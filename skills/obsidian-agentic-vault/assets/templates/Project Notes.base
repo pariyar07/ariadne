@@ -1,0 +1,13 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - 'not file.inFolder("Templates")'
+views:
+  - type: table
+    name: "All Notes"
+    order:
+      - file.name
+      - type
+      - status
+      - created
+      - file.folder

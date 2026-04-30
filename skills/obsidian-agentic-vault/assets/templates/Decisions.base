@@ -1,0 +1,9 @@
+filters: 'type == "decision"'
+views:
+  - type: table
+    name: "Decisions"
+    order:
+      - file.name
+      - status
+      - created
+      - file.folder

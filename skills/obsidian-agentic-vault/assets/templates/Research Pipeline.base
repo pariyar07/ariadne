@@ -1,0 +1,16 @@
+filters:
+  or:
+    - 'type == "raw-source"'
+    - 'type == "research"'
+views:
+  - type: table
+    name: "Research Pipeline"
+    order:
+      - file.name
+      - type
+      - status
+      - source_type
+      - author
+      - created
+      - accessed
+      - file.folder
