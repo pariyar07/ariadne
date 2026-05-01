@@ -1,0 +1,14 @@
+filters:
+  or:
+    - 'file.inFolder("Processing Queue")'
+    - 'type == "processing-item"'
+views:
+  - type: table
+    name: "Processing Queue"
+    order:
+      - file.name
+      - status
+      - priority
+      - source
+      - created
+      - file.folder

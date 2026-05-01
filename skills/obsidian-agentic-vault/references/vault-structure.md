@@ -6,8 +6,12 @@ Use this as guidance, not a rigid schema.
 
 - `Raw/` - unprocessed captures.
 - `Raw/Sources/` - source documents, links, articles, tweets, papers, repos, transcripts.
+- `Inbox/` - raw brain dumps, unstructured user input, quick captures, and items that have not been routed yet.
+- `Processing Queue/` - tracked work items for sources or brain dumps that need compilation, linking, review, or archival.
 - `Notes/` - general durable notes that do not fit a specialized folder.
 - `Research/` - source-backed synthesis.
+- `Entities/` - important people, companies, products, projects, clients, tools, and concepts that behave like objects in the knowledge graph.
+- `Relationships/` - explicit relationship notes when a connection deserves durable explanation.
 - `Concepts/` - reusable ideas, models, definitions.
 - `Questions/` - open questions and research prompts.
 - `Decisions/` - dated decisions with context and rationale.
@@ -40,6 +44,8 @@ Add when the vault is about understanding a topic:
 - `Datasets/`
 - `Claims/`
 - `Bibliography/`
+- `Artifacts/`
+- `Search/`
 
 ## Learning Mode
 

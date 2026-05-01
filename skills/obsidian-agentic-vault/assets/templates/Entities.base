@@ -1,0 +1,10 @@
+filters: 'type == "entity"'
+views:
+  - type: table
+    name: "Entities"
+    order:
+      - file.name
+      - entity_type
+      - status
+      - created
+      - file.folder

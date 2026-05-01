@@ -1,0 +1,14 @@
+filters:
+  or:
+    - 'type == "health-check"'
+    - 'status == "needs-review"'
+views:
+  - type: table
+    name: "Knowledge Health"
+    order:
+      - file.name
+      - type
+      - status
+      - created
+      - period
+      - file.folder

@@ -1,0 +1,12 @@
+filters: 'type == "relationship"'
+views:
+  - type: table
+    name: "Relationships"
+    order:
+      - file.name
+      - relationship_type
+      - from
+      - to
+      - confidence
+      - status
+      - created

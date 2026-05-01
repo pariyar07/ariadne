@@ -1,0 +1,14 @@
+filters:
+  or:
+    - 'file.inFolder("Inbox")'
+    - 'type == "brain-dump"'
+views:
+  - type: table
+    name: "Inbox"
+    order:
+      - file.name
+      - type
+      - status
+      - created
+      - source_type
+      - file.folder

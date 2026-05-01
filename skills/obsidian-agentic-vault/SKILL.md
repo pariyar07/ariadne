@@ -1,6 +1,6 @@
 ---
 name: obsidian-agentic-vault
-description: Create and maintain Satyam's agentic Obsidian vaults for projects, research, learning, life systems, and other long-running knowledge work. Use when creating a new Obsidian vault, setting up an agent-maintained Markdown wiki, ingesting sources into raw/ and compiled notes, adding AGENTS.md or CLAUDE.md to a vault, creating project memory, or running vault health checks.
+description: Create and maintain Satyam's agentic Obsidian vaults for projects, research, learning, life systems, and other long-running knowledge work. Use when creating a new Obsidian vault, setting up an agent-maintained Markdown wiki, ingesting sources into raw/ and compiled notes, adding AGENTS.md or CLAUDE.md to a vault, creating project memory, processing brain dumps, maintaining indexes, or running vault health checks.
 ---
 
 # Obsidian Agentic Vault
@@ -19,7 +19,7 @@ This skill complements Obsidian mechanics skills:
 
 The vault is the memory. The skill is the setup and maintenance procedure.
 
-The human curates direction. The agent captures, compiles, links, indexes, and maintains the wiki.
+The human curates direction. A dedicated knowledge-processing workflow captures, compiles, links, indexes, and maintains the wiki. Task-running agents should consume the vault and write outputs back, but should not casually restructure it.
 
 ## Start Workflow
 
@@ -44,8 +44,12 @@ Create these folders unless the user asks for a different structure:
 
 - `Raw/`
 - `Raw/Sources/`
+- `Inbox/`
+- `Processing Queue/`
 - `Notes/`
 - `Research/`
+- `Entities/`
+- `Relationships/`
 - `Concepts/`
 - `Questions/`
 - `Decisions/`
@@ -60,15 +64,17 @@ Add mode-specific folders only when useful.
 
 ## Source Ingest Workflow
 
-When the user shares links, documents, tweets, repos, papers, screenshots, transcripts, or rough notes:
+When the user shares links, documents, tweets, repos, papers, screenshots, transcripts, brain dumps, or rough notes:
 
 1. Capture raw/source material in `Raw/Sources/`.
 2. Include source metadata: title, author, URL/path, source type, created/accessed date, and why it matters.
-3. Extract source claims separately from interpretation.
-4. Compile durable synthesis into the right folder: `Research/`, `Concepts/`, `Notes/`, `Product/`, `Architecture/`, `Life/`, or another relevant area.
-5. Link related notes with wikilinks.
-6. Add unresolved questions to `Questions/`.
-7. Update indexes or hub notes when the project map changes.
+3. Put unstructured user input in `Inbox/` and create a processing item in `Processing Queue/` when it needs follow-up.
+4. Extract source claims separately from interpretation.
+5. Identify entities, relationships, concepts, decisions, and questions.
+6. Compile durable synthesis into the right folder: `Research/`, `Concepts/`, `Notes/`, `Product/`, `Architecture/`, `Life/`, or another relevant area.
+7. Link related notes with wikilinks.
+8. Add unresolved questions to `Questions/`.
+9. Update indexes or hub notes when the project map changes.
 
 ## Long-Term Context Discovery
 
@@ -97,6 +103,11 @@ When asked to audit or maintain a vault, check for:
 - decisions without rationale
 - notes missing frontmatter
 - broken wikilinks
+- unprocessed inbox items
+- processing queue items stuck in `needs-review`
+- important notes without meaningful contextual links
+- claims without source links
+- stale index notes
 - generated outputs that should be filed back into the wiki
 
 ## Templates
@@ -107,3 +118,4 @@ See:
 
 - `references/vault-structure.md`
 - `references/maintenance.md`
+- `references/knowledge-processing-architecture.md`
