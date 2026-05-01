@@ -35,7 +35,7 @@ The human curates direction. The agent captures, compiles, links, indexes, and m
 4. Add core files from `assets/templates/`.
 5. Customize `00 Index.md`, `AGENTS.md`, and `CLAUDE.md` for the vault purpose.
 6. Add relevant mode folders from `references/vault-structure.md`.
-7. Create Bases from `assets/templates/bases/` when useful.
+7. Create Bases from the `.base` files in `assets/templates/` when useful.
 8. Validate that Markdown frontmatter and Base YAML parse.
 
 ## Default Folder Structure
