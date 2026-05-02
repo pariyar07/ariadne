@@ -1,8 +1,8 @@
 ---
-title: {{date}} {{title}}
+title: "{{date}} {{title}}"
 type: processing-item
 status: captured
-created: {{date}}
+created: "{{date}}"
 source:
 priority:
 tags:
@@ -30,5 +30,4 @@ tags:
 
 
 ## Review Notes
-
 

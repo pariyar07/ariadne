@@ -1,8 +1,8 @@
 ---
-title: {{date}} Knowledge Health Check
+title: "{{date}} Knowledge Health Check"
 type: health-check
 status: draft
-created: {{date}}
+created: "{{date}}"
 period:
 tags:
   - health-check
@@ -26,6 +26,18 @@ tags:
 ## Orphan Notes
 
 
+## Broken Wikilinks
+
+
+## Unlinked Base Files
+
+
+## Bloat And Drift
+
+
+## Local Agent Instructions
+
+
 ## Duplicate Concepts
 
 
@@ -39,5 +51,3 @@ tags:
 
 
 ## Actions
-
-

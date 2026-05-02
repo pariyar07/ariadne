@@ -1,8 +1,8 @@
 ---
-title: {{date}} {{title}}
+title: "{{date}} {{title}}"
 type: brain-dump
 status: captured
-created: {{date}}
+created: "{{date}}"
 source_type: human-input
 tags:
   - inbox
@@ -37,4 +37,3 @@ tags:
 - Relationships:
 - Decisions:
 - Questions:
-

@@ -1,8 +1,8 @@
 ---
-title: {{title}}
+title: "{{title}}"
 type: research
 status: draft
-created: {{date}}
+created: "{{date}}"
 tags:
   - research
 ---
@@ -25,5 +25,4 @@ tags:
 
 
 ## Related
-
 

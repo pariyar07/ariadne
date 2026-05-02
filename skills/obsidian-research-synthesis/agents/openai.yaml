@@ -1,0 +1,3 @@
+display_name: Obsidian Research Synthesis
+short_description: Synthesize multi-source research threads inside an Obsidian vault.
+default_prompt: Synthesize this research thread and update the relevant vault notes.

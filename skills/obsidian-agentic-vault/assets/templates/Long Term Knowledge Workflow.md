@@ -2,7 +2,7 @@
 title: Long Term Knowledge Workflow
 type: workflow
 status: active
-created: {{date}}
+created: "{{date}}"
 tags:
   - agent-workflow
   - context-management
@@ -24,12 +24,13 @@ Use this order:
 
 1. Read `00 Index.md`.
 2. Read `AGENTS.md` or `CLAUDE.md`.
-3. Read relevant folder hub notes.
-4. Search filenames with `find`.
-5. Search contents with `rg`.
-6. Follow relevant wikilinks.
-7. Read raw sources only when compiled notes are insufficient.
-8. Use Bases to inspect status and metadata.
+3. Read `Agent/00 Agent Navigation.md` if it exists.
+4. Read relevant folder hub notes.
+5. Search filenames with `find`.
+6. Search contents with `rg`.
+7. Follow relevant wikilinks.
+8. Read raw sources only when compiled notes are insufficient.
+9. Use Bases to inspect status and metadata.
 
 ## Health Checks
 
@@ -42,3 +43,4 @@ Check for:
 - decisions without rationale
 - missing frontmatter
 - broken links
+- Bases missing from `Bases/00 Bases Index.md`

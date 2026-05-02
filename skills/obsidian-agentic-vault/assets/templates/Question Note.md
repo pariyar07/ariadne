@@ -1,8 +1,8 @@
 ---
-title: {{title}}
+title: "{{title}}"
 type: question
 status: open
-created: {{date}}
+created: "{{date}}"
 tags:
   - question
 ---
@@ -19,5 +19,4 @@ tags:
 
 
 ## Next Steps
-
 

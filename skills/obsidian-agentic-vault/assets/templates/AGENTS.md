@@ -5,8 +5,12 @@ This is an Obsidian vault maintained as a durable, agent-readable Markdown knowl
 Read first:
 
 1. `00 Index.md`
-2. `Agent/Long Term Knowledge Workflow.md`
-3. `Agent/Ingest Compile Workflow.md`
+2. `Agent/00 Agent Navigation.md`
+3. `Agent/Long Term Knowledge Workflow.md`
+4. `Agent/Ingest Compile Workflow.md`
+5. `Agent/Vault Navigation Standard.md` before navigation changes.
+6. `Agent/Knowledge Processing Architecture.md` before structural changes.
+7. If working inside a durable workstream folder, check for a local `AGENTS.md` and follow it if present.
 
 Rules:
 
@@ -14,8 +18,12 @@ Rules:
 - Use YAML frontmatter with `title`, `type`, `status`, `created`, and `tags` where useful.
 - Keep raw source captures separate from compiled notes.
 - Update indexes when adding important notes.
+- Link new Bases from `Bases/00 Bases Index.md`.
 - Distinguish source claims, interpretation, and decisions.
 - Search progressively. Do not read the whole vault by default.
+- Promote new workstream graphs only when recurring use needs a hub, routing rule, optional template, optional Base, and health-check coverage.
+- Proactively call out navigation bloat: oversized entry files, folders without hubs, hubs that need sub-hubs, recurring workstreams missing routing, and raw/inbox/output buildup without compilation.
+- Propose a local folder `AGENTS.md` when global rules are too generic for repeated work in a specialized folder.
 
 Purpose:
 

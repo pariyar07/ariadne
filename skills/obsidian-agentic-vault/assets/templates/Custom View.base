@@ -1,0 +1,16 @@
+# Copy this file when a vault needs a new domain-specific view.
+# Rename it to match the view, for example `Sales Pipeline.base` or `Training Metrics.base`.
+
+filters:
+  and:
+    - 'file.ext == "md"'
+views:
+  - type: table
+    name: "Custom View"
+    order:
+      - file.name
+      - type
+      - status
+      - created
+      - tags
+      - file.folder

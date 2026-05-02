@@ -24,6 +24,7 @@ Check:
 - decisions without rationale
 - duplicate concepts
 - orphan notes
+- `.base` files missing from `Bases/00 Bases Index.md`
 - stale questions
 - claims without source links
 - important concepts without examples
@@ -71,6 +72,8 @@ Common `type` values:
 - `project`
 - `life`
 - `system`
+- `operating-standard`
+- `health-check`
 
 Common `status` values:
 

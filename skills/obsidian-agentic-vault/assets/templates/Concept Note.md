@@ -1,8 +1,8 @@
 ---
-title: {{title}}
+title: "{{title}}"
 type: concept
 status: draft
-created: {{date}}
+created: "{{date}}"
 tags:
   - concept
 ---
@@ -19,5 +19,4 @@ tags:
 
 
 ## Related
-
 

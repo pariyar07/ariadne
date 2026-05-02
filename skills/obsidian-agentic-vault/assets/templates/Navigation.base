@@ -1,0 +1,13 @@
+filters:
+  or:
+    - 'type == "index"'
+    - 'type == "operating-standard"'
+views:
+  - type: table
+    name: "Navigation And Standards"
+    order:
+      - file.name
+      - type
+      - status
+      - created
+      - file.folder

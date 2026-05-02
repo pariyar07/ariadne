@@ -1,8 +1,8 @@
 ---
-title: {{title}}
+title: "{{title}}"
 type: entity
 status: draft
-created: {{date}}
+created: "{{date}}"
 entity_type:
 aliases: []
 tags:
@@ -27,5 +27,4 @@ tags:
 
 
 ## Related
-
 

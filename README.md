@@ -1,21 +1,19 @@
-# Obsidian Agentic Vault Skill
+# Obsidian Agentic Vault Skills
 
-Personal skill package for creating and maintaining Obsidian vaults as agent-maintained Markdown knowledge systems.
+Personal skill package for building Obsidian vaults as agent-maintained Markdown knowledge systems.
 
-The skill is meant for project, research, learning, life, and system vaults that should compound over time. It encodes a reusable workflow for turning raw sources, brain dumps, generated outputs, and decisions into a linked, inspectable Markdown wiki.
+The core pattern is simple: humans choose what enters, agents compile raw material into a linked wiki, and Obsidian stays the readable frontend.
+
+```mermaid
+flowchart LR
+  A[Raw / Inbox] --> B[Compile]
+  B --> C[Knowledge Graph]
+  C --> D[Hubs + Routing]
+  D --> E[Bases + Health Checks]
+  E --> C
+```
 
 ## Install
-
-Install for Claude Code:
-
-```bash
-npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill \
-  --global \
-  --agent claude-code \
-  --skill obsidian-agentic-vault \
-  --copy \
-  --yes
-```
 
 Install for Codex:
 
@@ -28,100 +26,84 @@ npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill \
   --yes
 ```
 
-Install for all supported agents:
+Install for Claude Code:
 
 ```bash
 npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill \
   --global \
-  --agent '*' \
+  --agent claude-code \
   --skill obsidian-agentic-vault \
   --copy \
   --yes
 ```
 
-List available skills without installing:
+Install all skills for all supported agents:
+
+```bash
+npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill \
+  --global \
+  --agent '*' \
+  --copy \
+  --yes
+```
+
+List available skills:
 
 ```bash
 npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill --list
 ```
 
-## Repository Shape
+## Skills
 
-The repository keeps package-level docs at the root and installable skills under `skills/`.
+- `obsidian-agentic-vault` - bootstrap a vault with folders, templates, agent navigation, and Bases.
+- `obsidian-ingest-compile` - turn links, documents, brain dumps, and raw inputs into durable notes.
+- `obsidian-research-synthesis` - synthesize multi-source research threads and debate hubs.
+- `obsidian-vault-maintainer` - run health checks and repair navigability.
+- `obsidian-navigation-architect` - design hubs, routing, workstream graphs, templates, and Base/view layers.
+- `obsidian-vault-validator` - run deterministic structural checks for YAML, broken links, orphan notes, and unlinked Bases.
 
-```text
-skills/
-  obsidian-agentic-vault/
-    SKILL.md
-    agents/
-    assets/
-    references/
-```
+## Model
 
-The `skills` CLI installs the selected skill folder, not the entire repository root.
+The vault has three layers:
 
-## Skill Purpose
+- **Knowledge Graph:** research, concepts, entities, relationships, decisions, and domain workstreams.
+- **Operating Graph:** agent instructions, workflows, inbox, processing queue, raw sources, templates, and health checks.
+- **View Layer:** Bases, canvases, dashboards, and reports over the Markdown source of truth.
 
-Use `obsidian-agentic-vault` for project, research, learning, life, or system vaults that should compound over time through:
+The bootstrap skill includes `assets/templates/Custom View.base` as a generic starting point for domain-specific Base views.
 
-- raw source capture
-- inbox / brain dump intake
-- dedicated processing queues
-- compiled Markdown notes
-- entity and relationship notes
-- durable decisions
-- open questions
-- generated outputs
-- contextual linking
-- long-term context discovery
-- vault health checks
-
-## Operating Model
-
-The vault is the memory. The skill is the setup and maintenance procedure.
-
-The default architecture separates two jobs:
-
-- **Knowledge processing:** ingest, triage, compile, link, index, lint, and archive.
-- **Task execution:** answer questions, generate outputs, build things, and write durable results back into the vault.
-
-This separation keeps the vault coherent as it grows. Task-running agents should consume the vault and file outputs back into it, but durable structural changes should follow the knowledge-processing workflow.
-
-## Default Knowledge Flow
+Navigation should stay layered:
 
 ```text
-Inbox / Raw Sources
-  -> Processing Queue
-  -> Extraction
-  -> Compiled Notes
-  -> Entities / Relationships / Concepts
-  -> Indexes / Bases / Visualizations
-  -> Health Checks
+00 Index.md = strategic map
+Agent/00 Agent Navigation.md = routing map
+Folder hubs = detailed maps
+Thread hubs = deep topic maps
+Bases = dynamic tables
 ```
 
-## Included Templates
+## References
 
-The skill includes templates for:
+- `skills/obsidian-agentic-vault/references/vault-operating-model.md`
+- `skills/obsidian-agentic-vault/references/vault-modes.md`
+- `skills/obsidian-agentic-vault/references/vault-structure.md`
+- `skills/obsidian-agentic-vault/references/maintenance.md`
+- `skills/obsidian-agentic-vault/references/knowledge-processing-architecture.md`
 
-- raw source notes
-- brain dumps
-- processing items
-- research notes
-- concept notes
-- entity notes
-- relationship notes
-- decision notes
-- question notes
-- source evaluations
-- knowledge health checks
+## Validation
 
-It also includes Obsidian Base templates for:
+Run the validator from a vault root:
 
-- inbox
-- processing queue
-- research pipeline
-- entities
-- relationships
-- decisions
-- knowledge health
-- all notes
+```bash
+ruby /path/to/skills/obsidian-vault-validator/scripts/validate_vault.rb
+```
+
+Healthy output should look like:
+
+```text
+yaml-ok
+broken-wikilinks: 0
+true-orphans-md: 0
+unlinked-base-files: 0
+bloat-warnings: 0
+```

@@ -2,7 +2,7 @@
 title: Ingest Compile Workflow
 type: workflow
 status: active
-created: {{date}}
+created: "{{date}}"
 tags:
   - agent-workflow
   - knowledge-base

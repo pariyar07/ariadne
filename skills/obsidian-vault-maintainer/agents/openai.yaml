@@ -1,0 +1,3 @@
+display_name: Obsidian Vault Maintainer
+short_description: Audit and maintain links, frontmatter, queues, hubs, Bases, and health reports.
+default_prompt: Run a health check on this Obsidian vault and repair navigability issues.

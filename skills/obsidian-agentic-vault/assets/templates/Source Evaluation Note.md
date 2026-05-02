@@ -1,8 +1,8 @@
 ---
-title: {{title}}
+title: "{{title}}"
 type: source-evaluation
 status: draft
-created: {{date}}
+created: "{{date}}"
 source:
 relevance_score:
 novelty_score:
@@ -34,5 +34,4 @@ tags:
 
 
 ## Follow-Up Questions
-
 

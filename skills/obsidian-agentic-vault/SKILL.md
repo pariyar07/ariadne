@@ -1,11 +1,11 @@
 ---
 name: obsidian-agentic-vault
-description: Create and maintain Satyam's agentic Obsidian vaults for projects, research, learning, life systems, and other long-running knowledge work. Use when creating a new Obsidian vault, setting up an agent-maintained Markdown wiki, ingesting sources into raw/ and compiled notes, adding AGENTS.md or CLAUDE.md to a vault, creating project memory, processing brain dumps, maintaining indexes, or running vault health checks.
+description: Bootstrap Satyam's agentic Obsidian vaults for projects, research, learning, life systems, and other long-running knowledge work. Use when creating a new vault, installing the base folder structure, templates, AGENTS.md, CLAUDE.md, Agent navigation files, and default Bases.
 ---
 
 # Obsidian Agentic Vault
 
-Use this skill to create or maintain an Obsidian vault as a durable, agent-maintained knowledge system.
+Use this skill to create or refresh the foundation of an Obsidian vault as a durable, agent-maintained Markdown knowledge system.
 
 This skill complements Obsidian mechanics skills:
 
@@ -15,11 +15,20 @@ This skill complements Obsidian mechanics skills:
 - Use `defuddle` for clean Markdown extraction from web pages.
 - Use `obsidian-cli` when Obsidian is open and CLI interaction is useful.
 
+It also has workflow companion skills:
+
+- `obsidian-ingest-compile` for raw inputs, links, documents, and brain dumps.
+- `obsidian-research-synthesis` for multi-source research threads.
+- `obsidian-vault-maintainer` for health checks and recurring maintenance.
+- `obsidian-navigation-architect` for hubs, routing, workstream graphs, and Base/view-layer changes.
+
 ## Core Model
 
 The vault is the memory. The skill is the setup and maintenance procedure.
 
-The human curates direction. A dedicated knowledge-processing workflow captures, compiles, links, indexes, and maintains the wiki. Task-running agents should consume the vault and write outputs back, but should not casually restructure it.
+The human curates direction. Agents compile raw material into a linked Markdown wiki. Obsidian is the readable frontend. Bases, canvases, and reports are view layers over the Markdown source of truth.
+
+This skill bootstraps the system. Use the companion skills for ongoing ingest, synthesis, navigation changes, and maintenance.
 
 ## Start Workflow
 
@@ -34,9 +43,11 @@ The human curates direction. A dedicated knowledge-processing workflow captures,
 3. Create or update the base folder structure.
 4. Add core files from `assets/templates/`.
 5. Customize `00 Index.md`, `AGENTS.md`, and `CLAUDE.md` for the vault purpose.
-6. Add relevant mode folders from `references/vault-structure.md`.
-7. Create Bases from the `.base` files in `assets/templates/` when useful.
-8. Validate that Markdown frontmatter and Base YAML parse.
+6. Add `Agent/00 Agent Navigation.md`, `Agent/Vault Navigation Standard.md`, `Agent/Task Routing Matrix.md`, and `Agent/Vault Health Check Procedure.md` when useful.
+7. Add relevant mode folders from `references/vault-structure.md`.
+8. Create Bases from the `.base` files in `assets/templates/` when useful.
+9. Add `Bases/00 Bases Index.md` and link each Base from it.
+10. Validate that Markdown frontmatter and Base YAML parse.
 
 ## Default Folder Structure
 
@@ -62,20 +73,6 @@ Create these folders unless the user asks for a different structure:
 
 Add mode-specific folders only when useful.
 
-## Source Ingest Workflow
-
-When the user shares links, documents, tweets, repos, papers, screenshots, transcripts, brain dumps, or rough notes:
-
-1. Capture raw/source material in `Raw/Sources/`.
-2. Include source metadata: title, author, URL/path, source type, created/accessed date, and why it matters.
-3. Put unstructured user input in `Inbox/` and create a processing item in `Processing Queue/` when it needs follow-up.
-4. Extract source claims separately from interpretation.
-5. Identify entities, relationships, concepts, decisions, and questions.
-6. Compile durable synthesis into the right folder: `Research/`, `Concepts/`, `Notes/`, `Product/`, `Architecture/`, `Life/`, or another relevant area.
-7. Link related notes with wikilinks.
-8. Add unresolved questions to `Questions/`.
-9. Update indexes or hub notes when the project map changes.
-
 ## Long-Term Context Discovery
 
 Do not read the entire vault by default.
@@ -92,23 +89,15 @@ Use progressive discovery:
 8. Read raw sources only when compiled notes are insufficient.
 9. Use `.base` files to inspect note status and metadata.
 
-## Health Checks
+## Navigation Pattern
 
-When asked to audit or maintain a vault, check for:
+New vaults should separate:
 
-- raw sources not compiled
-- orphan notes
-- duplicate concepts
-- stale open questions
-- decisions without rationale
-- notes missing frontmatter
-- broken wikilinks
-- unprocessed inbox items
-- processing queue items stuck in `needs-review`
-- important notes without meaningful contextual links
-- claims without source links
-- stale index notes
-- generated outputs that should be filed back into the wiki
+- knowledge graph: research, concepts, entities, relationships, decisions, architecture, product, and other durable semantic notes
+- operating graph: agent instructions, workflows, templates, inbox, processing queue, raw sources, outputs, and health checks
+- view layer: Bases, canvases, dashboards, and generated reports
+
+Future workstream graphs should be promoted only when recurring use needs a dedicated route. A workstream graph needs a hub, routing rule, optional template, optional Base, and health-check coverage.
 
 ## Templates
 
@@ -116,6 +105,8 @@ Use the files in `assets/templates/` as starting points. Copy them into the targ
 
 See:
 
+- `references/vault-operating-model.md`
+- `references/vault-modes.md`
 - `references/vault-structure.md`
 - `references/maintenance.md`
 - `references/knowledge-processing-architecture.md`

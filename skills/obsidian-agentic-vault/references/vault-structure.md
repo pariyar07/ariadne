@@ -19,8 +19,22 @@ Use this as guidance, not a rigid schema.
 - `Visualizations/` - Canvas files, diagrams, maps.
 - `Templates/` - note templates.
 - `Agent/` - workflows and local agent operating rules.
-- `Bases/` - Obsidian Bases.
+- `Bases/` - Obsidian Bases and `00 Bases Index.md` for the view layer.
 - `Archive/` - inactive or superseded material.
+
+## Navigation Files
+
+Use these when the vault should be agent-maintained for more than a short session:
+
+- `Agent/00 Agent Navigation.md`
+- `Agent/Knowledge Processing Architecture.md`
+- `Agent/Vault Navigation Standard.md`
+- `Agent/Task Routing Matrix.md`
+- `Agent/Vault Health Check Procedure.md`
+- `Bases/00 Bases Index.md`
+- `Bases/Navigation.base`
+
+Promote new workstream graphs only when recurring use needs a durable route. A workstream graph needs a hub, routing rule, optional template, optional Base, and health-check coverage.
 
 ## Project Mode
 

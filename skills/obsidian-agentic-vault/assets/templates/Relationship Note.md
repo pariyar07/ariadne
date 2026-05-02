@@ -1,8 +1,8 @@
 ---
-title: {{title}}
+title: "{{title}}"
 type: relationship
 status: draft
-created: {{date}}
+created: "{{date}}"
 from:
 to:
 relationship_type:
@@ -26,5 +26,4 @@ tags:
 
 
 ## Related
-
 

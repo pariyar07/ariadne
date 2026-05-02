@@ -1,8 +1,8 @@
 ---
-title: {{date}} {{title}}
+title: "{{date}} {{title}}"
 type: decision
 status: proposed
-created: {{date}}
+created: "{{date}}"
 tags:
   - decision
 ---
@@ -22,5 +22,4 @@ tags:
 
 
 ## Consequences
-
 

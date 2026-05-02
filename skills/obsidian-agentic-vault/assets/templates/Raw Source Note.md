@@ -1,13 +1,13 @@
 ---
-title: {{title}}
+title: "{{title}}"
 type: raw-source
 status: captured
-created: {{date}}
+created: "{{date}}"
 source_type:
 author:
 url:
 published:
-accessed: {{date}}
+accessed: "{{date}}"
 tags:
   - raw-source
 ---

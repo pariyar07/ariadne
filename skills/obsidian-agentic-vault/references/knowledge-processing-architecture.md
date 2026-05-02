@@ -90,6 +90,7 @@ Make the knowledge base inspectable through:
 - `00 Index.md`
 - folder index notes
 - `.base` views
+- `Bases/00 Bases Index.md`
 - Canvas maps
 - health check reports
 - generated artifacts in `Outputs/`
