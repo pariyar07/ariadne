@@ -19,6 +19,16 @@ Do not only answer in chat when the user shares material that should compound. C
 4. Read `Agent/Ingest Compile Workflow.md` if it exists.
 5. Open only the relevant folder hub and notes.
 
+## Scope Routing
+
+Before writing, determine the target scope:
+
+- Use the root scope for Satyam-wide material.
+- Use the current scope for local work inside an active durable area.
+- Use the nearest child scope for a narrower recurring workflow with its own hub.
+
+For cross-scope material, capture the source once where it belongs, then create or update relationship notes, synthesis notes, or routing notes at the nearest common parent scope. Link to child-scope evidence instead of duplicating raw sources across scopes.
+
 ## Intake Routing
 
 - External sources go in `Raw/Sources/`.

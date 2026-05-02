@@ -1,0 +1,19 @@
+filters:
+  and:
+    - 'file.inFolder("{{scope_path}}")'
+    - 'file.ext == "md"'
+formulas:
+  scope: '"{{scope_name}}"'
+properties:
+  formula.scope:
+    displayName: "Scope"
+views:
+  - type: table
+    name: "{{scope_name}} Notes"
+    order:
+      - file.name
+      - formula.scope
+      - type
+      - status
+      - created
+      - file.folder

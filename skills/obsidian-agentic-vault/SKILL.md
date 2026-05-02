@@ -28,6 +28,8 @@ The vault is the memory. The skill is the setup and maintenance procedure.
 
 The human curates direction. Agents compile raw material into a linked Markdown wiki. Obsidian is the readable frontend. Bases, canvases, and reports are view layers over the Markdown source of truth.
 
+For multi-area vaults, model the vault as a recursive scope tree. The root scope owns global policy and shared view layers. Each child scope inherits parent rules and adds only local deltas.
+
 This skill bootstraps the system. Use the companion skills for ongoing ingest, synthesis, navigation changes, and maintenance.
 
 ## Start Workflow
@@ -97,7 +99,7 @@ New vaults should separate:
 - operating graph: agent instructions, workflows, templates, inbox, processing queue, raw sources, outputs, and health checks
 - view layer: Bases, canvases, dashboards, and generated reports
 
-Future workstream graphs should be promoted only when recurring use needs a dedicated route. A workstream graph needs a hub, routing rule, optional template, optional Base, and health-check coverage.
+Future scopes should be promoted only when recurring use needs a dedicated route. A promoted scope needs a hub, parent/child navigation links, routing coverage, optional local rules, optional templates, optional Bases, and health-check coverage.
 
 ## Templates
 
@@ -110,3 +112,5 @@ See:
 - `references/vault-structure.md`
 - `references/maintenance.md`
 - `references/knowledge-processing-architecture.md`
+- `references/recursive-scopes.md`
+- `references/bases-scope-patterns.md`

@@ -1,0 +1,3 @@
+# Gamma Bases
+
+- [[MissingScope.base]]

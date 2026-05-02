@@ -1,0 +1,3 @@
+display_name: Obsidian Scope Manager
+short_description: Create, promote, import, and reorganize recursive Obsidian vault scopes.
+default_prompt: Create or promote a durable scope inside this Obsidian vault.

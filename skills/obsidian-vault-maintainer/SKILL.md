@@ -37,6 +37,14 @@ Check for:
 - durable folders without `00 ... Index.md` hubs
 - recurring workstreams missing from task routing
 - stale or missing local `AGENTS.md` files for specialized folders
+- promoted scopes missing hubs
+- child hubs missing parent links
+- parent hubs missing child links
+- local Bases missing folder scope filters
+- local `AGENTS.md` files repeating parent policy instead of local deltas
+- local queues piling up inside child scopes
+- raw sources not compiled within the relevant scope
+- scope indexes becoming full tables of contents instead of navigable maps
 
 ## Report
 
@@ -58,6 +66,8 @@ Use statuses such as:
 - Treat bloat as a maintenance issue: call it out, then split to folder hubs, thread hubs, or Bases.
 - Treat repeated folder-specific guidance as a signal to propose a local `AGENTS.md`.
 - Keep Bases as a view layer over Markdown, not a second source of truth.
+- Repair scope drift at the nearest responsible scope.
+- Do not push local material to the root just for visibility.
 - Do not restructure the vault unless the user asked for maintenance that requires it.
 
 ## Useful Local Checks
@@ -65,7 +75,7 @@ Use statuses such as:
 Prefer the bundled validator skill when available:
 
 ```bash
-ruby /path/to/skills/obsidian-vault-validator/scripts/validate_vault.rb
+/path/to/skills/obsidian-vault-validator/scripts/validate_vault.sh
 ```
 
 It should report `yaml-ok`, `broken-wikilinks: 0`, `true-orphans-md: 0`, `unlinked-base-files: 0`, and ideally `bloat-warnings: 0` for a healthy vault.

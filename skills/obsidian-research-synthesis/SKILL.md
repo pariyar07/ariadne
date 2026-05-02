@@ -16,6 +16,12 @@ Use this skill when the task is broader than a single-source ingest: comparing s
 5. Read the thread hub if one exists.
 6. Read compiled notes before raw sources.
 
+## Scope Routing
+
+Keep synthesis local unless it affects multiple scopes. A local project, workflow, or research thread should keep its synthesis in that scope and link from the local hub.
+
+Cross-scope synthesis belongs at the nearest common parent scope. Link to child-scope evidence, source notes, and local syntheses rather than copying them upward. Promote to the root scope only when the synthesis is genuinely Satyam-wide.
+
 ## Synthesis Workflow
 
 1. Define the research question or thread being updated.

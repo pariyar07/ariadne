@@ -1,0 +1,3 @@
+# Vault Index
+
+- [[Welcome]]
