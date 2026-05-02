@@ -25,6 +25,16 @@ Rules:
 - Proactively call out navigation bloat: oversized entry files, folders without hubs, hubs that need sub-hubs, recurring workstreams missing routing, and raw/inbox/output buildup without compilation.
 - Propose a local folder `AGENTS.md` when global rules are too generic for repeated work in a specialized folder.
 
+Wikilink resolution for agents:
+
+When following a bare wikilink such as `[[AGENTS]]` or `[[00 Index]]`, use Obsidian's own nearest-scope-first algorithm — do not guess or load all matches:
+
+1. Look for the file in the same folder as the note containing the link.
+2. If not found, walk toward the vault root, preferring the closest match.
+3. If still ambiguous, prefer the path-qualified form and flag the ambiguity.
+
+Navigation files (`AGENTS.md`, `00 Index.md`, `Agent/` folder) must always use path-qualified wikilinks so agents arriving cold have zero ambiguity. Content notes may use bare links because agents always arrive at them through a qualified navigation file, never cold.
+
 Purpose:
 
 {{purpose}}

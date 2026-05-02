@@ -43,6 +43,21 @@ Do not read the whole vault.
 
 Those are parent/root rules and should not be repeated.
 
+## Wikilink Resolution Across Scopes
+
+Bare wikilinks are safe for humans — Obsidian resolves them at runtime using nearest-scope-first. Agents reading raw files do not have the runtime, so they must apply the same algorithm explicitly:
+
+1. Look for the file in the same folder as the note containing the link.
+2. If not found, walk toward the vault root, preferring the closest match.
+3. If still ambiguous, prefer the path-qualified form and flag it.
+
+**Two-tier rule:**
+
+- Navigation files (`AGENTS.md`, `00 Index.md`, `Agent/` folder) — always path-qualified. These are agent entry points; zero ambiguity is required.
+- Content notes (research, concepts, episodes, etc.) — bare links are fine. Agents always arrive at content via a qualified navigation file, never cold.
+
+Multi-scope vaults will have duplicate filenames (`AGENTS.md`, `00 Index.md`, `CLAUDE.md`). Path-qualified navigation links are what make agent traversal deterministic across scope boundaries.
+
 ## Bases
 
 Root Bases inspect across scopes and include `formula.scope`.
