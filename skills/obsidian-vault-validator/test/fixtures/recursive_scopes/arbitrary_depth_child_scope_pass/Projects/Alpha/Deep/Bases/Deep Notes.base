@@ -1,0 +1,4 @@
+views:
+  - type: table
+    name: Deep
+    filters: 'file.inFolder("Projects/Alpha/Deep")'

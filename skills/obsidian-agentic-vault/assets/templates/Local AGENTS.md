@@ -1,8 +1,10 @@
 # {{folder_name}} - Local Agent Instructions
 
-This file contains folder-specific guidance for agents working in this workstream.
+This file contains folder-specific guidance for agents working in this local scope.
 
-Use this only when the folder has specialized workflow rules that are not covered by the root `AGENTS.md`.
+Use this only when the folder has specialized workflow rules that differ from its parent scope.
+
+This file is a local delta. It inherits parent/root rules and must not repeat global policy from parent `AGENTS.md` files.
 
 ## Purpose
 
@@ -14,10 +16,10 @@ Use this only when the folder has specialized workflow rules that are not covere
 
 ## Local Rules
 
-- Keep notes as plain Markdown with Obsidian wikilinks.
-- Use frontmatter fields required by this workstream.
-- Link durable notes from the folder hub.
-- Update relevant Bases when metadata-driven inspection matters.
+- Add only rules that are different for this local scope.
+- Link durable notes from the scope hub.
+- Use path-qualified wikilinks when linking outside this scope and duplicate filenames may exist.
+- Update relevant local Bases when metadata-driven inspection matters.
 
 ## Workflow
 
@@ -40,5 +42,6 @@ Input -> Local object -> Local interpretation -> Output -> Decision
 
 - This folder has many durable notes but no useful local hub.
 - The local hub is too long to scan.
-- Repeated questions require instructions not captured here.
+- Repeated questions require local-delta instructions not captured here.
 - A local Base would be more useful than a long hand-maintained list.
+- This file repeats parent/root rules instead of naming only local differences.

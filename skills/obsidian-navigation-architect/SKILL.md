@@ -50,6 +50,29 @@ When promoting a workstream:
 8. Update `00 Index.md` only if strategically important.
 9. Add health-check coverage if the workstream creates recurring maintenance.
 
+## Recursive Scope Protocol
+
+A navigation scope can exist at any depth: the vault root, a top-level workstream, a child workflow, or a deep child project. Promote a child scope only when a recurring durable route needs local traversal; otherwise keep it as a normal folder under the parent scope.
+
+When creating or updating a child scope:
+
+1. Identify the parent scope and its hub.
+2. Create or update the child hub, usually `00 ... Index.md`.
+3. Link the child from the parent hub or nearest navigation route.
+4. Link the parent from the child hub.
+5. Add routing coverage at the nearest useful `Agent/Task Routing Matrix.md`.
+6. Add a local `AGENTS.md` only for local deltas.
+7. Add local templates or local Bases only when the repeated workflow justifies them.
+8. Add health checks for hub links, scope queues, raw-source compilation, and Base coverage.
+
+Warn when you see:
+
+- child `AGENTS.md` files repeating parent or root policy instead of local deltas
+- child local Bases without scope filters
+- parent hub missing child link
+- child hub missing parent link
+- ambiguous cross-scope wikilinks that should point through the nearest useful hub, relationship note, or synthesis
+
 ## Bloat And Drift
 
 When navigating or restructuring a vault, proactively call out:

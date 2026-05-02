@@ -1,0 +1,16 @@
+filters: 'type == "scope-index"'
+formulas:
+  scope: 'if(parent_scope, parent_scope + " / " + file.name, file.name)'
+properties:
+  formula.scope:
+    displayName: Scope Path
+views:
+  - type: table
+    name: Scopes
+    order:
+      - file.name
+      - formula.scope
+      - parent_scope
+      - status
+      - created
+      - file.folder
