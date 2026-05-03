@@ -21,7 +21,7 @@ flowchart LR
 Install all skills globally for Claude Code:
 
 ```bash
-npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill \
+npx skills add https://github.com/pariyar07/ariadne \
   --global \
   --agent claude-code \
   --copy \
@@ -31,7 +31,7 @@ npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill \
 Install for all supported agents:
 
 ```bash
-npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill \
+npx skills add https://github.com/pariyar07/ariadne \
   --global \
   --agent '*' \
   --copy \
@@ -41,7 +41,7 @@ npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill \
 List available skills:
 
 ```bash
-npx skills add https://github.com/pariyar07/obsidian-agentic-vault-skill --list
+npx skills add https://github.com/pariyar07/ariadne --list
 ```
 
 ## Skills
