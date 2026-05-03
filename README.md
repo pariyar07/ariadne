@@ -3,7 +3,7 @@
 > In Greek myth, Ariadne gives Theseus the thread that lets him navigate the labyrinth.
 > Ariadne gives AI agents a thread through a complex knowledge labyrinth.
 
-A Claude Code skill package for building Obsidian vaults that AI agents can navigate, maintain, and operate reliably.
+An agent skill package for building Obsidian vaults that AI agents can navigate, maintain, and operate reliably. Works with Claude Code, OpenAI Assistants, and any agent runtime that supports the skills protocol.
 
 The core pattern: humans choose what enters, agents compile raw material into a linked wiki, Obsidian is the readable frontend, and Bases are live query views over the Markdown source of truth.
 
@@ -18,22 +18,30 @@ flowchart LR
 
 ## Install
 
-Install all skills globally for Claude Code:
-
-```bash
-npx skills add https://github.com/pariyar07/ariadne \
-  --global \
-  --agent claude-code \
-  --copy \
-  --yes
-```
-
-Install for all supported agents:
+Install for all supported agents (Claude Code, OpenAI, and others):
 
 ```bash
 npx skills add https://github.com/pariyar07/ariadne \
   --global \
   --agent '*' \
+  --copy \
+  --yes
+```
+
+Install for a specific agent:
+
+```bash
+# Claude Code
+npx skills add https://github.com/pariyar07/ariadne \
+  --global \
+  --agent claude-code \
+  --copy \
+  --yes
+
+# OpenAI Assistants
+npx skills add https://github.com/pariyar07/ariadne \
+  --global \
+  --agent openai \
   --copy \
   --yes
 ```
