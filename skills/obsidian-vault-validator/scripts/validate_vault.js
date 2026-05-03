@@ -370,6 +370,22 @@ function validate(vaultPath) {
     }
   }
 
+  const baseScopeFormulaWarnings = [];
+  const rootBases = baseFiles.filter(rootBaseFile);
+  if (rootBases.length > 0) {
+    for (const [dir, childHub] of hubsByDir.entries()) {
+      if (dir === ".") continue;
+      if (!scopeHub(childHub, markdownFrontmatter)) continue;
+      for (const rootBase of rootBases) {
+        const text = baseText.get(rootBase) || "";
+        if (!text.includes("file.inFolder")) continue;
+        if (!containsScopeFilter(text, dir)) {
+          baseScopeFormulaWarnings.push(`${rootBase}: scope formula missing branch for ${dir}`);
+        }
+      }
+    }
+  }
+
   const bloatWarnings = [];
   if (fs.existsSync("00 Index.md")) {
     const lines = lineCount("00 Index.md");
@@ -424,6 +440,7 @@ function validate(vaultPath) {
     ambiguousWikilinkWarnings,
     scopeNavigationWarnings,
     routingMatrixWarnings,
+    baseScopeFormulaWarnings,
   };
 }
 
@@ -445,6 +462,7 @@ function printResults(result) {
     ["ambiguous-wikilink-warnings", result.ambiguousWikilinkWarnings],
     ["scope-navigation-warnings", result.scopeNavigationWarnings],
     ["routing-matrix-warnings", result.routingMatrixWarnings],
+    ["base-scope-formula-warnings", result.baseScopeFormulaWarnings],
   ];
 
   for (const [name, values] of counters) {

@@ -48,6 +48,7 @@ The validator reports:
 - `ambiguous-wikilink-warnings: N` for basename-only wikilinks that resolve to multiple Markdown/Base targets
 - `scope-navigation-warnings: N` for promoted child scope hubs that are not linked bidirectionally with their parent hub
 - `routing-matrix-warnings: N` for scope hubs that exist but are not linked from `Agent/Task Routing Matrix.md`
+- `base-scope-formula-warnings: N` for root `Bases/*.base` files with a `file.inFolder` scope formula that is missing a branch for a known scope path
 
 It discovers `.base` files recursively, excluding `.obsidian` paths, and resolves wikilinks to both Markdown notes and `.base` files.
 
@@ -68,6 +69,7 @@ local-agents-inheritance-warnings: 0
 ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
+base-scope-formula-warnings: 0
 ```
 
 Some vaults may intentionally keep raw captures or temporary files lightly linked. If the validator reports issues, inspect whether they are intentional before adding links.

@@ -34,7 +34,8 @@ Ask only what is missing:
 7. Add local Bases only when metadata/status inspection helps.
 8. Add local templates only for repeated note shapes.
 9. Add health-check coverage if the scope can decay.
-10. Run validation — `routing-matrix-warnings: 0` confirms the scope is reachable.
+10. Add the new scope's folder path to every root `Bases/*.base` scope formula that contains `file.inFolder` — otherwise notes in this scope show as "Global" in all root views.
+11. Run validation — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm the scope is fully wired.
 
 ## Import Existing Vault As Scope
 
