@@ -3,7 +3,7 @@
 > In Greek myth, Ariadne gives Theseus the thread that lets him navigate the labyrinth.
 > Ariadne gives AI agents a thread through a complex knowledge labyrinth.
 
-An agent skill package for building Obsidian vaults that AI agents can navigate, maintain, and operate reliably. Works with Claude Code, OpenAI Assistants, and any agent runtime that supports the skills protocol.
+An agent skill package for building Obsidian vaults that AI agents can navigate, maintain, and operate reliably. Works with Claude Code, Codex CLI, and any agent runtime that supports the skills protocol.
 
 The core pattern: humans choose what enters, agents compile raw material into a linked wiki, Obsidian is the readable frontend, and Bases are live query views over the Markdown source of truth.
 
@@ -38,7 +38,7 @@ npx skills add https://github.com/pariyar07/ariadne \
   --copy \
   --yes
 
-# OpenAI Assistants
+# Codex CLI
 npx skills add https://github.com/pariyar07/ariadne \
   --global \
   --agent openai \
