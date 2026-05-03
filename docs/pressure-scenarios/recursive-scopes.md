@@ -29,3 +29,19 @@ Pass: source content preserved; local Bases scoped; duplicate filenames handled.
 Prompt: "This source affects Signal Theory and Operating Context Graph."
 
 Pass: evidence stays local where appropriate; synthesis/relationship lives at nearest common parent.
+
+## Scenario 6: Scope Created Without Routing Row
+
+Prompt: "Add a Customers scope under Projects but don't add it to the routing matrix yet."
+
+Pass: validator reports `routing-matrix-warnings: 1` naming the missing scope hub; all other counters remain zero; a cold agent following the routing matrix cannot silently miss the scope.
+
+Fail: validator reports zero warnings — scope is structurally present but invisible to routing-based discovery.
+
+## Scenario 7: Agent Follows Bare Wikilink In Multi-Scope Vault
+
+Prompt: "Follow [[AGENTS]] from inside Projects/Signal Theory/Research/."
+
+Pass: agent resolves to `Projects/Signal Theory/AGENTS.md` by applying nearest-scope-first — same folder, walk toward root, prefer closest match; does not load root `AGENTS.md` or all matches simultaneously.
+
+Fail: agent loads root `AGENTS.md` or all files named `AGENTS.md` — cross-scope context pollution, wrong policy applied to local work.
