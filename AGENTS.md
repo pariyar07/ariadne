@@ -49,4 +49,12 @@ Each skill is a folder with:
 - New validator warnings must be non-fatal unless they represent a structural impossibility.
 - Every new validator counter needs: logic in JS + return object entry + counters array entry + `docs/guides/validator.md` update + `SKILL.md` healthy output update + `README.md` healthy output update + test fixture.
 - `agents/openai.yaml` is required for each skill for Codex CLI display metadata.
-- Do not commit `CLAUDE.local.md` or `GEMINI.local.md` — these are machine-local.
+- Do not commit `CLAUDE.local.md`, `GEMINI.local.md`, or `AGENTS.override.md` — these are machine-local.
+
+## Local Setup (gitignored files)
+
+To connect this repo to a local Obsidian vault, create these files (all gitignored):
+
+- `CLAUDE.local.md` — appended to `CLAUDE.md` by Claude Code; add your vault path and routing
+- `GEMINI.local.md` — appended to `GEMINI.md` by Gemini CLI; same content
+- `AGENTS.override.md` — replaces `AGENTS.md` for Codex CLI; copy `AGENTS.md` and add your local vault section at the bottom
