@@ -16,8 +16,22 @@ Do not only answer in chat when the user shares material that should compound. C
 1. Read `00 Index.md`.
 2. Read `AGENTS.md` or `CLAUDE.md`.
 3. Read `Agent/00 Agent Navigation.md` if it exists.
-4. Read `Agent/Ingest Compile Workflow.md` if it exists.
-5. Open only the relevant folder hub and notes.
+4. Read `Agent/Task Routing Matrix.md` to confirm the target scope for this material.
+5. Read `Agent/Ingest Compile Workflow.md` if it exists (or the local scope equivalent).
+6. Open only the relevant folder hub and notes.
+
+## Intake Infrastructure Check
+
+Before ingesting, verify the target scope has intake infrastructure. If any of the following are missing, create them before proceeding:
+
+- `Raw/Sources/` folder and `Raw/Sources/00 Source Index.md`
+- `Inbox/` folder and `Inbox/00 Inbox Index.md`
+- `Processing Queue/` folder and `Processing Queue/00 Processing Queue Index.md`
+- A local `Agent/Ingest Compile Workflow.md` (copy from root or create a minimal one)
+
+Add a row to the local `Agent/Task Routing Matrix.md` for "Shared link or source material" pointing to the new workflow file if no row exists.
+
+For root-level intake, these folders already exist. For domain scopes, they may need to be set up. Set them up silently as part of the first ingest — do not ask the user to do it manually.
 
 ## Scope Routing
 

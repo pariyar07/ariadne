@@ -21,7 +21,8 @@ Ask only what is missing:
 1. What is the scope name?
 2. Where should it live?
 3. What recurring job does it serve?
-4. Does it need local rules, templates, Bases, queues, or only a hub?
+4. Does it need intake infrastructure — `Raw/Sources/`, `Inbox/`, `Processing Queue/`, local `Ingest Compile Workflow`?
+5. Does it need local rules, templates, Bases, or only a hub?
 
 ## Create Or Promote A Scope
 
@@ -31,11 +32,12 @@ Ask only what is missing:
 4. Link child scope from parent hub/navigation.
 5. Link parent scope from child hub.
 6. Add local `AGENTS.md` only when local rules differ.
-7. Add local Bases only when metadata/status inspection helps.
-8. Add local templates only for repeated note shapes.
-9. Add health-check coverage if the scope can decay.
-10. Add the new scope's folder path to every root `Bases/*.base` scope formula that contains `file.inFolder` — otherwise notes in this scope show as "Global" in all root views.
-11. Run validation — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm the scope is fully wired.
+7. Add intake infrastructure when the scope will receive raw material — create `Raw/Sources/`, `Raw/Sources/00 Source Index.md`, `Inbox/`, `Inbox/00 Inbox Index.md`, `Processing Queue/`, `Processing Queue/00 Processing Queue Index.md`, and a local `Agent/Ingest Compile Workflow.md`. Add a routing row for "Shared link or source material" pointing to the new workflow. Skip these if the scope will never ingest raw sources.
+8. Add local Bases only when metadata/status inspection helps.
+9. Add local templates only for repeated note shapes.
+10. Add health-check coverage if the scope can decay.
+11. Add the new scope's folder path to every root `Bases/*.base` scope formula that contains `file.inFolder` — otherwise notes in this scope show as "Global" in all root views.
+12. Run validation — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm the scope is fully wired.
 
 ## Import Existing Vault As Scope
 

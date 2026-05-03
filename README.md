@@ -166,6 +166,13 @@ base-scope-formula-warnings: 0
 
 See `docs/guides/validator.md` for the full counter reference.
 
+## Guides
+
+| Guide | Contents |
+| --- | --- |
+| `docs/guides/quickstart.md` | Full usage guide — every skill, every scenario, cold-start phrases, skill chains, and common mistakes |
+| `docs/guides/validator.md` | Validator counter reference |
+
 ## References
 
 All reference docs live under `skills/obsidian-agentic-vault/references/`:
