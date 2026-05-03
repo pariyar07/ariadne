@@ -47,6 +47,7 @@ The validator reports:
 - `local-agents-inheritance-warnings: N` for local `AGENTS.md` files that omit parent/root inheritance or repeat global policy text
 - `ambiguous-wikilink-warnings: N` for basename-only wikilinks that resolve to multiple Markdown/Base targets
 - `scope-navigation-warnings: N` for promoted child scope hubs that are not linked bidirectionally with their parent hub
+- `routing-matrix-warnings: N` for scope hubs that exist but are not linked from `Agent/Task Routing Matrix.md`
 
 It discovers `.base` files recursively, excluding `.obsidian` paths, and resolves wikilinks to both Markdown notes and `.base` files.
 
@@ -66,6 +67,7 @@ local-base-scope-warnings: 0
 local-agents-inheritance-warnings: 0
 ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
+routing-matrix-warnings: 0
 ```
 
 Some vaults may intentionally keep raw captures or temporary files lightly linked. If the validator reports issues, inspect whether they are intentional before adding links.

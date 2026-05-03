@@ -111,6 +111,14 @@ const tests = [
     assertCounter(result.stdout, "scope-navigation-warnings", 1);
     assert.match(result.stdout, /Projects\/00 Projects Index\.md does not link child hub Projects\/Child\/00 Child Index\.md/);
   },
+
+  function routingMatrixMissingScopeWarns() {
+    const result = runValidator("routing_matrix_missing_scope_warning");
+
+    assertSuccess(result);
+    assertCounter(result.stdout, "routing-matrix-warnings", 1);
+    assert.match(result.stdout, /Agent\/Task Routing Matrix\.md does not link scope hub Projects\/Alpha\/00 Alpha Index\.md/);
+  },
 ];
 
 for (const test of tests) {

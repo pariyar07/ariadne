@@ -358,6 +358,18 @@ function validate(vaultPath) {
     }
   }
 
+  const routingMatrixWarnings = [];
+  const routingMatrix = markdownFiles.find((file) => path.posix.basename(file) === "Task Routing Matrix.md" && path.posix.dirname(file) === "Agent");
+  if (routingMatrix) {
+    for (const [dir, childHub] of hubsByDir.entries()) {
+      if (dir === ".") continue;
+      if (!scopeHub(childHub, markdownFrontmatter)) continue;
+      if (!fileLinksTo(routingMatrix, childHub)) {
+        routingMatrixWarnings.push(`Agent/Task Routing Matrix.md does not link scope hub ${childHub}`);
+      }
+    }
+  }
+
   const bloatWarnings = [];
   if (fs.existsSync("00 Index.md")) {
     const lines = lineCount("00 Index.md");
@@ -411,6 +423,7 @@ function validate(vaultPath) {
     localAgentsInheritanceWarnings,
     ambiguousWikilinkWarnings,
     scopeNavigationWarnings,
+    routingMatrixWarnings,
   };
 }
 
@@ -431,6 +444,7 @@ function printResults(result) {
     ["local-agents-inheritance-warnings", result.localAgentsInheritanceWarnings],
     ["ambiguous-wikilink-warnings", result.ambiguousWikilinkWarnings],
     ["scope-navigation-warnings", result.scopeNavigationWarnings],
+    ["routing-matrix-warnings", result.routingMatrixWarnings],
   ];
 
   for (const [name, values] of counters) {

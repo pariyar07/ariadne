@@ -27,14 +27,14 @@ Ask only what is missing:
 
 1. Create the scope folder.
 2. Create the scope hub.
-3. Link child scope from parent hub/navigation.
-4. Link parent scope from child hub.
-5. Add task-routing coverage.
+3. Add a row to `Agent/Task Routing Matrix.md` — do this before nav links so the routing chain is never broken even momentarily.
+4. Link child scope from parent hub/navigation.
+5. Link parent scope from child hub.
 6. Add local `AGENTS.md` only when local rules differ.
 7. Add local Bases only when metadata/status inspection helps.
 8. Add local templates only for repeated note shapes.
 9. Add health-check coverage if the scope can decay.
-10. Run validation.
+10. Run validation — `routing-matrix-warnings: 0` confirms the scope is reachable.
 
 ## Import Existing Vault As Scope
 

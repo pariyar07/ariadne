@@ -47,7 +47,7 @@ Check for:
 - [[Agent/00 Agent Navigation]] carrying detailed note lists instead of routes
 - folders with many durable notes but no `00 ... Index.md` hub
 - hubs that are too long to scan and should be split into sub-hubs or Bases
-- recurring workstreams missing from [[Agent/Task Routing Matrix]]
+- recurring workstreams missing from [[Agent/Task Routing Matrix]] — confirmed by `routing-matrix-warnings: 0` in the validator
 - raw sources, inbox items, processing items, or outputs accumulating without compilation
 - important open questions living only inside long notes instead of [[Questions/00 Questions Index]]
 - folders where agents repeatedly need user guidance because global instructions are too generic
