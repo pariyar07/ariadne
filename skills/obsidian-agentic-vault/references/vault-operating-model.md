@@ -196,7 +196,7 @@ flowchart TB
 
 Agents should not read the whole vault by default. They should route by task, open the smallest useful hub, then follow relevant links.
 
-## Karpathy-Style Flow
+## Ingestion Flow
 
 ```mermaid
 flowchart LR

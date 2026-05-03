@@ -1,6 +1,6 @@
 ---
 name: obsidian-ingest-compile
-description: Capture and compile links, documents, PDFs, tweets, transcripts, screenshots, meeting notes, brain dumps, and rough user input into an agent-maintained Obsidian Markdown vault using the Karpathy-style raw-to-wiki workflow.
+description: Capture and compile links, documents, PDFs, tweets, transcripts, screenshots, meeting notes, brain dumps, and rough user input into an agent-maintained Obsidian Markdown vault. Human curates; agent compiles raw material into a durable linked wiki.
 ---
 
 # Obsidian Ingest Compile
