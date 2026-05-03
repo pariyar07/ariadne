@@ -51,6 +51,7 @@ local-agents-inheritance-warnings: 0
 ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
+base-scope-formula-warnings: 0
 ```
 
 ## Counter Reference
@@ -67,5 +68,6 @@ routing-matrix-warnings: 0
 | `ambiguous-wikilink-warnings` | No | A bare wikilink resolves to multiple files |
 | `scope-navigation-warnings` | No | A scope hub is not bidirectionally linked with its parent hub |
 | `routing-matrix-warnings` | No | A scope hub exists but is not linked from `Agent/Task Routing Matrix.md` |
+| `base-scope-formula-warnings` | No | A root Base with a `file.inFolder` scope formula is missing a branch for a known scope path |
 
 Fatal counters cause a non-zero exit code. Warning counters are non-fatal — they surface drift before it compounds.
