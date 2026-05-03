@@ -119,6 +119,14 @@ const tests = [
     assertCounter(result.stdout, "routing-matrix-warnings", 1);
     assert.match(result.stdout, /Agent\/Task Routing Matrix\.md does not link scope hub Projects\/Alpha\/00 Alpha Index\.md/);
   },
+
+  function baseScopeFormulaMissingBranchWarns() {
+    const result = runValidator("base_scope_formula_missing_branch_warning");
+
+    assertSuccess(result);
+    assertCounter(result.stdout, "base-scope-formula-warnings", 1);
+    assert.match(result.stdout, /Bases\/Master Notes\.base: scope formula missing branch for Domains\/Alpha/);
+  },
 ];
 
 for (const test of tests) {

@@ -1,0 +1,13 @@
+filters:
+  'file.ext == "md"'
+formulas:
+  scope: 'if(file.inFolder("Domains/Beta"), "Beta", "Global")'
+properties:
+  formula.scope:
+    displayName: Scope
+views:
+  - type: table
+    name: "All Notes"
+    order:
+      - file.name
+      - formula.scope

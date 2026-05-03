@@ -9,7 +9,7 @@ Root Bases inspect across scopes and include a `Scope` column.
 ```yaml
 filters: type == "entity"
 formulas:
-  scope: 'if(file.inFolder("Projects/Signal Theory"), "Signal Theory", if(file.inFolder("Projects/Operating Context Graph"), "Operating Context Graph", "Global"))'
+  scope: 'if(file.inFolder("Domains/Alpha"), "Alpha", if(file.inFolder("Domains/Beta"), "Beta", "Global"))'
 properties:
   formula.scope:
     displayName: Scope
