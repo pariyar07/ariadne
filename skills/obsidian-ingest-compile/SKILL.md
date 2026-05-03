@@ -23,7 +23,7 @@ Do not only answer in chat when the user shares material that should compound. C
 
 Before writing, determine the target scope:
 
-- Use the root scope for Satyam-wide material.
+- Use the root scope for vault-wide material that belongs to no single child scope.
 - Use the current scope for local work inside an active durable area.
 - Use the nearest child scope for a narrower recurring workflow with its own hub.
 

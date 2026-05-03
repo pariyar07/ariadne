@@ -20,7 +20,7 @@ Use this skill when the task is broader than a single-source ingest: comparing s
 
 Keep synthesis local unless it affects multiple scopes. A local project, workflow, or research thread should keep its synthesis in that scope and link from the local hub.
 
-Cross-scope synthesis belongs at the nearest common parent scope. Link to child-scope evidence, source notes, and local syntheses rather than copying them upward. Promote to the root scope only when the synthesis is genuinely Satyam-wide.
+Cross-scope synthesis belongs at the nearest common parent scope. Link to child-scope evidence, source notes, and local syntheses rather than copying them upward. Promote to the root scope only when the synthesis is genuinely vault-wide and belongs to no single child scope.
 
 ## Synthesis Workflow
 

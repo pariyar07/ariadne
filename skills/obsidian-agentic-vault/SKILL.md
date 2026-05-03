@@ -1,6 +1,6 @@
 ---
 name: obsidian-agentic-vault
-description: Bootstrap Satyam's agentic Obsidian vaults for projects, research, learning, life systems, and other long-running knowledge work. Use when creating a new vault, installing the base folder structure, templates, AGENTS.md, CLAUDE.md, Agent navigation files, and default Bases.
+description: Bootstrap an agentic Obsidian vault for projects, research, learning, life systems, and other long-running knowledge work. Use when creating a new vault, installing the base folder structure, templates, AGENTS.md, CLAUDE.md, Agent navigation files, and default Bases.
 ---
 
 # Obsidian Agentic Vault
