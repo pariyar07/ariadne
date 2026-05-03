@@ -26,9 +26,17 @@ It also has workflow companion skills:
 
 The vault is the memory. The skill is the setup and maintenance procedure.
 
-The human curates direction. Agents compile raw material into a linked Markdown wiki. Obsidian is the readable frontend. Bases, canvases, and reports are view layers over the Markdown source of truth.
+The human curates direction. Agents compile raw material into a linked Markdown wiki. Obsidian is the readable frontend. Bases, canvases, and reports are view layers over the Markdown source of truth — they never replace it.
 
-For multi-area vaults, model the vault as a recursive scope tree. The root scope owns global policy and shared view layers. Each child scope inherits parent rules and adds only local deltas.
+For multi-area vaults, model the vault as a recursive scope tree. The root scope owns global policy and shared view layers. Each child scope inherits parent rules and adds only local deltas — it never repeats the parent and never ignores it.
+
+The design principles behind these patterns are documented in the skill references:
+
+- `references/knowledge-processing-architecture.md` — intake interfaces, processing passes, and the raw → compiled pipeline
+- `references/recursive-scopes.md` — scope inheritance, the includes-and-transcends model, wikilink resolution
+- `references/vault-operating-model.md` — the three-layer vault model and navigability rules
+
+These are reference documentation for skill users. They are not files to bootstrap into the target vault — the principles are encoded in how the skills work.
 
 This skill bootstraps the system. Use the companion skills for ongoing ingest, synthesis, navigation changes, and maintenance.
 
