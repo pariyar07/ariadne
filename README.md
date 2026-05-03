@@ -8,17 +8,48 @@ An agent skill package for building Obsidian vaults that AI agents can navigate,
 The core pattern: humans choose what enters, agents compile raw material into a linked wiki, Obsidian is the readable frontend, and Bases are live query views over the Markdown source of truth.
 
 ```mermaid
-flowchart LR
-  A[Raw / Inbox] --> B[Compile]
-  B --> C[Knowledge Graph]
-  C --> D[Hubs + Routing]
-  D --> E[Bases + Validation]
-  E --> C
+flowchart TD
+  Human(["👤 Human\nRaw · Inbox · Brain dumps"])
+  Agent(["🤖 AI Agent\nClaude Code · Codex CLI"])
+
+  subgraph Vault["Vault"]
+
+    subgraph OG["Operating Graph"]
+      OP["AGENTS.md · Agent Navigation\nTask Routing Matrix · Workflows"]
+    end
+
+    subgraph Scopes["Recursive Scope Tree"]
+      ROOT["Root — global policy"]
+      D1["Domain A\n└ local AGENTS.md (delta only)"]
+      D2["Domain B\n└ local AGENTS.md (delta only)"]
+      ROOT --> D1 & D2
+    end
+
+    subgraph KG["Knowledge Graph (per scope)"]
+      K["Research · Concepts · Entities\nRelationships · Decisions · Questions"]
+    end
+
+    subgraph VL["View Layer"]
+      B["Bases — live .base queries"]
+      V["Validator — 11 structural checks"]
+    end
+
+  end
+
+  Human -->|"obsidian-ingest-compile\nobsidian-research-synthesis"| KG
+  Agent -->|enters via| OG
+  OG -->|"routes to smallest\nrelevant context"| Scopes
+  Scopes --> KG
+  KG --> B
+  V -.->|structural guarantee| Vault
+  B -.->|surfaces gaps| Human
 ```
 
 ## Install
 
-Install for all supported agents (Claude Code, OpenAI, and others):
+**Prerequisites:** Node.js (for `npx`), and [Obsidian Bases](https://obsidian.md/bases) enabled in your vault (Settings → Core plugins → Bases) for the `.base` view files.
+
+Install for all supported agents (Claude Code, Codex CLI, and others):
 
 ```bash
 npx skills add https://github.com/pariyar07/ariadne \
@@ -54,9 +85,11 @@ npx skills add https://github.com/pariyar07/ariadne --list
 
 ## Skills
 
+Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills operate on an existing vault.
+
 | Skill | Purpose |
 | --- | --- |
-| `obsidian-agentic-vault` | Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
+| `obsidian-agentic-vault` | **Start here** — Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
 | `obsidian-scope-manager` | Create, promote, import, and nest durable knowledge scopes |
 | `obsidian-navigation-architect` | Design hubs, routing, workstream graphs, templates, and view layers |
 | `obsidian-ingest-compile` | Turn links, documents, and brain dumps into durable wiki notes |
