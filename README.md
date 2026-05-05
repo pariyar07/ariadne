@@ -7,6 +7,8 @@ An agent skill package for building Obsidian vaults that AI agents can navigate,
 
 The core pattern: humans choose what enters, agents compile raw material into a linked wiki, Obsidian is the readable frontend, and Bases are live query views over the Markdown source of truth.
 
+**[Read the origin story →](https://satyampariyar.com/blog/circle-of-concern)**
+
 ```mermaid
 flowchart TD
   Human(["👤 Human\nRaw · Inbox · Brain dumps"])
@@ -189,7 +191,7 @@ All reference docs live under `skills/obsidian-agentic-vault/references/`:
 
 ## Contributing
 
-See `CONTRIBUTING.md`.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome — please read the contributing guide before opening either.
 
 ## License
 
