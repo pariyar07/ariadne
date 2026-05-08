@@ -47,6 +47,14 @@ flowchart TD
   B -.->|surfaces gaps| Human
 ```
 
+## In Practice
+
+This is Satyam's vault after several months of active use — research threads, five active project scopes, a published essay scope, and the agent operating graph all wired together.
+
+![Obsidian vault graph — scope clusters connected through agent hub nodes](docs/assets/satyams-vault-graph.png)
+
+Each color cluster is a scope. The large hub nodes with many edges are the agent navigation files (`00 Index.md`, `Agent/00 Agent Navigation`, routing matrices). The graph shows what the scope model looks like when it's actually running: dense within boundaries, connected across them through deliberate navigation links.
+
 ## Install
 
 **Prerequisites:** Node.js (for `npx`), and [Obsidian Bases](https://obsidian.md/bases) enabled in your vault (Settings → Core plugins → Bases) for the `.base` view files.
