@@ -61,5 +61,7 @@ Ask only what is missing:
 
 - Use `obsidian-agentic-vault` for new vault bootstrap.
 - Use `obsidian-navigation-architect` for route and hub design.
+- Use `obsidian-research-pipeline` when an existing scope needs a full research pipeline after creation.
+- Use `obsidian-research-ingest` for the first research source when scope routing may be unclear.
 - Use `obsidian-bases` for Base syntax.
 - Use `obsidian-vault-validator` for deterministic checks.

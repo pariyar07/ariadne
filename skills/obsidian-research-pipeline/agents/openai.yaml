@@ -1,0 +1,3 @@
+display_name: Obsidian Research Pipeline
+short_description: Add domain research pipelines to Obsidian scopes.
+default_prompt: Add a research pipeline to this Obsidian scope.

@@ -11,7 +11,8 @@ Ariadne vaults are designed so a cold agent — one that has never seen your vau
 > **verb + optional scope + optional material**
 
 Examples:
-- `"Ingest this link into OCG"` → routes to OCG ingest workflow
+- `"Research ingest https://example.com"` → asks for a domain if needed, then routes into the right research pipeline
+- `"Ingest this link into OCG"` → routes directly to OCG ingest workflow
 - `"Synthesize the context graph research thread"` → routes to OCG synthesis
 - `"Add a new scope for customer discovery"` → routes to scope creation
 - `"Run a vault health check"` → routes to maintenance
@@ -25,6 +26,8 @@ Examples:
 | --- | --- | --- |
 | Create a new vault from scratch | `obsidian-agentic-vault` | "Bootstrap a new vault for..." |
 | Add a new domain or scope | `obsidian-scope-manager` | "Add a scope for..." / "Create a domain for..." |
+| Add research infrastructure inside a domain | `obsidian-research-pipeline` | "Add a research pipeline to..." |
+| Cold-start research source ingest | `obsidian-research-ingest` | "Research ingest..." / "Save this research..." |
 | Ingest a link, article, or brain dump | `obsidian-ingest-compile` | "Ingest this..." / "Add this to..." |
 | Synthesize multiple sources | `obsidian-research-synthesis` | "Synthesize the ... research" / "Update the ... thread" |
 | Redesign navigation or routing | `obsidian-navigation-architect` | "Redesign navigation for..." / "Add a workstream for..." |
@@ -71,7 +74,52 @@ Examples:
 
 ---
 
-## Scenario 3: Ingest a Link Into a Specific Domain
+## Scenario 3: Add a Research Pipeline Inside a Domain
+
+**What to say:**
+> "Add a research pipeline to [domain]"
+> "Set up research intake and synthesis for [domain]"
+
+**What happens:**
+1. `obsidian-research-pipeline` reads the scope hub, local agent navigation, routing matrix, and existing research folder.
+2. Creates or updates the local research pipeline: `Raw/Sources/`, `Inbox/`, `Processing Queue/`, `Research/`, synthesis/thread hubs, `Concepts/`, `Entities`, `Relationships/`, `Questions/`, templates, and optional local Bases.
+3. Adds local ingest and knowledge-processing workflow notes when needed.
+4. Wires routing rows so future source intake and synthesis start from the smallest useful context set.
+5. Validates the resulting structure.
+
+**When to use:** A domain already exists, but research is still just a folder or a few notes. Use this before recurring source ingest or research sprints.
+
+**Scale choices:**
+- Small domain: research index, source index, synthesis note, thread hub, ingest workflow, routing rows.
+- Active research domain: add concepts, entities, relationships, questions, templates, and local `Research Pipeline.base`.
+- Mature domain: add health-check coverage and more local Bases when metadata inspection helps.
+
+---
+
+## Scenario 4: Cold-Start Research Ingest
+
+**What to say:**
+> "Research ingest https://example.com"
+> "Save this research source"
+
+**What happens:**
+1. `obsidian-research-ingest` reads the root routing layer and active domain registry.
+2. If no domain is named, it asks which domain should receive the research.
+3. It checks whether the target domain has a research pipeline.
+4. If the pipeline is missing, it invokes `obsidian-research-pipeline` first.
+5. It uses `obsidian-ingest-compile` to capture raw source metadata and compile a source-backed research note.
+6. It updates synthesis/thread hubs only when the source changes the research map.
+
+**When to use:** You are entering a cold agent session with a source link or research material and do not want to remember the vault routing rules.
+
+**What gets created or updated:**
+- `Raw/Sources/YYYY-MM-DD Source Title.md` when raw capture is useful
+- `Research/Source Title.md` for compiled source-backed understanding
+- synthesis/thread hubs, concepts, entities, relationships, and questions when the source warrants it
+
+---
+
+## Scenario 5: Direct Ingest Into a Specific Domain
 
 **What to say:**
 > "Ingest this link into [domain]" or "Add this to [domain] research"
@@ -94,7 +142,7 @@ Examples:
 
 ---
 
-## Scenario 4: Synthesize a Research Thread
+## Scenario 6: Synthesize a Research Thread
 
 **What to say:**
 > "Synthesize the [topic] research thread"
@@ -112,7 +160,7 @@ Examples:
 
 ---
 
-## Scenario 5: Redesign Navigation or Add a Workstream
+## Scenario 7: Redesign Navigation or Add a Workstream
 
 **What to say:**
 > "Add a workstream for [topic] inside [domain]"
@@ -128,7 +176,7 @@ Examples:
 
 ---
 
-## Scenario 6: Health Check
+## Scenario 8: Health Check
 
 **What to say:**
 > "Run a vault health check"
@@ -153,7 +201,7 @@ See `docs/guides/validator.md` for the full counter reference.
 
 ---
 
-## Scenario 7: Cold Start in an Existing Vault
+## Scenario 9: Cold Start in an Existing Vault
 
 If you open a new agent session and want it to orient fast:
 
@@ -177,7 +225,7 @@ That's the full cold-start context. The agent should not read more until it know
 
 ```
 obsidian-agentic-vault   → creates vault structure
-obsidian-ingest-compile  → first source enters the vault
+obsidian-research-ingest → first research source enters the right scope
 obsidian-vault-validator → confirms structure is clean
 ```
 
@@ -185,14 +233,25 @@ obsidian-vault-validator → confirms structure is clean
 
 ```
 obsidian-scope-manager   → creates scope, hub, routing, intake infrastructure
-obsidian-ingest-compile  → first source enters the new scope
+obsidian-research-ingest → first research source enters the new scope
 obsidian-vault-validator → confirms routing-matrix-warnings: 0, base-scope-formula-warnings: 0
+```
+
+### Existing scope → research pipeline
+
+```
+obsidian-research-pipeline → creates research hubs, local intake, routing, optional Bases
+obsidian-research-ingest   → first source enters the scope
+obsidian-ingest-compile    → compiles the source once the scope is known
+obsidian-research-synthesis → updates synthesis and thread hub after multiple sources
+obsidian-vault-validator   → confirms structure is wired
 ```
 
 ### Research sprint → synthesis
 
 ```
-obsidian-ingest-compile     (×N sources)
+obsidian-research-ingest    (×N sources, if scope may be unclear)
+obsidian-ingest-compile     (×N sources, if scope is known)
 obsidian-research-synthesis → synthesis note + thread hub
 obsidian-vault-maintainer   → confirm no orphans or stale queue items
 ```

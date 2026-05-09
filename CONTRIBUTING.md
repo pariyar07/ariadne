@@ -12,7 +12,9 @@ skills/
   obsidian-scope-manager/     ← scope creation and wiring
   obsidian-navigation-architect/ ← hub and routing design
   obsidian-ingest-compile/    ← raw input → durable notes
+  obsidian-research-ingest/   ← cold-start research source routing
   obsidian-research-synthesis/ ← multi-source synthesis
+  obsidian-research-pipeline/ ← domain research pipeline setup
   obsidian-vault-maintainer/  ← health checks and repair
   obsidian-vault-validator/   ← deterministic structural validation
     scripts/validate_vault.js ← the validator (Node.js, no deps)

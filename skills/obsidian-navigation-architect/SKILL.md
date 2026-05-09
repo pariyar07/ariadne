@@ -142,4 +142,5 @@ Before finishing:
 
 - Use `obsidian-agentic-vault` for new vault bootstrap.
 - Use `obsidian-vault-maintainer` for health checks.
-- Use `obsidian-ingest-compile` and `obsidian-research-synthesis` for content flow.
+- Use `obsidian-research-pipeline` for domain research pipeline setup.
+- Use `obsidian-research-ingest`, `obsidian-ingest-compile`, and `obsidian-research-synthesis` for content flow.

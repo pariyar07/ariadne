@@ -38,7 +38,7 @@ flowchart TD
 
   end
 
-  Human -->|"obsidian-ingest-compile\nobsidian-research-synthesis"| KG
+  Human -->|"obsidian-research-ingest\nobsidian-ingest-compile\nobsidian-research-synthesis"| KG
   Agent -->|enters via| OG
   OG -->|"routes to smallest\nrelevant context"| Scopes
   Scopes --> KG
@@ -103,7 +103,9 @@ Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills o
 | `obsidian-scope-manager` | Create, promote, import, and nest durable knowledge scopes |
 | `obsidian-navigation-architect` | Design hubs, routing, workstream graphs, templates, and view layers |
 | `obsidian-ingest-compile` | Turn links, documents, and brain dumps into durable wiki notes |
+| `obsidian-research-ingest` | Cold-start research source ingest into the right scope |
 | `obsidian-research-synthesis` | Synthesize multi-source research threads and debate hubs |
+| `obsidian-research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
 | `obsidian-vault-maintainer` | Run health checks and repair navigability drift |
 | `obsidian-vault-validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 

@@ -1,0 +1,3 @@
+display_name: Obsidian Research Ingest
+short_description: Cold-start research source ingest for scopes.
+default_prompt: Ingest this research source into the right Obsidian scope.

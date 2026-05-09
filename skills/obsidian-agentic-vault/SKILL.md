@@ -18,7 +18,9 @@ This skill complements Obsidian mechanics skills:
 It also has workflow companion skills:
 
 - `obsidian-ingest-compile` for raw inputs, links, documents, and brain dumps.
+- `obsidian-research-ingest` for cold-start research sources when the target scope is missing, unclear, or may need pipeline setup.
 - `obsidian-research-synthesis` for multi-source research threads.
+- `obsidian-research-pipeline` for adding research intake and synthesis infrastructure inside an existing scope.
 - `obsidian-vault-maintainer` for health checks and recurring maintenance.
 - `obsidian-navigation-architect` for hubs, routing, workstream graphs, and Base/view-layer changes.
 

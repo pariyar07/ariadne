@@ -10,7 +10,9 @@ skills/
   obsidian-scope-manager/        ← scope creation and wiring
   obsidian-navigation-architect/ ← hub and routing design
   obsidian-ingest-compile/       ← raw input → durable notes
+  obsidian-research-ingest/      ← cold-start research source routing
   obsidian-research-synthesis/   ← multi-source synthesis
+  obsidian-research-pipeline/    ← domain research pipeline setup
   obsidian-vault-maintainer/     ← health checks and repair
   obsidian-vault-validator/      ← deterministic structural validation
     scripts/validate_vault.js    ← the validator (Node.js, no deps)
@@ -36,6 +38,8 @@ Each skill is a folder with:
 | Edit skill instructions | `skills/<skill-name>/SKILL.md` |
 | Edit vault templates | `skills/obsidian-agentic-vault/assets/templates/` |
 | Edit reference documentation | `skills/obsidian-agentic-vault/references/` |
+| Edit cold-start research ingest | `skills/obsidian-research-ingest/SKILL.md` |
+| Edit domain research pipeline setup | `skills/obsidian-research-pipeline/SKILL.md` |
 | Edit the validator | `skills/obsidian-vault-validator/scripts/validate_vault.js` |
 | Run the validator | `node skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"` |
 | Run the test suite | `node skills/obsidian-vault-validator/test/test_recursive_scopes.js` |

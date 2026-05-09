@@ -82,7 +82,9 @@ It should report `yaml-ok`, `broken-wikilinks: 0`, `true-orphans-md: 0`, `unlink
 
 ## Related Skills
 
+- Use `obsidian-research-ingest` to process research sources found during maintenance when scope routing is unclear.
 - Use `obsidian-ingest-compile` to process raw material found during maintenance.
+- Use `obsidian-research-pipeline` when a scope needs missing research infrastructure.
 - Use `obsidian-vault-validator` for deterministic structural checks.
 - Use `obsidian-navigation-architect` when maintenance requires durable structural changes.
 - Use `obsidian-research-synthesis` when stale research threads need updating.

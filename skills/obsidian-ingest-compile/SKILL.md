@@ -79,6 +79,8 @@ Before finishing:
 
 ## Related Skills
 
+- Use `obsidian-research-ingest` when the user provides a research source but the target domain/scope is missing or unclear.
+- Use `obsidian-research-pipeline` when the target scope needs research infrastructure before ingest.
 - Use `obsidian-research-synthesis` for multi-source research threads.
 - Use `obsidian-navigation-architect` when the ingest creates a new durable workstream.
 - Use `obsidian-vault-maintainer` for health checks after large ingest sessions.

@@ -84,4 +84,5 @@ The validator also warns when a large specialized folder may need a local `AGENT
 
 - Use `obsidian-navigation-architect` for missing hubs, Base links, and routing issues.
 - Use `obsidian-vault-maintainer` for broader health-check repair.
+- Use `obsidian-research-ingest` when orphaned raw material is research and the target scope is unclear.
 - Use `obsidian-ingest-compile` when orphaned raw material needs compilation.

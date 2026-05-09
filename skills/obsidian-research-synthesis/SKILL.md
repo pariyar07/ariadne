@@ -70,6 +70,8 @@ Before finishing:
 
 ## Related Skills
 
+- Use `obsidian-research-ingest` for cold-start single-source research ingest when scope routing is unclear.
 - Use `obsidian-ingest-compile` for new single-source material.
+- Use `obsidian-research-pipeline` when the target scope lacks research infrastructure.
 - Use `obsidian-navigation-architect` if a research thread becomes a new workstream graph.
 - Use `obsidian-vault-maintainer` for stale synthesis and source coverage checks.
