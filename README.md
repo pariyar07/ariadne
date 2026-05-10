@@ -109,6 +109,22 @@ Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills o
 | `obsidian-vault-maintainer` | Run health checks and repair navigability drift |
 | `obsidian-vault-validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
+## What's Coming
+
+Ariadne's next direction is cross-domain synthesis and feedback loops.
+
+Today, Ariadne helps agents enter a vault, find the right scope, ingest research, maintain hubs, and validate structure. The next layer is helping agents notice when knowledge in one domain should affect another domain, then returning those connections to the user as useful output.
+
+Planned areas of exploration:
+
+- cross-domain synthesis across scope-level research hubs
+- explicit relationship notes for connections between domains
+- recurring daily or weekly vault briefs
+- stale question resurfacing
+- contradiction review across old decisions, beliefs, and newer synthesis
+
+The design constraint stays the same: agents should not need to read the whole vault to be useful. They should follow explicit routes, compare durable syntheses, write back meaningful connections, and keep the Markdown vault as the source of truth.
+
 ## How It Works
 
 ### Three Layers
