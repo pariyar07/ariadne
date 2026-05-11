@@ -100,7 +100,7 @@ Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills o
 | Skill | Purpose |
 | --- | --- |
 | `obsidian-agentic-vault` | **Start here** — Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
-| `obsidian-vault-discovery` | Register existing Ariadne vaults so cold agents can find them from any workspace |
+| `obsidian-vault-discovery` | Register existing Obsidian vaults so cold agents can find them from any workspace |
 | `obsidian-scope-manager` | Create, promote, import, and nest durable knowledge scopes |
 | `obsidian-navigation-architect` | Design hubs, routing, workstream graphs, templates, and view layers |
 | `obsidian-ingest-compile` | Turn links, documents, and brain dumps into durable wiki notes |
@@ -130,7 +130,7 @@ The design constraint stays the same: agents should not need to read the whole v
 
 ### Three Layers
 
-Every Ariadne vault has three layers:
+Every vault created with Ariadne has three layers:
 
 - **Knowledge Graph** — research, concepts, entities, relationships, decisions, and domain workstreams
 - **Operating Graph** — agent instructions (`AGENTS.md`), routing matrices, workflows, intake queues, and templates

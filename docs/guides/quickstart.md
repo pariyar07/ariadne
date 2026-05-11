@@ -6,7 +6,7 @@ This guide covers everything you can do with Ariadne: from bootstrapping a new v
 
 ## What You Need to Say
 
-Ariadne vaults are designed so a cold agent — one that has never seen your vault — can orient, route, and act correctly from a single instruction. The pattern is:
+Vaults created or maintained with Ariadne are designed so a cold agent — one that has never seen your vault — can orient, route, and act correctly from a single instruction. The pattern is:
 
 > **verb + optional scope + optional material**
 
@@ -75,7 +75,7 @@ This writes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and tiny marker-ma
 
 **What to say:**
 > "Make this vault discoverable to agents"
-> "Register my existing Ariadne vault globally"
+> "Register my existing vault globally"
 > "Make agents find this vault from anywhere"
 
 **What happens:**

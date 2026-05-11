@@ -136,7 +136,7 @@ Supported adapters:
 - `roo` - `~/.roo/rules/ariadne-vault-discovery.md`
 - `cline` - `~/Documents/Cline/Rules/ariadne-vault-discovery.md`
 
-Use `--agents all` only when the user wants all supported adapters. Use `--agents none` when the user only wants the Ariadne registry files.
+Use `--agents all` only when the user wants all supported adapters. Use `--agents none` when the user only wants the registry files.
 
 Use `--dry-run` before writing when the user wants to inspect changes.
 

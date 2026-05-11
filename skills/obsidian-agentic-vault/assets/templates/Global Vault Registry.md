@@ -1,6 +1,6 @@
-# Ariadne Vault Registry
+# Registered Obsidian Vaults
 
-These are local Obsidian vaults designed for AI-agent navigation.
+These are local Obsidian vaults registered as long-term knowledge sources for AI-agent navigation.
 
 ## {{vault_name}}
 

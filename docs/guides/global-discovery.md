@@ -1,12 +1,12 @@
 # Global Discovery
 
-Ariadne vaults are easy for agents to navigate once the agent knows where the vault is. Global discovery registers that entry point on the user's local machine so future cold agents can find the vault without scanning chat history, unrelated folders, or the whole filesystem.
+Vaults created or maintained with Ariadne are easy for agents to navigate once the agent knows where the vault is. Global discovery registers that entry point on the user's local machine so future cold agents can find the vault without scanning chat history, unrelated folders, or the whole filesystem.
 
-Global discovery is optional. It is useful when a user wants agents launched from any folder to treat an Ariadne vault as a long-term knowledge source.
+Global discovery is optional. It is useful when a user wants agents launched from any folder to treat an Obsidian vault as a long-term knowledge source.
 
 ## What Registration Creates
 
-Registration writes an Ariadne-owned registry under the user's home directory:
+Registration writes an Ariadne-managed registry under the user's home directory:
 
 ```text
 ~/.ariadne/vaults.json

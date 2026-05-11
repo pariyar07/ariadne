@@ -70,7 +70,7 @@ const tests = [
     assert.strictEqual(data.vaults[0].path, vault);
     assert.strictEqual(data.vaults[0].purpose, "Long-term project and research knowledge.");
 
-    assert.match(read(registryMd), /# Ariadne Vault Registry/);
+    assert.match(read(registryMd), /# Registered Obsidian Vaults/);
     assert.match(read(registryMd), /## Work Vault/);
     assert.match(read(registryMd), /Path: /);
     assert.match(read(registryMd), /Read `00 Index\.md`/);
@@ -82,9 +82,11 @@ const tests = [
     ]) {
       const text = read(file);
       assert.match(text, /<!-- ariadne:vault-discovery:start -->/);
+      assert.match(text, /## Registered Vault Discovery/);
       assert.match(text, /Registry:/);
       assert.match(text, /\.ariadne\/vaults\.md/);
       assert.match(text, /vague questions about prior projects/);
+      assert.doesNotMatch(text, /This machine has one or more Ariadne/);
       assert.match(text, /<!-- ariadne:vault-discovery:end -->/);
     }
   },

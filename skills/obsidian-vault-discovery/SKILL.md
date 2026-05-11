@@ -1,20 +1,20 @@
 ---
 name: obsidian-vault-discovery
-description: Register existing Ariadne Obsidian vaults for machine-level discovery so cold agents can find long-term knowledge from any workspace. Use when checking, adding, updating, repairing, or removing global vault discovery.
+description: Register existing Obsidian vaults for machine-level discovery so cold agents can find long-term knowledge from any workspace. Use when checking, adding, updating, repairing, or removing global vault discovery.
 ---
 
 # Obsidian Vault Discovery
 
-Use this skill when a user already has an Ariadne Obsidian vault and wants future cold agents to find it from outside the vault.
+Use this skill when a user already has an Obsidian vault created or maintained with Ariadne and wants future cold agents to find it from outside the vault.
 
 Typical requests:
 
 - "Make this vault discoverable to agents."
-- "Register my existing Ariadne vault globally."
+- "Register my existing vault globally."
 - "Make agents find my vault from anywhere."
 - "Check whether this vault is registered."
 - "Repair Ariadne global discovery."
-- "Change my primary Ariadne vault."
+- "Change my primary registered vault."
 
 This skill manages machine-level discovery. It does not create the vault. Use `obsidian-agentic-vault` to bootstrap a new vault.
 
@@ -31,7 +31,7 @@ The global blocks point to `~/.ariadne/vaults.md`; they should never duplicate l
 ## Start Workflow
 
 1. Determine the vault path.
-2. Confirm the path looks like an Ariadne vault by checking for `00 Index.md`, `AGENTS.md`, or `Agent/00 Agent Navigation.md`.
+2. Confirm the path looks like an agent-readable Obsidian vault by checking for `00 Index.md`, `AGENTS.md`, or `Agent/00 Agent Navigation.md`.
 3. Determine the vault name and short purpose. Infer from `00 Index.md` when obvious; otherwise ask.
 4. Ask which adapters to update, or use the default `codex,claude,gemini` when the user does not care.
 5. Offer `--dry-run` when the user wants to preview changes.
@@ -51,7 +51,7 @@ node /path/to/skills/obsidian-agentic-vault/scripts/register_vault.js \
   --primary
 ```
 
-Use `--agents none` to update only the Ariadne registry files.
+Use `--agents none` to update only the registry files.
 
 Use `--agents all` only when the user explicitly wants all supported adapters.
 

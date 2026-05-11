@@ -27,7 +27,7 @@ function usage() {
     "  --purpose <text>       Short description of the vault purpose.",
     "  --home <path>          Override home directory. Useful for tests.",
     "  --agents <list>        Comma-separated adapters: codex,claude,gemini,copilot,opencode,roo,cline,all,none.",
-    "  --primary             Mark this vault as the primary Ariadne vault.",
+    "  --primary             Mark this vault as the primary registered vault.",
     "  --remove              Remove this vault from the registry and remove adapter blocks when no vaults remain.",
     "  --dry-run             Print planned files without writing.",
     "  --help                Show this help.",
@@ -147,9 +147,9 @@ function removeVault(registry, vaultPath, now) {
 
 function registryMarkdown(registry) {
   const lines = [
-    "# Ariadne Vault Registry",
+    "# Registered Obsidian Vaults",
     "",
-    "These are local Obsidian vaults designed for AI-agent navigation.",
+    "These are local Obsidian vaults registered as long-term knowledge sources for AI-agent navigation.",
     "",
   ];
 
@@ -179,14 +179,14 @@ function registryMarkdown(registry) {
 function discoveryBlock(registryPathDisplay) {
   return [
     MARKER_START,
-    "## Ariadne Vault Discovery",
+    "## Registered Vault Discovery",
     "",
-    "This machine has one or more Ariadne Obsidian vaults registered as long-term knowledge sources.",
+    "This machine has one or more Obsidian vaults registered as long-term knowledge sources.",
     "",
     "Registry:",
     `- ${registryPathDisplay}`,
     "",
-    "For vague questions about prior projects, meetings, research, decisions, customers, work history, personal knowledge, or \"what was I working on\", read the registry first. Then enter the relevant vault through its `00 Index.md`, `AGENTS.md`, and `Agent/00 Agent Navigation.md`.",
+    "For vague questions about prior projects, meetings, research, decisions, customers, work history, personal knowledge, or \"what was I working on\", read the vault registry first. Then enter the relevant vault through its `00 Index.md`, `AGENTS.md`, and `Agent/00 Agent Navigation.md`.",
     "",
     "Do not scan the whole vault by default. Search progressively and prefer compiled notes, hubs, indexes, decisions, and synthesis notes over raw sources.",
     MARKER_END,
