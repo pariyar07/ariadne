@@ -16,3 +16,5 @@ jobs:
           node-version: '20'
       - name: Run validator test suite
         run: node skills/obsidian-vault-validator/test/test_recursive_scopes.js
+      - name: Run vault registration test suite
+        run: node skills/obsidian-agentic-vault/test/test_register_vault.js

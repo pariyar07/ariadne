@@ -18,6 +18,7 @@ This skill complements Obsidian mechanics skills:
 It also has workflow companion skills:
 
 - `obsidian-ingest-compile` for raw inputs, links, documents, and brain dumps.
+- `obsidian-vault-discovery` for registering existing vaults so cold agents can find them from any workspace.
 - `obsidian-research-ingest` for cold-start research sources when the target scope is missing, unclear, or may need pipeline setup.
 - `obsidian-research-synthesis` for multi-source research threads.
 - `obsidian-research-pipeline` for adding research intake and synthesis infrastructure inside an existing scope.
@@ -60,6 +61,7 @@ This skill bootstraps the system. Use the companion skills for ongoing ingest, s
 8. Create Bases from the `.base` files in `assets/templates/` when useful.
 9. Add `Bases/00 Bases Index.md` and link each Base from it.
 10. Validate that Markdown frontmatter and Base YAML parse.
+11. Offer optional machine-level registration so future cold agents can discover the vault from outside the vault.
 
 ## Default Folder Structure
 
@@ -100,6 +102,56 @@ Use progressive discovery:
 7. Follow relevant wikilinks.
 8. Read raw sources only when compiled notes are insufficient.
 9. Use `.base` files to inspect note status and metadata.
+
+## Machine-Level Vault Registration
+
+After bootstrapping or refreshing a vault, offer to register it for cold-agent discovery on the user's local machine. Use the `obsidian-vault-discovery` workflow for this step, especially when the user wants to register, inspect, repair, or change discovery later.
+
+Registration is optional and should be explicit. Do not silently write global agent instruction files.
+
+When the user agrees, use `scripts/register_vault.js`:
+
+```bash
+node /path/to/skills/obsidian-agentic-vault/scripts/register_vault.js \
+  --vault "/path/to/vault" \
+  --name "Vault Name" \
+  --purpose "Short purpose statement." \
+  --agents codex,claude,gemini \
+  --primary
+```
+
+What registration creates:
+
+- `~/.ariadne/vaults.json` - machine-readable vault registry.
+- `~/.ariadne/vaults.md` - agent-readable vault registry.
+- small marker-managed discovery blocks in selected global agent files.
+
+Supported adapters:
+
+- `codex` - `~/.codex/AGENTS.md`
+- `claude` - `~/.claude/CLAUDE.md`
+- `gemini` - `~/.gemini/GEMINI.md`
+- `copilot` - `~/.copilot/copilot-instructions.md`
+- `opencode` - `~/.config/opencode/AGENTS.md`
+- `roo` - `~/.roo/rules/ariadne-vault-discovery.md`
+- `cline` - `~/Documents/Cline/Rules/ariadne-vault-discovery.md`
+
+Use `--agents all` only when the user wants all supported adapters. Use `--agents none` when the user only wants the Ariadne registry files.
+
+Use `--dry-run` before writing when the user wants to inspect changes.
+
+Use `--remove` through `obsidian-vault-discovery` when the user wants to unregister a vault.
+
+Safety rules:
+
+- Global files should point to `~/.ariadne/vaults.md`; they should not duplicate long vault instructions.
+- Existing global instructions must be preserved.
+- Updates must stay inside the marker block:
+  - `<!-- ariadne:vault-discovery:start -->`
+  - `<!-- ariadne:vault-discovery:end -->`
+- Re-running registration for the same vault should update the existing registry entry, not duplicate it.
+
+Cold agents that encounter the global discovery block should read the registry first for vague questions about prior projects, meetings, research, decisions, customers, work history, personal knowledge, or "what was I working on".
 
 ## Navigation Pattern
 

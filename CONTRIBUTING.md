@@ -15,10 +15,12 @@ skills/
   obsidian-research-ingest/   ← cold-start research source routing
   obsidian-research-synthesis/ ← multi-source synthesis
   obsidian-research-pipeline/ ← domain research pipeline setup
+  obsidian-vault-discovery/   ← existing vault discovery registration
   obsidian-vault-maintainer/  ← health checks and repair
   obsidian-vault-validator/   ← deterministic structural validation
     scripts/validate_vault.js ← the validator (Node.js, no deps)
 docs/
+  guides/global-discovery.md  ← global discovery registration guide
   guides/validator.md         ← validator counter reference
   pressure-scenarios/         ← edge case docs
 ```
@@ -47,6 +49,13 @@ Good contributions:
 1. Create `skills/<skill-name>/SKILL.md`
 2. Add an `agents/` folder with at least `openai.yaml` if you want multi-agent support
 3. Add a row to the Skills table in `README.md`
+
+### Changing global discovery
+
+1. Update `skills/obsidian-agentic-vault/scripts/register_vault.js`
+2. Update `skills/obsidian-agentic-vault/test/test_register_vault.js`
+3. Update `skills/obsidian-vault-discovery/SKILL.md`
+4. Update `docs/guides/global-discovery.md`
 
 ### Test fixtures
 

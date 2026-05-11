@@ -100,6 +100,7 @@ Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills o
 | Skill | Purpose |
 | --- | --- |
 | `obsidian-agentic-vault` | **Start here** — Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
+| `obsidian-vault-discovery` | Register existing Ariadne vaults so cold agents can find them from any workspace |
 | `obsidian-scope-manager` | Create, promote, import, and nest durable knowledge scopes |
 | `obsidian-navigation-architect` | Design hubs, routing, workstream graphs, templates, and view layers |
 | `obsidian-ingest-compile` | Turn links, documents, and brain dumps into durable wiki notes |
@@ -199,7 +200,25 @@ See `docs/guides/validator.md` for the full counter reference.
 | Guide | Contents |
 | --- | --- |
 | `docs/guides/quickstart.md` | Full usage guide — every skill, every scenario, cold-start phrases, skill chains, and common mistakes |
+| `docs/guides/global-discovery.md` | Optional machine-level vault registration so cold agents can find local vaults from any folder |
 | `docs/guides/validator.md` | Validator counter reference |
+
+## Global Discovery
+
+After bootstrapping a vault, Ariadne can optionally register the vault on the user's machine. For existing vaults, use `obsidian-vault-discovery`.
+
+```bash
+node skills/obsidian-agentic-vault/scripts/register_vault.js \
+  --vault "/path/to/vault" \
+  --name "My Knowledge Vault" \
+  --purpose "Long-term project and research knowledge." \
+  --agents codex,claude,gemini \
+  --primary
+```
+
+This creates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`, then adds a small marker-managed discovery block to selected global agent instruction files. The block points agents to the registry; it does not copy the whole vault context.
+
+Use this when you want future cold agent sessions, launched from any folder, to find the vault quickly for vague questions about prior projects, meetings, research, decisions, or "what was I working on?"
 
 ## References
 
