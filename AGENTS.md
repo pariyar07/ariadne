@@ -18,7 +18,12 @@ skills/
     scripts/validate_vault.js    ← the validator (Node.js, no deps)
     scripts/validate_vault.sh    ← shell wrapper
     test/                        ← test fixtures and runner
+  obsidian-agentic-vault/
+    scripts/register_vault.js    ← optional machine-level vault registration
+    test/test_register_vault.js  ← registration script tests
+  obsidian-vault-discovery/      ← workflow skill for registering existing vaults
 docs/
+  guides/global-discovery.md     ← cold-agent vault discovery registration
   guides/validator.md            ← validator counter reference
   pressure-scenarios/            ← edge case documentation
 ```
@@ -37,19 +42,24 @@ Each skill is a folder with:
 | --- | --- |
 | Edit skill instructions | `skills/<skill-name>/SKILL.md` |
 | Edit vault templates | `skills/obsidian-agentic-vault/assets/templates/` |
+| Edit global discovery registration | `skills/obsidian-agentic-vault/scripts/register_vault.js` |
+| Edit vault discovery skill | `skills/obsidian-vault-discovery/SKILL.md` |
 | Edit reference documentation | `skills/obsidian-agentic-vault/references/` |
 | Edit cold-start research ingest | `skills/obsidian-research-ingest/SKILL.md` |
 | Edit domain research pipeline setup | `skills/obsidian-research-pipeline/SKILL.md` |
 | Edit the validator | `skills/obsidian-vault-validator/scripts/validate_vault.js` |
 | Run the validator | `node skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"` |
 | Run the test suite | `node skills/obsidian-vault-validator/test/test_recursive_scopes.js` |
+| Run registration tests | `node skills/obsidian-agentic-vault/test/test_register_vault.js` |
 | Read validator counter docs | `docs/guides/validator.md` |
+| Read global discovery docs | `docs/guides/global-discovery.md` |
 
 ## Rules
 
 - Skills are Markdown — no build step, no dependencies beyond Node.js for the validator.
 - The validator uses only built-in Node.js modules. Never add external dependencies to it.
 - All validator checks must be deterministic — same vault always produces same output.
+- Registration scripts must be idempotent and marker-managed. Never overwrite user global instructions outside Ariadne marker blocks.
 - New validator warnings must be non-fatal unless they represent a structural impossibility.
 - Every new validator counter needs: logic in JS + return object entry + counters array entry + `docs/guides/validator.md` update + `SKILL.md` healthy output update + `README.md` healthy output update + test fixture.
 - `agents/openai.yaml` is required for each skill for Codex CLI display metadata.

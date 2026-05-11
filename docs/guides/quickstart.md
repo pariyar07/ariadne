@@ -25,6 +25,7 @@ Examples:
 | What you want to do | Skill to invoke | Trigger phrase |
 | --- | --- | --- |
 | Create a new vault from scratch | `obsidian-agentic-vault` | "Bootstrap a new vault for..." |
+| Register an existing vault globally | `obsidian-vault-discovery` | "Make this vault discoverable" / "Register this vault globally" |
 | Add a new domain or scope | `obsidian-scope-manager` | "Add a scope for..." / "Create a domain for..." |
 | Add research infrastructure inside a domain | `obsidian-research-pipeline` | "Add a research pipeline to..." |
 | Cold-start research source ingest | `obsidian-research-ingest` | "Research ingest..." / "Save this research..." |
@@ -43,7 +44,8 @@ Examples:
 
 **What happens:**
 1. `obsidian-agentic-vault` creates the base folder structure, `AGENTS.md`, `CLAUDE.md`, `00 Index.md`, `Agent/` navigation files, `Bases/`, `Templates/`, intake folders, and mode-specific folders.
-2. You get a vault that a cold agent can navigate immediately.
+2. The agent offers optional machine-level registration through `obsidian-vault-discovery` so future cold agents can discover this vault from outside the vault.
+3. You get a vault that a cold agent can navigate immediately.
 
 **When to use:** First time setting up any vault. Works for research, startups, personal life systems, content operations, engineering, or any other purpose.
 
@@ -52,9 +54,61 @@ Examples:
 - Medium vault (active project, startup): adds `Agent/` nav files, `Entities/`, `Relationships/`, `Bases/`, `Processing Queue/`, mode-specific folders
 - Large vault (multiple recurring workstreams): promotes each workstream into a child scope with its own hub, routing, and optional local rules
 
+**Optional global discovery:**
+
+If you want agents launched from any folder on your machine to find this vault for vague long-term-context questions, register it:
+
+```bash
+node skills/obsidian-agentic-vault/scripts/register_vault.js \
+  --vault "/path/to/vault" \
+  --name "My Knowledge Vault" \
+  --purpose "Long-term project and research knowledge." \
+  --agents codex,claude,gemini \
+  --primary
+```
+
+This writes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and tiny marker-managed pointers in selected global agent files. See `docs/guides/global-discovery.md`.
+
 ---
 
-## Scenario 2: Add a Domain Scope to an Existing Vault
+## Scenario 2: Register an Existing Vault For Global Discovery
+
+**What to say:**
+> "Make this vault discoverable to agents"
+> "Register my existing Ariadne vault globally"
+> "Make agents find this vault from anywhere"
+
+**What happens:**
+1. `obsidian-vault-discovery` checks the target path for Ariadne entry files.
+2. It creates or updates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`.
+3. It optionally updates selected global agent instruction files with tiny marker-managed pointers.
+4. Future cold agents can read the registry first, then enter the vault through `00 Index.md`, `AGENTS.md`, and `Agent/00 Agent Navigation.md`.
+
+**When to use:** You skipped registration during vault creation, imported an older vault, changed machines, or want to repair global discovery later.
+
+**Command:**
+
+```bash
+node skills/obsidian-agentic-vault/scripts/register_vault.js \
+  --vault "/path/to/vault" \
+  --name "My Knowledge Vault" \
+  --purpose "Long-term project and research knowledge." \
+  --agents codex,claude,gemini \
+  --primary
+```
+
+To unregister a vault later:
+
+```bash
+node skills/obsidian-agentic-vault/scripts/register_vault.js \
+  --vault "/path/to/vault" \
+  --agents codex,claude,gemini \
+  --remove
+```
+
+---
+
+## Scenario 3: Add a Domain Scope to an Existing Vault
 
 **What to say:**
 > "Add a scope for [domain name] — it will [describe the recurring job]"
@@ -74,7 +128,7 @@ Examples:
 
 ---
 
-## Scenario 3: Add a Research Pipeline Inside a Domain
+## Scenario 4: Add a Research Pipeline Inside a Domain
 
 **What to say:**
 > "Add a research pipeline to [domain]"
@@ -96,7 +150,7 @@ Examples:
 
 ---
 
-## Scenario 4: Cold-Start Research Ingest
+## Scenario 5: Cold-Start Research Ingest
 
 **What to say:**
 > "Research ingest https://example.com"
@@ -119,7 +173,7 @@ Examples:
 
 ---
 
-## Scenario 5: Direct Ingest Into a Specific Domain
+## Scenario 6: Direct Ingest Into a Specific Domain
 
 **What to say:**
 > "Ingest this link into [domain]" or "Add this to [domain] research"
@@ -142,7 +196,7 @@ Examples:
 
 ---
 
-## Scenario 6: Synthesize a Research Thread
+## Scenario 7: Synthesize a Research Thread
 
 **What to say:**
 > "Synthesize the [topic] research thread"
@@ -160,7 +214,7 @@ Examples:
 
 ---
 
-## Scenario 7: Redesign Navigation or Add a Workstream
+## Scenario 8: Redesign Navigation or Add a Workstream
 
 **What to say:**
 > "Add a workstream for [topic] inside [domain]"
@@ -176,7 +230,7 @@ Examples:
 
 ---
 
-## Scenario 8: Health Check
+## Scenario 9: Health Check
 
 **What to say:**
 > "Run a vault health check"
@@ -201,7 +255,7 @@ See `docs/guides/validator.md` for the full counter reference.
 
 ---
 
-## Scenario 9: Cold Start in an Existing Vault
+## Scenario 10: Cold Start in an Existing Vault
 
 If you open a new agent session and want it to orient fast:
 
@@ -216,6 +270,8 @@ If you open a new agent session and want it to orient fast:
 5. `Domains/00 Domains Index.md` — scope registry
 
 That's the full cold-start context. The agent should not read more until it knows which task to do.
+
+If the session starts outside the vault and the vault has been registered globally, the agent should first read `~/.ariadne/vaults.md`, choose the relevant vault, then follow the entry order above.
 
 ---
 

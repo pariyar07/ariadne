@@ -1,0 +1,303 @@
+#!/usr/bin/env node
+"use strict";
+
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+
+const MARKER_START = "<!-- ariadne:vault-discovery:start -->";
+const MARKER_END = "<!-- ariadne:vault-discovery:end -->";
+
+const AGENT_FILES = {
+  codex: [".codex", "AGENTS.md"],
+  claude: [".claude", "CLAUDE.md"],
+  gemini: [".gemini", "GEMINI.md"],
+  copilot: [".copilot", "copilot-instructions.md"],
+  opencode: [".config", "opencode", "AGENTS.md"],
+  roo: [".roo", "rules", "ariadne-vault-discovery.md"],
+  cline: ["Documents", "Cline", "Rules", "ariadne-vault-discovery.md"],
+};
+
+function usage() {
+  return [
+    "Usage:",
+    "  node register_vault.js --vault <path> --name <name> [options]",
+    "",
+    "Options:",
+    "  --purpose <text>       Short description of the vault purpose.",
+    "  --home <path>          Override home directory. Useful for tests.",
+    "  --agents <list>        Comma-separated adapters: codex,claude,gemini,copilot,opencode,roo,cline,all,none.",
+    "  --primary             Mark this vault as the primary Ariadne vault.",
+    "  --remove              Remove this vault from the registry and remove adapter blocks when no vaults remain.",
+    "  --dry-run             Print planned files without writing.",
+    "  --help                Show this help.",
+  ].join("\n");
+}
+
+function parseArgs(argv) {
+  const options = {
+    home: os.homedir(),
+    purpose: "",
+    agents: ["codex", "claude", "gemini"],
+    primary: false,
+    dryRun: false,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--help" || arg === "-h") {
+      options.help = true;
+    } else if (arg === "--primary") {
+      options.primary = true;
+    } else if (arg === "--remove") {
+      options.remove = true;
+    } else if (arg === "--dry-run") {
+      options.dryRun = true;
+    } else if (arg === "--home" || arg === "--vault" || arg === "--name" || arg === "--purpose" || arg === "--agents") {
+      const value = argv[index + 1];
+      if (!value) throw new Error(`${arg} requires a value`);
+      options[arg.slice(2)] = value;
+      index += 1;
+    } else {
+      throw new Error(`Unknown argument: ${arg}`);
+    }
+  }
+
+  if (options.help) return options;
+  if (!options.vault) throw new Error("--vault is required");
+  if (!options.remove && !options.name) throw new Error("--name is required");
+
+  options.home = path.resolve(options.home);
+  options.vault = path.resolve(options.vault);
+  options.agents = expandAgents(options.agents);
+
+  return options;
+}
+
+function expandAgents(value) {
+  const raw = Array.isArray(value) ? value : String(value || "").split(",");
+  const names = raw.map((name) => name.trim().toLowerCase()).filter(Boolean);
+  if (names.includes("none")) return [];
+  if (names.includes("all")) return Object.keys(AGENT_FILES);
+
+  const unknown = names.filter((name) => !AGENT_FILES[name]);
+  if (unknown.length > 0) throw new Error(`Unsupported agent adapter: ${unknown.join(", ")}`);
+  return Array.from(new Set(names));
+}
+
+function ensureDir(file) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+}
+
+function loadRegistry(file) {
+  if (!fs.existsSync(file)) {
+    return {
+      version: 1,
+      primaryVaultPath: null,
+      updatedAt: null,
+      vaults: [],
+    };
+  }
+
+  const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+  return {
+    version: parsed.version || 1,
+    primaryVaultPath: parsed.primaryVaultPath || null,
+    updatedAt: parsed.updatedAt || null,
+    vaults: Array.isArray(parsed.vaults) ? parsed.vaults : [],
+  };
+}
+
+function upsertVault(registry, vault, now, primary) {
+  const existing = registry.vaults.find((entry) => entry.path === vault.path);
+  const entry = {
+    name: vault.name,
+    path: vault.path,
+    purpose: vault.purpose,
+    entrypoints: [
+      "00 Index.md",
+      "AGENTS.md",
+      "Agent/00 Agent Navigation.md",
+      "Agent/Task Routing Matrix.md",
+    ],
+    registeredAt: existing ? existing.registeredAt : now,
+    updatedAt: now,
+  };
+
+  if (existing) {
+    Object.assign(existing, entry);
+  } else {
+    registry.vaults.push(entry);
+  }
+
+  registry.vaults.sort((left, right) => left.name.localeCompare(right.name));
+  if (primary || !registry.primaryVaultPath) {
+    registry.primaryVaultPath = vault.path;
+  }
+  registry.updatedAt = now;
+}
+
+function removeVault(registry, vaultPath, now) {
+  registry.vaults = registry.vaults.filter((entry) => entry.path !== vaultPath);
+  if (registry.primaryVaultPath === vaultPath) {
+    registry.primaryVaultPath = registry.vaults.length > 0 ? registry.vaults[0].path : null;
+  }
+  registry.updatedAt = now;
+}
+
+function registryMarkdown(registry) {
+  const lines = [
+    "# Ariadne Vault Registry",
+    "",
+    "These are local Obsidian vaults designed for AI-agent navigation.",
+    "",
+  ];
+
+  if (registry.primaryVaultPath) {
+    lines.push(`Primary vault: ${registry.primaryVaultPath}`, "");
+  }
+
+  for (const vault of registry.vaults) {
+    lines.push(`## ${vault.name}`);
+    lines.push("");
+    lines.push(`Path: ${vault.path}`);
+    if (vault.purpose) lines.push(`Purpose: ${vault.purpose}`);
+    lines.push("");
+    lines.push("Cold-start entry order:");
+    lines.push("1. Read `00 Index.md`.");
+    lines.push("2. Read `AGENTS.md`.");
+    lines.push("3. Read `Agent/00 Agent Navigation.md`.");
+    lines.push("4. Read `Agent/Task Routing Matrix.md` when routing by task.");
+    lines.push("5. Search this vault with `rg` before searching chat history or unrelated folders.");
+    lines.push("6. Prefer compiled notes, indexes, hubs, decisions, and synthesis notes over raw sources.");
+    lines.push("");
+  }
+
+  return `${lines.join("\n").trimEnd()}\n`;
+}
+
+function discoveryBlock(registryPathDisplay) {
+  return [
+    MARKER_START,
+    "## Ariadne Vault Discovery",
+    "",
+    "This machine has one or more Ariadne Obsidian vaults registered as long-term knowledge sources.",
+    "",
+    "Registry:",
+    `- ${registryPathDisplay}`,
+    "",
+    "For vague questions about prior projects, meetings, research, decisions, customers, work history, personal knowledge, or \"what was I working on\", read the registry first. Then enter the relevant vault through its `00 Index.md`, `AGENTS.md`, and `Agent/00 Agent Navigation.md`.",
+    "",
+    "Do not scan the whole vault by default. Search progressively and prefer compiled notes, hubs, indexes, decisions, and synthesis notes over raw sources.",
+    MARKER_END,
+    "",
+  ].join("\n");
+}
+
+function replaceMarkedBlock(existing, block) {
+  const escapedStart = MARKER_START.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const escapedEnd = MARKER_END.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const pattern = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}\\n?`, "u");
+  if (pattern.test(existing)) {
+    return existing.replace(pattern, block);
+  }
+
+  const separator = existing.trim().length > 0 && !existing.endsWith("\n\n") ? "\n" : "";
+  return `${existing}${separator}${block}`;
+}
+
+function removeMarkedBlock(existing) {
+  if (!existing.includes(MARKER_START)) return existing;
+  const escapedStart = MARKER_START.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const escapedEnd = MARKER_END.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const pattern = new RegExp(`\\n?${escapedStart}[\\s\\S]*?${escapedEnd}\\n?`, "u");
+  const removed = existing.replace(pattern, "\n").replace(/\n{3,}/gu, "\n\n").trimEnd();
+  return removed ? `${removed}\n` : "";
+}
+
+function writeFile(file, text, dryRun, planned) {
+  planned.push(file);
+  if (dryRun) return;
+  ensureDir(file);
+  fs.writeFileSync(file, text);
+}
+
+function register(options) {
+  const registryDir = path.join(options.home, ".ariadne");
+  const registryJson = path.join(registryDir, "vaults.json");
+  const registryMd = path.join(registryDir, "vaults.md");
+  const registryPathDisplay = "~/.ariadne/vaults.md";
+  const now = new Date().toISOString();
+  const planned = [];
+
+  const registry = loadRegistry(registryJson);
+  if (options.remove) {
+    removeVault(registry, options.vault, now);
+  } else {
+    upsertVault(
+      registry,
+      {
+        name: options.name,
+        path: options.vault,
+        purpose: options.purpose,
+      },
+      now,
+      options.primary,
+    );
+  }
+
+  writeFile(registryJson, `${JSON.stringify(registry, null, 2)}\n`, options.dryRun, planned);
+  writeFile(registryMd, registryMarkdown(registry), options.dryRun, planned);
+
+  const block = discoveryBlock(registryPathDisplay);
+  for (const agent of options.agents) {
+    const file = path.join(options.home, ...AGENT_FILES[agent]);
+    const exists = fs.existsSync(file);
+    const existing = exists ? fs.readFileSync(file, "utf8") : "";
+    if (options.remove && registry.vaults.length === 0 && !existing.includes(MARKER_START)) continue;
+    const nextText = options.remove && registry.vaults.length === 0 ? removeMarkedBlock(existing) : replaceMarkedBlock(existing, block);
+    writeFile(file, nextText, options.dryRun, planned);
+  }
+
+  return planned;
+}
+
+function main() {
+  try {
+    const options = parseArgs(process.argv.slice(2));
+    if (options.help) {
+      console.log(usage());
+      return;
+    }
+
+    const planned = register(options);
+    const action = options.remove
+      ? options.dryRun
+        ? "Would unregister"
+        : "Unregistered"
+      : options.dryRun
+        ? "Would register"
+        : "Registered";
+    console.log(`${action} ${options.name || options.vault}`);
+    for (const file of planned) {
+      console.log(`- ${file}`);
+    }
+  } catch (error) {
+    console.error(error.message);
+    console.error("");
+    console.error(usage());
+    process.exitCode = 1;
+  }
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  AGENT_FILES,
+  MARKER_END,
+  MARKER_START,
+  discoveryBlock,
+  register,
+};
