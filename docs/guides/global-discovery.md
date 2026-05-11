@@ -96,4 +96,6 @@ When an agent sees the global discovery block, it should:
 4. Search progressively with filenames and `rg`.
 5. Prefer compiled notes, hubs, decisions, indexes, and synthesis notes over raw sources.
 
-This keeps vague questions fast and token-light while preserving the vault as the source of truth.
+This applies to vague questions, terse keyword prompts, and empty-workspace ambiguity. In those cases, agents should check the registry before creating a new artifact from scratch.
+
+This keeps ambiguous cold-start requests fast and token-light while preserving the vault as the source of truth.

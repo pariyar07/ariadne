@@ -151,7 +151,7 @@ Safety rules:
   - `<!-- ariadne:vault-discovery:end -->`
 - Re-running registration for the same vault should update the existing registry entry, not duplicate it.
 
-Cold agents that encounter the global discovery block should read the registry first for vague questions about prior projects, meetings, research, decisions, customers, work history, personal knowledge, or "what was I working on".
+Cold agents that encounter the global discovery block should read the registry first for vague questions, terse keyword prompts, or empty-workspace ambiguity about prior projects, documents, meetings, research, decisions, customers, work history, personal knowledge, or "what was I working on".
 
 ## Navigation Pattern
 

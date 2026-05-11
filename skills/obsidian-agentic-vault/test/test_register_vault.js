@@ -85,7 +85,8 @@ const tests = [
       assert.match(text, /## Registered Vault Discovery/);
       assert.match(text, /Registry:/);
       assert.match(text, /\.ariadne\/vaults\.md/);
-      assert.match(text, /vague questions about prior projects/);
+      assert.match(text, /terse keyword prompts/);
+      assert.match(text, /before creating new artifacts/);
       assert.doesNotMatch(text, /This machine has one or more Ariadne/);
       assert.match(text, /<!-- ariadne:vault-discovery:end -->/);
     }
