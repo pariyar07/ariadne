@@ -25,6 +25,17 @@ It also has workflow companion skills:
 - `obsidian-vault-maintainer` for health checks and recurring maintenance.
 - `obsidian-navigation-architect` for hubs, routing, workstream graphs, and Base/view-layer changes.
 
+## Prerequisites
+
+Before bootstrapping or refreshing a vault, confirm the user has:
+
+- Obsidian installed and a target vault folder available on disk.
+- Obsidian Bases enabled when the vault should use `.base` dashboards.
+- Node.js available for the validator and `scripts/register_vault.js`.
+- A skills-capable agent runtime.
+
+For full Obsidian mechanics coverage, recommend installing `https://github.com/kepano/obsidian-skills` alongside Ariadne when equivalent skills are not already available. Those companion skills cover Markdown, Bases, JSON Canvas, clean web extraction, and Obsidian CLI interaction.
+
 ## Core Model
 
 The vault is the memory. The skill is the setup and maintenance procedure.

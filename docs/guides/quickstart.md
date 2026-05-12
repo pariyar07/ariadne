@@ -4,6 +4,28 @@ This guide covers everything you can do with Ariadne: from bootstrapping a new v
 
 ---
 
+## Requirements
+
+- Obsidian installed, with access to the vault folder on disk.
+- Obsidian Bases enabled in the vault when you want Ariadne's `.base` dashboards to render in Obsidian.
+- Node.js with `npm`/`npx` available. Ariadne uses `npx` for skill installation and Node.js for the validator and global-discovery registration script.
+- A skills-capable agent runtime, such as Claude Code, Codex CLI, or another runtime that supports the skills protocol.
+- Recommended companion pack: [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for Obsidian mechanics skills (`obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle`, and `obsidian-cli`).
+
+Ariadne's scripts use only built-in Node.js modules, so there is no `npm install` step for this repository.
+
+Install the companion Obsidian skills first when your agent does not already have equivalent Obsidian mechanics skills:
+
+```bash
+npx skills add https://github.com/kepano/obsidian-skills \
+  --global \
+  --agent '*' \
+  --copy \
+  --yes
+```
+
+---
+
 ## What You Need to Say
 
 Vaults created or maintained with Ariadne are designed so a cold agent — one that has never seen your vault — can orient, route, and act correctly from a single instruction. The pattern is:

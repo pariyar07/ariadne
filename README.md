@@ -55,9 +55,27 @@ This is Satyam's vault after several months of active use — research threads, 
 
 Each color cluster is a scope. The large hub nodes with many edges are the agent navigation files (`00 Index.md`, `Agent/00 Agent Navigation`, routing matrices). The graph shows what the scope model looks like when it's actually running: dense within boundaries, connected across them through deliberate navigation links.
 
-## Install
+## Requirements
 
-**Prerequisites:** Node.js (for `npx`), and [Obsidian Bases](https://obsidian.md/bases) enabled in your vault (Settings → Core plugins → Bases) for the `.base` view files.
+- Obsidian installed, with filesystem access to the target vault.
+- Obsidian Bases enabled in the vault (Settings -> Core plugins -> Bases) if you want the `.base` view files to render inside Obsidian.
+- Node.js with `npm`/`npx` available for installing skills and running the bundled validator and vault-registration scripts.
+- A skills-capable agent runtime, such as Claude Code, Codex CLI, or another runtime that supports the skills protocol.
+- Recommended companion pack: [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills), which provides Obsidian mechanics skills such as Markdown, Bases, JSON Canvas, clean Markdown extraction, and Obsidian CLI interaction.
+
+Install the companion Obsidian skills first when your agent does not already have equivalent Obsidian mechanics skills:
+
+```bash
+npx skills add https://github.com/kepano/obsidian-skills \
+  --global \
+  --agent '*' \
+  --copy \
+  --yes
+```
+
+Ariadne itself has no package install step and no external npm dependencies. Its scripts use only built-in Node.js modules.
+
+## Install
 
 Install for all supported agents (Claude Code, Codex CLI, and others):
 
