@@ -16,7 +16,8 @@ function toPosix(file) {
 }
 
 function excludedPath(file) {
-  return file === ".obsidian" || file.startsWith(".obsidian/") || file.includes("/.obsidian/");
+  return file === ".obsidian" || file.startsWith(".obsidian/") || file.includes("/.obsidian/") ||
+    file === ".git" || file.startsWith(".git/") || file.includes("/.git/");
 }
 
 function walk(dir, root = dir, results = []) {
@@ -34,7 +35,7 @@ function walk(dir, root = dir, results = []) {
 }
 
 function withoutKnownExtension(file) {
-  return file.replace(/\.(md|base)$/u, "");
+  return file.replace(/\.(md|base|canvas)$/u, "");
 }
 
 function normalizeLinkTarget(target) {
@@ -232,9 +233,9 @@ function validate(vaultPath) {
   const errors = [];
   const markdownFrontmatter = new Map();
   const files = walk(".");
-    const markdownFiles = files.filter((file) => file.endsWith(".md")).sort();
+  const markdownFiles = files.filter((file) => file.endsWith(".md")).sort();
   const baseFiles = files.filter((file) => file.endsWith(".base")).sort();
-  const allTargets = [...markdownFiles, ...baseFiles];
+  const allTargets = files.filter((file) => !file.startsWith(".")).sort();
 
   const baseText = new Map();
   for (const file of baseFiles) {

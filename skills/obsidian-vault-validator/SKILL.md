@@ -50,7 +50,7 @@ The validator reports:
 - `routing-matrix-warnings: N` for scope hubs that exist but are not linked from `Agent/Task Routing Matrix.md`
 - `base-scope-formula-warnings: N` for root `Bases/*.base` files with a `file.inFolder` scope formula that is missing a branch for a known scope path
 
-It discovers `.base` files recursively, excluding `.obsidian` paths, and resolves wikilinks to both Markdown notes and `.base` files.
+It discovers `.base` files recursively, excluding `.obsidian` and `.git` paths, and resolves wikilinks to real vault files including Markdown notes, `.base` files, `.canvas` files, and attachments.
 
 Every `**/Bases/*.base` file must have a sibling `00 Bases Index.md` that links the Base by relative Markdown link or wikilink. The legacy root `Bases/00 Bases Index.md` check is still enforced, and the same rule now applies to nested scope Base folders.
 

@@ -104,6 +104,14 @@ const tests = [
     assert.match(result.stdout, /Topic\.md -> \[\[Shared\]\] resolves to multiple targets/);
   },
 
+  function canvasWikilinkTargetPasses() {
+    const result = runValidator("canvas_wikilink_target_pass");
+
+    assertSuccess(result);
+    assertCounter(result.stdout, "broken-wikilinks", 0);
+    assertCounter(result.stdout, "true-orphans-md", 0);
+  },
+
   function parentHubMissingChildLinkWarns() {
     const result = runValidator("parent_hub_missing_child_link_warning");
 

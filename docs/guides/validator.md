@@ -28,7 +28,7 @@ The shell wrapper provides a stable entry point plus a clearer missing-Node erro
 
 - Markdown frontmatter parses as YAML.
 - `.base` file YAML parses cleanly.
-- Wikilinks resolve to Markdown notes or Base files.
+- Wikilinks resolve to real vault files, including Markdown notes, Base files, Canvas files, and attachments.
 - Root and local Base files are linked from the relevant `00 Bases Index.md`.
 - Local Bases include a `file.inFolder("<scope_path>")` filter so they don't show rows from other scopes.
 - Local `AGENTS.md` files mention parent inheritance and do not repeat global policy text.
@@ -59,7 +59,7 @@ base-scope-formula-warnings: 0
 | Counter | Fatal | Meaning |
 | --- | --- | --- |
 | `yaml-errors` | Yes | Frontmatter or `.base` YAML is malformed |
-| `broken-wikilinks` | Yes | A wikilink target does not exist |
+| `broken-wikilinks` | Yes | A wikilink target does not exist as a real vault file |
 | `true-orphans-md` | Yes | A Markdown note has no incoming or outgoing links |
 | `unlinked-base-files` | Yes | A `.base` file is not linked from its sibling `00 Bases Index.md` |
 | `bloat-warnings` | No | Entry files or hubs are growing too large for reliable traversal |

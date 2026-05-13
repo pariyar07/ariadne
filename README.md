@@ -187,6 +187,8 @@ Bases                     → dynamic inspection layer
 
 Navigation files (`AGENTS.md`, `00 Index.md`, `Agent/`) always use path-qualified wikilinks so agents arriving cold have zero ambiguity. Content notes may use bare links because agents always arrive via a qualified navigation file, never cold.
 
+The validator resolves wikilinks to real vault files, including Markdown notes, Base files, Canvas files, and attachments. Orphan checks remain Markdown-only.
+
 ## Validation
 
 Run the validator from a vault root:
