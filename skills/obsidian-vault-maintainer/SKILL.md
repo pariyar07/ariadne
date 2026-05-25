@@ -46,6 +46,26 @@ Check for:
 - raw sources not compiled within the relevant scope
 - scope indexes becoming full tables of contents instead of navigable maps
 
+## Proactive Repair Routing
+
+When you discover a problem during unrelated vault work, surface it instead of letting it become hidden drift:
+
+1. State what appears broken.
+2. Explain why it matters for future agents or human navigation.
+3. Recommend the smallest next check or skill.
+4. Say whether you can safely fix it now or need approval.
+
+Use this routing:
+
+- Global discovery, stale registry entrypoints, or missing adapter marker blocks: use `obsidian-vault-discovery` and run the Ariadne discovery doctor.
+- Broken wikilinks, orphan notes, invalid frontmatter, invalid `.base` YAML, unlinked Bases, or validator warnings: use `obsidian-vault-validator` first, then repair with this skill.
+- Navigation bloat, missing hubs, missing parent-child hub links, task routing drift, or unclear scope boundaries: use `obsidian-navigation-architect`.
+- Raw sources, inbox items, processing items, or outputs accumulating without compilation: use `obsidian-ingest-compile` or `obsidian-research-ingest`.
+- Missing repeatable research infrastructure inside a scope: use `obsidian-research-pipeline`.
+- Stale synthesis, stale assumptions, or unresolved questions that need consolidation: use `obsidian-research-synthesis`.
+
+Keep the repair scoped to the nearest responsible folder or domain. Ask before restructuring navigation, modifying global agent files, or installing/updating skills.
+
 ## Report
 
 Save dated reports in `Outputs/` using the vault's health-check template when available.

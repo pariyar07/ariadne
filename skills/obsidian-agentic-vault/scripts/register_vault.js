@@ -7,6 +7,12 @@ const path = require("path");
 
 const MARKER_START = "<!-- ariadne:vault-discovery:start -->";
 const MARKER_END = "<!-- ariadne:vault-discovery:end -->";
+const DEFAULT_ENTRYPOINTS = [
+  "00 Index.md",
+  "AGENTS.md",
+  "Agent/00 Agent Navigation.md",
+  "Agent/Task Routing Matrix.md",
+];
 
 const AGENT_FILES = {
   codex: [".codex", "AGENTS.md"],
@@ -28,6 +34,7 @@ function usage() {
     "  --home <path>          Override home directory. Useful for tests.",
     "  --agents <list>        Comma-separated adapters: codex,claude,gemini,copilot,opencode,roo,cline,all,none.",
     "  --primary             Mark this vault as the primary registered vault.",
+    "  --check, --doctor     Check registry paths, entrypoints, Markdown, and selected adapter blocks.",
     "  --remove              Remove this vault from the registry and remove adapter blocks when no vaults remain.",
     "  --dry-run             Print planned files without writing.",
     "  --help                Show this help.",
@@ -49,6 +56,8 @@ function parseArgs(argv) {
       options.help = true;
     } else if (arg === "--primary") {
       options.primary = true;
+    } else if (arg === "--check" || arg === "--doctor") {
+      options.check = true;
     } else if (arg === "--remove") {
       options.remove = true;
     } else if (arg === "--dry-run") {
@@ -64,11 +73,11 @@ function parseArgs(argv) {
   }
 
   if (options.help) return options;
-  if (!options.vault) throw new Error("--vault is required");
-  if (!options.remove && !options.name) throw new Error("--name is required");
+  if (!options.check && !options.vault) throw new Error("--vault is required");
+  if (!options.check && !options.remove && !options.name) throw new Error("--name is required");
 
   options.home = path.resolve(options.home);
-  options.vault = path.resolve(options.vault);
+  if (options.vault) options.vault = path.resolve(options.vault);
   options.agents = expandAgents(options.agents);
 
   return options;
@@ -108,18 +117,48 @@ function loadRegistry(file) {
   };
 }
 
+function existsInVault(vaultPath, relativePath) {
+  return fs.existsSync(path.join(vaultPath, relativePath));
+}
+
+function detectRootIndex(vaultPath) {
+  const preferred = ["00 Global Index.md", "00 Index.md"];
+  for (const file of preferred) {
+    if (existsInVault(vaultPath, file)) return file;
+  }
+
+  if (!fs.existsSync(vaultPath)) return null;
+
+  const rootIndex = fs
+    .readdirSync(vaultPath, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .filter((name) => /^00 .*Index\.md$/u.test(name))
+    .sort((left, right) => left.localeCompare(right))[0];
+
+  return rootIndex || null;
+}
+
+function detectEntrypoints(vaultPath) {
+  const rootIndex = detectRootIndex(vaultPath);
+  const candidates = [
+    rootIndex,
+    "AGENTS.md",
+    "Agent/00 Agent Navigation.md",
+    "Agent/Task Routing Matrix.md",
+  ].filter(Boolean);
+
+  const existing = candidates.filter((relativePath) => existsInVault(vaultPath, relativePath));
+  return existing.length > 0 ? Array.from(new Set(existing)) : DEFAULT_ENTRYPOINTS;
+}
+
 function upsertVault(registry, vault, now, primary) {
   const existing = registry.vaults.find((entry) => entry.path === vault.path);
   const entry = {
     name: vault.name,
     path: vault.path,
     purpose: vault.purpose,
-    entrypoints: [
-      "00 Index.md",
-      "AGENTS.md",
-      "Agent/00 Agent Navigation.md",
-      "Agent/Task Routing Matrix.md",
-    ],
+    entrypoints: detectEntrypoints(vault.path),
     registeredAt: existing ? existing.registeredAt : now,
     updatedAt: now,
   };
@@ -164,12 +203,13 @@ function registryMarkdown(registry) {
     if (vault.purpose) lines.push(`Purpose: ${vault.purpose}`);
     lines.push("");
     lines.push("Cold-start entry order:");
-    lines.push("1. Read `00 Index.md`.");
-    lines.push("2. Read `AGENTS.md`.");
-    lines.push("3. Read `Agent/00 Agent Navigation.md`.");
-    lines.push("4. Read `Agent/Task Routing Matrix.md` when routing by task.");
-    lines.push("5. Search this vault with `rg` before searching chat history or unrelated folders.");
-    lines.push("6. Prefer compiled notes, indexes, hubs, decisions, and synthesis notes over raw sources.");
+    const entrypoints = Array.isArray(vault.entrypoints) && vault.entrypoints.length > 0 ? vault.entrypoints : DEFAULT_ENTRYPOINTS;
+    entrypoints.forEach((entrypoint, index) => {
+      const suffix = entrypoint === "Agent/Task Routing Matrix.md" ? " when routing by task" : "";
+      lines.push(`${index + 1}. Read \`${entrypoint}\`${suffix}.`);
+    });
+    lines.push(`${entrypoints.length + 1}. Search this vault with \`rg\` before searching chat history or unrelated folders.`);
+    lines.push(`${entrypoints.length + 2}. Prefer compiled notes, indexes, hubs, decisions, and synthesis notes over raw sources.`);
     lines.push("");
   }
 
@@ -186,7 +226,7 @@ function discoveryBlock(registryPathDisplay) {
     "Registry:",
     `- ${registryPathDisplay}`,
     "",
-    "For vague questions, terse keyword prompts, or empty-workspace ambiguity about prior projects, documents, meetings, research, decisions, customers, work history, personal knowledge, or \"what was I working on\", read the vault registry first before creating new artifacts. Then enter the relevant vault through its `00 Index.md`, `AGENTS.md`, and `Agent/00 Agent Navigation.md`.",
+    "For vague questions, terse keyword prompts, or empty-workspace ambiguity about prior projects, documents, meetings, research, decisions, customers, work history, personal knowledge, or \"what was I working on\", read the vault registry first before creating new artifacts. Then enter the relevant vault through its listed cold-start entry order.",
     "",
     "Do not scan the whole vault by default. Search progressively and prefer compiled notes, hubs, indexes, decisions, and synthesis notes over raw sources.",
     MARKER_END,
@@ -220,6 +260,75 @@ function writeFile(file, text, dryRun, planned) {
   if (dryRun) return;
   ensureDir(file);
   fs.writeFileSync(file, text);
+}
+
+function checkDiscovery(options) {
+  const registryDir = path.join(options.home, ".ariadne");
+  const registryJson = path.join(registryDir, "vaults.json");
+  const registryMd = path.join(registryDir, "vaults.md");
+  const issues = [];
+
+  if (!fs.existsSync(registryJson)) {
+    issues.push(`Registry JSON missing: ${registryJson}`);
+  }
+
+  if (!fs.existsSync(registryMd)) {
+    issues.push(`Registry Markdown missing: ${registryMd}`);
+  }
+
+  if (!fs.existsSync(registryJson)) {
+    return issues;
+  }
+
+  const registry = loadRegistry(registryJson);
+  const expectedMarkdown = registryMarkdown(registry);
+  if (fs.existsSync(registryMd) && fs.readFileSync(registryMd, "utf8") !== expectedMarkdown) {
+    issues.push(`Registry Markdown is stale: ${registryMd}`);
+  }
+
+  if (registry.primaryVaultPath && !registry.vaults.some((vault) => vault.path === registry.primaryVaultPath)) {
+    issues.push(`Primary vault is not registered: ${registry.primaryVaultPath}`);
+  }
+
+  for (const vault of registry.vaults) {
+    if (!fs.existsSync(vault.path)) {
+      issues.push(`Vault path missing: ${vault.path}`);
+      continue;
+    }
+
+    const registeredEntrypoints = Array.isArray(vault.entrypoints) ? vault.entrypoints : DEFAULT_ENTRYPOINTS;
+    for (const entrypoint of registeredEntrypoints) {
+      if (!existsInVault(vault.path, entrypoint)) {
+        issues.push(`Registered entrypoint missing: ${entrypoint} (${vault.name})`);
+      }
+    }
+
+    const detectedEntrypoints = detectEntrypoints(vault.path);
+    for (const entrypoint of detectedEntrypoints) {
+      if (!registeredEntrypoints.includes(entrypoint)) {
+        issues.push(`Detected entrypoint is not registered: ${entrypoint} (${vault.name})`);
+      }
+    }
+  }
+
+  for (const agent of options.agents) {
+    const file = path.join(options.home, ...AGENT_FILES[agent]);
+    if (!fs.existsSync(file)) {
+      issues.push(`Adapter file missing marker block: ${file}`);
+      continue;
+    }
+
+    const text = fs.readFileSync(file, "utf8");
+    if (!text.includes(MARKER_START) || !text.includes(MARKER_END)) {
+      issues.push(`Adapter file missing marker block: ${file}`);
+    } else if (!text.includes("~/.ariadne/vaults.md")) {
+      issues.push(`Adapter block missing registry path: ${file}`);
+    } else if (!text.includes("listed cold-start entry order")) {
+      issues.push(`Adapter block has stale entrypoint instructions: ${file}`);
+    }
+  }
+
+  return issues;
 }
 
 function register(options) {
@@ -270,6 +379,21 @@ function main() {
       return;
     }
 
+    if (options.check) {
+      const issues = checkDiscovery(options);
+      if (issues.length === 0) {
+        console.log("Discovery check passed");
+        return;
+      }
+
+      console.log(`Discovery check found ${issues.length} issue(s):`);
+      for (const issue of issues) {
+        console.log(`- ${issue}`);
+      }
+      process.exitCode = 1;
+      return;
+    }
+
     const planned = register(options);
     const action = options.remove
       ? options.dryRun
@@ -298,6 +422,9 @@ module.exports = {
   AGENT_FILES,
   MARKER_END,
   MARKER_START,
+  detectEntrypoints,
+  detectRootIndex,
+  checkDiscovery,
   discoveryBlock,
   register,
 };

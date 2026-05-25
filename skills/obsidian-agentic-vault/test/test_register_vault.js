@@ -52,7 +52,11 @@ const tests = [
   function createsRegistryFilesAndAgentAdapters() {
     const home = tempHome();
     const vault = path.join(home, "Documents", "Work Vault");
-    fs.mkdirSync(vault, { recursive: true });
+    fs.mkdirSync(path.join(vault, "Agent"), { recursive: true });
+    fs.writeFileSync(path.join(vault, "00 Global Index.md"), "# Work Vault\n");
+    fs.writeFileSync(path.join(vault, "AGENTS.md"), "# Agent Instructions\n");
+    fs.writeFileSync(path.join(vault, "Agent", "00 Agent Navigation.md"), "# Agent Navigation\n");
+    fs.writeFileSync(path.join(vault, "Agent", "Task Routing Matrix.md"), "# Task Routing Matrix\n");
 
     const result = runRegister(registerArgs(home, vault));
 
@@ -69,11 +73,18 @@ const tests = [
     assert.strictEqual(data.vaults[0].name, "Work Vault");
     assert.strictEqual(data.vaults[0].path, vault);
     assert.strictEqual(data.vaults[0].purpose, "Long-term project and research knowledge.");
+    assert.deepStrictEqual(data.vaults[0].entrypoints, [
+      "00 Global Index.md",
+      "AGENTS.md",
+      "Agent/00 Agent Navigation.md",
+      "Agent/Task Routing Matrix.md",
+    ]);
 
     assert.match(read(registryMd), /# Registered Obsidian Vaults/);
     assert.match(read(registryMd), /## Work Vault/);
     assert.match(read(registryMd), /Path: /);
-    assert.match(read(registryMd), /Read `00 Index\.md`/);
+    assert.match(read(registryMd), /Read `00 Global Index\.md`/);
+    assert.doesNotMatch(read(registryMd), /Read `00 Index\.md`/);
 
     for (const file of [
       path.join(home, ".codex", "AGENTS.md"),
@@ -87,9 +98,81 @@ const tests = [
       assert.match(text, /\.ariadne\/vaults\.md/);
       assert.match(text, /terse keyword prompts/);
       assert.match(text, /before creating new artifacts/);
+      assert.match(text, /listed cold-start entry order/);
       assert.doesNotMatch(text, /This machine has one or more Ariadne/);
       assert.match(text, /<!-- ariadne:vault-discovery:end -->/);
     }
+  },
+
+  function detectsStandardRootIndexWhenPresent() {
+    const home = tempHome();
+    const vault = path.join(home, "Vault");
+    fs.mkdirSync(vault, { recursive: true });
+    fs.writeFileSync(path.join(vault, "00 Index.md"), "# Standard Vault\n");
+    fs.writeFileSync(path.join(vault, "AGENTS.md"), "# Agent Instructions\n");
+
+    assertSuccess(runRegister(registerArgs(home, vault, ["--agents", "none"])));
+
+    const data = JSON.parse(read(path.join(home, ".ariadne", "vaults.json")));
+    assert.deepStrictEqual(data.vaults[0].entrypoints, ["00 Index.md", "AGENTS.md"]);
+    assert.match(read(path.join(home, ".ariadne", "vaults.md")), /Read `00 Index\.md`/);
+  },
+
+  function checkReportsHealthyDiscovery() {
+    const home = tempHome();
+    const vault = path.join(home, "Vault");
+    fs.mkdirSync(path.join(vault, "Agent"), { recursive: true });
+    fs.writeFileSync(path.join(vault, "00 Global Index.md"), "# Global\n");
+    fs.writeFileSync(path.join(vault, "AGENTS.md"), "# Agents\n");
+    fs.writeFileSync(path.join(vault, "Agent", "00 Agent Navigation.md"), "# Navigation\n");
+
+    assertSuccess(runRegister(registerArgs(home, vault, ["--agents", "codex"])));
+
+    const result = runRegister(["--home", home, "--agents", "codex", "--doctor"]);
+
+    assertSuccess(result);
+    assert.match(result.stdout, /Discovery check passed/);
+  },
+
+  function checkReportsStaleOrMissingDiscovery() {
+    const home = tempHome();
+    const vault = path.join(home, "Vault");
+    fs.mkdirSync(vault, { recursive: true });
+    fs.writeFileSync(path.join(vault, "00 Global Index.md"), "# Global\n");
+    fs.writeFileSync(path.join(vault, "AGENTS.md"), "# Agents\n");
+    fs.mkdirSync(path.join(home, ".ariadne"), { recursive: true });
+    fs.writeFileSync(
+      path.join(home, ".ariadne", "vaults.json"),
+      `${JSON.stringify(
+        {
+          version: 1,
+          primaryVaultPath: vault,
+          updatedAt: "2026-05-25T00:00:00.000Z",
+          vaults: [
+            {
+              name: "Vault",
+              path: vault,
+              purpose: "Test vault.",
+              entrypoints: ["00 Index.md", "AGENTS.md"],
+              registeredAt: "2026-05-25T00:00:00.000Z",
+              updatedAt: "2026-05-25T00:00:00.000Z",
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    fs.writeFileSync(path.join(home, ".ariadne", "vaults.md"), "# stale\n");
+
+    const result = runRegister(["--home", home, "--agents", "codex", "--check"]);
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stdout, /Discovery check found 4 issue/);
+    assert.match(result.stdout, /Registered entrypoint missing: 00 Index\.md/);
+    assert.match(result.stdout, /Detected entrypoint is not registered: 00 Global Index\.md/);
+    assert.match(result.stdout, /Registry Markdown is stale/);
+    assert.match(result.stdout, /Adapter file missing marker block/);
   },
 
   function updatesExistingMarkerBlockWithoutDuplicating() {

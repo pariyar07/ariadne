@@ -13,6 +13,7 @@ Typical requests:
 - "Register my existing vault globally."
 - "Make agents find my vault from anywhere."
 - "Check whether this vault is registered."
+- "Run Ariadne discovery doctor."
 - "Repair Ariadne global discovery."
 - "Change my primary registered vault."
 
@@ -31,8 +32,8 @@ The global blocks point to `~/.ariadne/vaults.md`; they should never duplicate l
 ## Start Workflow
 
 1. Determine the vault path.
-2. Confirm the path looks like an agent-readable Obsidian vault by checking for `00 Index.md`, `AGENTS.md`, or `Agent/00 Agent Navigation.md`.
-3. Determine the vault name and short purpose. Infer from `00 Index.md` when obvious; otherwise ask.
+2. Confirm the path looks like an agent-readable Obsidian vault by checking for `00 Global Index.md`, `00 Index.md`, another root `00 *Index.md`, `AGENTS.md`, or `Agent/00 Agent Navigation.md`.
+3. Determine the vault name and short purpose. Infer from the detected root index when obvious; otherwise ask.
 4. Ask which adapters to update, or use the default `codex,claude,gemini` when the user does not care.
 5. Offer `--dry-run` when the user wants to preview changes.
 6. Run the registration script.
@@ -56,6 +57,35 @@ Use `--agents none` to update only the registry files.
 Use `--agents all` only when the user explicitly wants all supported adapters.
 
 Use `--dry-run` before writing if the user is cautious or if existing global instruction files are complex.
+
+## Check Discovery
+
+Use `--check` or `--doctor` when the user wants to verify global discovery without changing files:
+
+```bash
+node /path/to/skills/obsidian-agentic-vault/scripts/register_vault.js \
+  --agents codex,claude,gemini \
+  --doctor
+```
+
+The doctor checks:
+
+- `~/.ariadne/vaults.json` exists and parses.
+- `~/.ariadne/vaults.md` matches the JSON registry.
+- registered vault paths exist.
+- registered entrypoints exist in each vault.
+- detected root entrypoints are registered.
+- selected global adapter files have Ariadne marker blocks.
+- adapter blocks point to `~/.ariadne/vaults.md` and tell agents to use the listed cold-start entry order.
+
+If doctor reports issues, re-run registration for the affected vault to repair registry and adapter blocks.
+
+When doctor reports issues during a broader task, do not only say that discovery failed. Tell the user:
+
+1. which registry, entrypoint, or adapter check failed,
+2. why cold agents may be affected,
+3. the repair command or `obsidian-vault-discovery` action to use,
+4. whether the repair touches global agent files and therefore needs approval.
 
 ## Remove Discovery
 

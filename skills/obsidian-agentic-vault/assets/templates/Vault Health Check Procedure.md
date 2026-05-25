@@ -81,6 +81,24 @@ Compare new notes against:
 - relevant thread hub
 - [[Bases/00 Bases Index]] when view-layer files change
 
+## Proactive Repair Routing
+
+If a problem appears during ordinary vault work, report it before continuing as if the vault is healthy. Use this shape:
+
+- What is broken.
+- Why it matters.
+- Which deterministic check or Ariadne skill should handle it.
+- Whether the fix is safe to do now or needs approval.
+
+Suggested routing:
+
+- Discovery registry, entrypoint, or adapter marker issues: `obsidian-vault-discovery` and the Ariadne discovery doctor.
+- Broken links, orphan notes, invalid frontmatter, invalid Bases, or unlinked Bases: `obsidian-vault-validator`, then `obsidian-vault-maintainer`.
+- Oversized hubs, missing hubs, unclear scope boundaries, or routing drift: `obsidian-navigation-architect`.
+- Raw, inbox, processing, or output buildup: `obsidian-ingest-compile` or `obsidian-research-ingest`.
+- Missing research pipeline structure: `obsidian-research-pipeline`.
+- Stale conclusions, assumptions, or unresolved questions: `obsidian-research-synthesis`.
+
 ## Report Format
 
 Create a dated note in `Outputs/` using [[Templates/Knowledge Health Check]].

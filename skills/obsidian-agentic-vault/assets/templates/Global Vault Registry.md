@@ -9,7 +9,7 @@ Purpose: {{purpose}}
 
 Cold-start entry order:
 
-1. Read `00 Index.md`.
+1. Read the detected root index, for example `00 Index.md` or `00 Global Index.md`.
 2. Read `AGENTS.md`.
 3. Read `Agent/00 Agent Navigation.md`.
 4. Read `Agent/Task Routing Matrix.md` when routing by task.

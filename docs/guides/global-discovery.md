@@ -92,10 +92,26 @@ When an agent sees the global discovery block, it should:
 
 1. Read `~/.ariadne/vaults.md`.
 2. Pick the relevant vault from the user's request.
-3. Enter through that vault's `00 Index.md`, `AGENTS.md`, and `Agent/00 Agent Navigation.md`.
+3. Enter through that vault's listed cold-start entry order.
 4. Search progressively with filenames and `rg`.
 5. Prefer compiled notes, hubs, decisions, indexes, and synthesis notes over raw sources.
 
 This applies to vague questions, terse keyword prompts, and empty-workspace ambiguity. In those cases, agents should check the registry before creating a new artifact from scratch.
 
 This keeps ambiguous cold-start requests fast and token-light while preserving the vault as the source of truth.
+
+## Discovery Doctor
+
+Use doctor mode to verify global discovery without writing files:
+
+```bash
+node skills/obsidian-agentic-vault/scripts/register_vault.js \
+  --agents codex,claude,gemini \
+  --doctor
+```
+
+The doctor checks that the registry files exist, registry Markdown matches registry JSON, registered vault paths and entrypoints exist, and selected adapter files still contain valid Ariadne marker blocks.
+
+If doctor reports stale entrypoints or missing marker blocks, re-run registration for the vault to repair the registry and selected adapters.
+
+Agents should treat a doctor failure as actionable navigation drift. Report the failing registry, entrypoint, or adapter check, explain how it affects cold-start behavior, and offer to repair it with `obsidian-vault-discovery`. Repairs that modify global agent files should be explicit, because those files may contain user-maintained instructions outside Ariadne marker blocks.

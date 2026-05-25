@@ -104,7 +104,7 @@ This writes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and tiny marker-ma
 1. `obsidian-vault-discovery` checks the target path for Ariadne entry files.
 2. It creates or updates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`.
 3. It optionally updates selected global agent instruction files with tiny marker-managed pointers.
-4. Future cold agents can read the registry first, then enter the vault through `00 Index.md`, `AGENTS.md`, and `Agent/00 Agent Navigation.md`.
+4. Future cold agents can read the registry first, then enter the vault through the listed cold-start entry order.
 
 **When to use:** You skipped registration during vault creation, imported an older vault, changed machines, or want to repair global discovery later.
 
@@ -126,6 +126,14 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
   --vault "/path/to/vault" \
   --agents codex,claude,gemini \
   --remove
+```
+
+To check global discovery health without writing files:
+
+```bash
+node skills/obsidian-agentic-vault/scripts/register_vault.js \
+  --agents codex,claude,gemini \
+  --doctor
 ```
 
 ---
