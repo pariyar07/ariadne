@@ -49,7 +49,7 @@ Examples:
 | What you want to do | Skill to invoke | Trigger phrase |
 | --- | --- | --- |
 | Create a new vault from scratch | `obsidian-agentic-vault` | "Bootstrap a new vault for..." |
-| Register an existing vault globally | `obsidian-vault-discovery` | "Make this vault discoverable" / "Register this vault globally" |
+| Register, update, or repair global discovery | `obsidian-vault-discovery` | "Make this vault discoverable" / "Register this vault globally" / "Repair Ariadne discovery" |
 | Add a new domain or scope | `obsidian-scope-manager` | "Add a scope for..." / "Create a domain for..." |
 | Add research infrastructure inside a domain | `obsidian-research-pipeline` | "Add a research pipeline to..." |
 | Cold-start research source ingest | `obsidian-research-ingest` | "Research ingest..." / "Save this research..." |
@@ -69,7 +69,7 @@ Examples:
 
 **What happens:**
 1. `obsidian-agentic-vault` creates the base folder structure, `AGENTS.md`, `CLAUDE.md`, `00 Index.md`, `Agent/` navigation files, `Bases/`, `Templates/`, intake folders, and mode-specific folders.
-2. The agent offers optional machine-level registration through `obsidian-vault-discovery` so future cold agents can discover this vault from outside the vault.
+2. The agent explicitly offers machine-level registration or repair through `obsidian-vault-discovery` when discovery is absent or stale, so future cold agents can discover this vault from outside the vault.
 3. You get a vault that a cold agent can navigate immediately.
 
 **When to use:** First time setting up any vault. Works for research, startups, personal life systems, content operations, engineering, or any other purpose.
@@ -92,7 +92,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
   --primary
 ```
 
-This writes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and tiny marker-managed pointers in selected global agent files. See `docs/guides/global-discovery.md`.
+This writes or refreshes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and tiny marker-managed pointers in selected global agent files. See `docs/guides/global-discovery.md`.
 
 ---
 
@@ -109,7 +109,7 @@ This writes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and tiny marker-ma
 3. It optionally updates selected global agent instruction files with tiny marker-managed pointers.
 4. Future cold agents can read the registry first, then enter the vault through the listed cold-start entry order.
 
-**When to use:** You skipped registration during vault creation, imported an older vault, changed machines, or want to repair global discovery later.
+**When to use:** You skipped registration during vault creation, imported an older vault, changed machines, want to repair global discovery later, or need to refresh marker blocks after Ariadne ships newer discovery rules.
 
 **Command:**
 
@@ -152,6 +152,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 3. If the scope will ingest raw material, creates `Raw/Sources/`, `Inbox/`, `Processing Queue/`, and a local `Agent/Ingest Compile Workflow.md`.
 4. Updates root `Bases/*.base` scope formulas so notes in the new scope appear correctly in global views.
 5. Validates — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm it's fully wired.
+6. If the parent vault is not globally registered or discovery is stale, the agent offers `obsidian-vault-discovery` for the parent vault. Scope creation does not add scope-specific global discovery rules.
 
 **When to use:** Adding a new project, content brand, research area, or life domain to an existing vault that already has the root layer.
 
@@ -325,6 +326,8 @@ If you open a new agent session and want it to orient fast:
 That's the full cold-start context. The agent should not read more until it knows which task to do.
 
 If the session starts outside the vault and the vault has been registered globally, the agent should first read `~/.ariadne/vaults.md`, choose the relevant vault, then follow the entry order above.
+
+If several registered vaults look plausible, the agent should show the top matches with short reasons and ask before creating, updating, or filing artifacts.
 
 ---
 

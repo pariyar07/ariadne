@@ -5,7 +5,7 @@ description: Register existing Obsidian vaults for machine-level discovery so co
 
 # Obsidian Vault Discovery
 
-Use this skill when a user already has an Obsidian vault created or maintained with Ariadne and wants future cold agents to find it from outside the vault.
+Use this skill when a user already has an Obsidian vault created or maintained with Ariadne and wants future cold agents to find it from outside the vault. Also use it to inspect, update, or repair existing global registry files and marker-managed adapter blocks when Ariadne ships newer discovery rules.
 
 Typical requests:
 
@@ -15,6 +15,7 @@ Typical requests:
 - "Check whether this vault is registered."
 - "Run Ariadne discovery doctor."
 - "Repair Ariadne global discovery."
+- "Update Ariadne global discovery rules."
 - "Change my primary registered vault."
 
 This skill manages machine-level discovery. It does not create the vault. Use `obsidian-agentic-vault` to bootstrap a new vault.
@@ -27,7 +28,7 @@ The vault remains the source of truth. Global discovery only creates a small loc
 2. `~/.ariadne/vaults.md` - agent-readable registry.
 3. Optional marker-managed blocks in global agent instruction files.
 
-The global blocks point to `~/.ariadne/vaults.md`; they should never duplicate long vault instructions.
+The global blocks point to `~/.ariadne/vaults.md`; they should never duplicate long vault instructions. Updating an existing registration should refresh stale marker-managed blocks in place instead of adding another global block.
 
 ## Start Workflow
 
@@ -38,6 +39,8 @@ The global blocks point to `~/.ariadne/vaults.md`; they should never duplicate l
 5. Offer `--dry-run` when the user wants to preview changes.
 6. Run the registration script.
 7. Report the registry and adapter files touched.
+
+When updating an already registered vault, treat the workflow as an idempotent refresh/repair. The goal is to bring registry entries and marker-managed global blocks up to the current Ariadne discovery wording while preserving all user-maintained instructions outside Ariadne markers.
 
 ## Registration Command
 
@@ -87,6 +90,10 @@ When doctor reports issues during a broader task, do not only say that discovery
 3. the repair command or `obsidian-vault-discovery` action to use,
 4. whether the repair touches global agent files and therefore needs approval.
 
+## Multiple-Match Policy
+
+If discovery produces multiple plausible vault matches for a request, do not guess. Show the top matches with short reasons, then ask which vault to use before creating, updating, or filing artifacts.
+
 ## Remove Discovery
 
 Use `--remove` when the user wants to unregister a vault:
@@ -118,6 +125,7 @@ When the removed vault is the last registered vault, selected adapter blocks are
   - `<!-- ariadne:vault-discovery:start -->`
   - `<!-- ariadne:vault-discovery:end -->`
 - Re-running registration for the same vault must update, not duplicate.
+- Use this workflow for stale global discovery blocks as well as first registration.
 - Keep global blocks tiny. They point to the registry; the vault handles navigation.
 
 ## Check Existing Discovery

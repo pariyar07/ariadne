@@ -2,7 +2,7 @@
 
 Vaults created or maintained with Ariadne are easy for agents to navigate once the agent knows where the vault is. Global discovery registers that entry point on the user's local machine so future cold agents can find the vault without scanning chat history, unrelated folders, or the whole filesystem.
 
-Global discovery is optional. It is useful when a user wants agents launched from any folder to treat an Obsidian vault as a long-term knowledge source.
+Global discovery is optional. It is useful when a user wants agents launched from any folder to treat an Obsidian vault as a long-term knowledge source. It is also the repair/update path for existing global marker blocks when Ariadne ships newer discovery rules.
 
 ## What Registration Creates
 
@@ -17,7 +17,7 @@ On Windows, `~` means the user's profile directory.
 
 `vaults.json` is machine-readable. `vaults.md` is agent-readable.
 
-Registration can also add a tiny marker-managed discovery block to supported agent global instruction files. The block points to `~/.ariadne/vaults.md`; it does not copy the whole vault context.
+Registration can also add or refresh a tiny marker-managed discovery block in supported agent global instruction files. The block points to `~/.ariadne/vaults.md`; it does not copy the whole vault context.
 
 ## Supported Adapters
 
@@ -57,6 +57,8 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
   --dry-run
 ```
 
+Re-running registration for an existing vault is the normal way to update stale registry entries or refresh marker-managed global blocks in place.
+
 ## Unregister A Vault
 
 To remove a vault from the registry:
@@ -74,6 +76,7 @@ If no vaults remain in the registry, the selected adapter blocks are removed fro
 
 - Registration should be offered after vault bootstrap, not forced.
 - The script is idempotent: registering the same vault again updates the registry entry.
+- Existing marker-managed blocks can be refreshed when Ariadne's global discovery wording changes.
 - Agent files are updated between marker comments only:
 
 ```md
@@ -97,6 +100,8 @@ When an agent sees the global discovery block, it should:
 5. Prefer compiled notes, hubs, decisions, indexes, and synthesis notes over raw sources.
 
 This applies to vague questions, terse keyword prompts, and empty-workspace ambiguity. In those cases, agents should check the registry before creating a new artifact from scratch.
+
+If multiple registered vaults plausibly match the request, the agent should show the top matches with short reasons and ask which vault to use before creating, updating, or filing artifacts.
 
 This keeps ambiguous cold-start requests fast and token-light while preserving the vault as the source of truth.
 

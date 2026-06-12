@@ -38,6 +38,7 @@ Ask only what is missing:
 10. Add health-check coverage if the scope can decay.
 11. Add the new scope's folder path to every root `Bases/*.base` scope formula that contains `file.inFolder` — otherwise notes in this scope show as "Global" in all root views.
 12. Run validation — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm the scope is fully wired.
+13. If the parent vault is not globally registered, or its global discovery block is stale, offer `obsidian-vault-discovery` for the parent vault. Scope creation should not write global files or add scope-specific global discovery rules.
 
 ## Import Existing Vault As Scope
 
@@ -56,6 +57,8 @@ Ask only what is missing:
 - Do not copy global boilerplate into local files.
 - Use path-qualified wikilinks across scope boundaries.
 - Do not create child scopes just because they might be useful.
+- Wire new scopes into vault-local navigation and routing only. Global discovery registers vaults, not individual scopes.
+- If global discovery produces multiple plausible parent vault matches, show the top matches with short reasons and ask before creating, updating, or filing artifacts.
 
 ## Related Skills
 

@@ -74,7 +74,7 @@ This skill bootstraps the system. Use the companion skills for ongoing ingest, s
 9. Add `Bases/00 Bases Index.md` and link each Base from it.
 10. Add Kanban boards or Dataview dashboards only when a recurring workstream needs visible status tracking.
 11. Validate that Markdown frontmatter and Base YAML parse.
-12. Offer optional machine-level registration so future cold agents can discover the vault from outside the vault.
+12. If machine-level discovery is absent or stale, explicitly offer `obsidian-vault-discovery` so future cold agents can discover the vault from outside the vault. Do not silently write global files.
 
 ## Default Folder Structure
 
@@ -118,9 +118,9 @@ Use progressive discovery:
 
 ## Machine-Level Vault Registration
 
-After bootstrapping or refreshing a vault, offer to register it for cold-agent discovery on the user's local machine. Use the `obsidian-vault-discovery` workflow for this step, especially when the user wants to register, inspect, repair, or change discovery later.
+After bootstrapping or refreshing a vault, check whether machine-level discovery is absent or stale enough to affect cold agents. If so, explicitly offer to use `obsidian-vault-discovery` to register, update, or repair discovery for the vault.
 
-Registration is optional and should be explicit. Do not silently write global agent instruction files.
+Registration and repair are optional and should be explicit. Do not silently write global agent instruction files.
 
 When the user agrees, use `scripts/register_vault.js`:
 
@@ -155,6 +155,8 @@ Use `--dry-run` before writing when the user wants to inspect changes.
 
 Use `--remove` through `obsidian-vault-discovery` when the user wants to unregister a vault.
 
+If a global discovery lookup returns multiple plausible vault matches, show the top matches with short reasons and ask which vault to use before creating, updating, or filing artifacts.
+
 Safety rules:
 
 - Global files should point to `~/.ariadne/vaults.md`; they should not duplicate long vault instructions.
@@ -163,6 +165,7 @@ Safety rules:
   - `<!-- ariadne:vault-discovery:start -->`
   - `<!-- ariadne:vault-discovery:end -->`
 - Re-running registration for the same vault should update the existing registry entry, not duplicate it.
+- Re-running registration can also refresh stale marker-managed discovery blocks when Ariadne ships newer discovery rules.
 
 Cold agents that encounter the global discovery block should read the registry first for vague questions, terse keyword prompts, or empty-workspace ambiguity about prior projects, documents, meetings, research, decisions, customers, work history, personal knowledge, or "what was I working on".
 
