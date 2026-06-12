@@ -15,6 +15,7 @@ skills/
   obsidian-research-ingest/   ← cold-start research source routing
   obsidian-research-synthesis/ ← multi-source synthesis
   obsidian-research-pipeline/ ← domain research pipeline setup
+  obsidian-workstream-board/  ← Kanban boards and Dataview dashboards
   obsidian-vault-discovery/   ← existing vault discovery registration
   obsidian-vault-maintainer/  ← health checks and repair
   obsidian-vault-validator/   ← deterministic structural validation

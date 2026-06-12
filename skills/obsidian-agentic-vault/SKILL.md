@@ -22,6 +22,7 @@ It also has workflow companion skills:
 - `obsidian-research-ingest` for cold-start research sources when the target scope is missing, unclear, or may need pipeline setup.
 - `obsidian-research-synthesis` for multi-source research threads.
 - `obsidian-research-pipeline` for adding research intake and synthesis infrastructure inside an existing scope.
+- `obsidian-workstream-board` for Kanban work boards, Dataview dashboards, and workstream status tracking.
 - `obsidian-vault-maintainer` for health checks and recurring maintenance.
 - `obsidian-navigation-architect` for hubs, routing, workstream graphs, and Base/view-layer changes.
 
@@ -71,8 +72,9 @@ This skill bootstraps the system. Use the companion skills for ongoing ingest, s
 7. Add relevant mode folders from `references/vault-structure.md`.
 8. Create Bases from the `.base` files in `assets/templates/` when useful.
 9. Add `Bases/00 Bases Index.md` and link each Base from it.
-10. Validate that Markdown frontmatter and Base YAML parse.
-11. Offer optional machine-level registration so future cold agents can discover the vault from outside the vault.
+10. Add Kanban boards or Dataview dashboards only when a recurring workstream needs visible status tracking.
+11. Validate that Markdown frontmatter and Base YAML parse.
+12. Offer optional machine-level registration so future cold agents can discover the vault from outside the vault.
 
 ## Default Folder Structure
 
