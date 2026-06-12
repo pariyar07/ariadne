@@ -8,6 +8,8 @@ This guide covers everything you can do with Ariadne: from bootstrapping a new v
 
 - Obsidian installed, with access to the vault folder on disk.
 - Obsidian Bases enabled in the vault when you want Ariadne's `.base` dashboards to render in Obsidian.
+- Optional: Obsidian Kanban community plugin for visual drag-and-drop board rendering.
+- Optional: Obsidian Dataview community plugin for dynamic Markdown dashboard query rendering.
 - Node.js with `npm`/`npx` available. Ariadne uses `npx` for skill installation and Node.js for the validator and global-discovery registration script.
 - A skills-capable agent runtime, such as Claude Code, Codex CLI, or another runtime that supports the skills protocol.
 - Recommended companion pack: [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for Obsidian mechanics skills (`obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle`, and `obsidian-cli`).
@@ -54,6 +56,7 @@ Examples:
 | Ingest a link, article, or brain dump | `obsidian-ingest-compile` | "Ingest this..." / "Add this to..." |
 | Synthesize multiple sources | `obsidian-research-synthesis` | "Synthesize the ... research" / "Update the ... thread" |
 | Redesign navigation or routing | `obsidian-navigation-architect` | "Redesign navigation for..." / "Add a workstream for..." |
+| Create or improve a work board or dashboard | `obsidian-workstream-board` | "Create a Kanban for..." / "Make a dashboard for..." / "Improve this board" |
 | Run health checks and repair | `obsidian-vault-maintainer` | "Run a vault health check" / "Fix navigation drift" |
 | Validate structure deterministically | `obsidian-vault-validator` | "Validate the vault" / "Check for broken links" |
 
@@ -260,7 +263,27 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 
 ---
 
-## Scenario 9: Health Check
+## Scenario 9: Create Or Improve A Workstream Board
+
+**What to say:**
+> "Create a Kanban board for [workstream]"
+> "Create a board and dashboard for [scope]"
+> "Improve this existing board"
+
+**What happens:**
+1. `obsidian-workstream-board` reads the target scope hub, local agent instructions, navigation, and routing matrix.
+2. It creates or updates `Kanban/<Board Name>.md` with Obsidian Kanban-compatible Markdown.
+3. It uses consistent task metadata such as `[area:: ...]` and `[priority:: high|medium|low]` so Dataview dashboards can query cards.
+4. When useful, it creates `Dashboards/<Board Name> Dashboard.md` with Dataview task and note rollups.
+5. It updates `Kanban/00 Kanban Index.md`, dashboard indexes, and scope navigation links when the board becomes a recurring route.
+
+**Plugin note:** The board remains readable Markdown without plugins. Obsidian Kanban is required for visual drag-and-drop board rendering. Obsidian Dataview is required for dynamic dashboard query rendering.
+
+**When to use:** Evaluation plans, implementation boards, QA boards, roadmap shaping, release tracking, customer discovery, or any recurring workflow where state should stay visible inside the vault.
+
+---
+
+## Scenario 10: Health Check
 
 **What to say:**
 > "Run a vault health check"
@@ -285,7 +308,7 @@ See `docs/guides/validator.md` for the full counter reference.
 
 ---
 
-## Scenario 10: Cold Start in an Existing Vault
+## Scenario 11: Cold Start in an Existing Vault
 
 If you open a new agent session and want it to orient fast:
 
@@ -350,6 +373,14 @@ obsidian-navigation-architect → fixes hubs, routing, Bases
 obsidian-vault-validator     → confirms all counters back to 0
 ```
 
+### Recurring workstream tracking
+
+```
+obsidian-navigation-architect → confirms the workstream belongs in the scope route
+obsidian-workstream-board     → creates or improves Kanban board and optional dashboard
+obsidian-vault-validator      → confirms links remain valid
+```
+
 ### Periodic vault maintenance
 
 ```
@@ -376,6 +407,8 @@ obsidian-ingest-compile   → process any stale raw/inbox items
 | `Outputs/` | Generated artifacts: briefs, memos, slide drafts, diagrams. File back into wiki if durable. |
 | `Agent/` | Agent instructions, routing matrices, workflows, health check procedures. |
 | `Bases/` | `.base` view files — live queries over Markdown metadata. Not the source of truth. |
+| `Kanban/` | Markdown-backed workstream boards for implementation, evaluation, QA, roadmap, or recurring project state. |
+| `Dashboards/` | Dataview dashboards that roll up tasks, notes, QA records, and workstream metadata. |
 | `Templates/` | Reusable note shapes. |
 | `Archive/` | Inactive or superseded material. |
 

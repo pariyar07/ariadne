@@ -59,6 +59,8 @@ Each color cluster is a scope. The large hub nodes with many edges are the agent
 
 - Obsidian installed, with filesystem access to the target vault.
 - Obsidian Bases enabled in the vault (Settings -> Core plugins -> Bases) if you want the `.base` view files to render inside Obsidian.
+- Optional: Obsidian Kanban community plugin if you want visual drag-and-drop Kanban boards.
+- Optional: Obsidian Dataview community plugin if you want dynamic Markdown dashboards to render query results.
 - Node.js with `npm`/`npx` available for installing skills and running the bundled validator and vault-registration scripts.
 - A skills-capable agent runtime, such as Claude Code, Codex CLI, or another runtime that supports the skills protocol.
 - Recommended companion pack: [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills), which provides Obsidian mechanics skills such as Markdown, Bases, JSON Canvas, clean Markdown extraction, and Obsidian CLI interaction.
@@ -111,6 +113,47 @@ List available skills:
 npx skills add https://github.com/pariyar07/ariadne --list
 ```
 
+## Update
+
+Update globally installed skills:
+
+```bash
+npx skills update -g -y
+```
+
+Reinstall Ariadne from GitHub when you want to force a fresh copy:
+
+```bash
+npx skills add https://github.com/pariyar07/ariadne \
+  --global \
+  --agent '*' \
+  --copy \
+  --yes
+```
+
+During local Ariadne development, reinstall from your checkout:
+
+```bash
+npx skills add /path/to/ariadne \
+  --global \
+  --agent '*' \
+  --copy \
+  --yes
+```
+
+List installed global skills:
+
+```bash
+npx skills list -g
+```
+
+Updating skills does not migrate existing vault content. After updating, run the validator against important vaults, and run global discovery doctor if you use machine-level vault discovery:
+
+```bash
+node skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"
+node skills/obsidian-agentic-vault/scripts/register_vault.js --agents codex,claude,gemini --doctor
+```
+
 ## Skills
 
 Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills operate on an existing vault.
@@ -125,6 +168,7 @@ Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills o
 | `obsidian-research-ingest` | Cold-start research source ingest into the right scope |
 | `obsidian-research-synthesis` | Synthesize multi-source research threads and debate hubs |
 | `obsidian-research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
+| `obsidian-workstream-board` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
 | `obsidian-vault-maintainer` | Run health checks and repair navigability drift |
 | `obsidian-vault-validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
