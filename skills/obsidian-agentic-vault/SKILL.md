@@ -159,8 +159,6 @@ If a global discovery lookup returns multiple plausible vault matches, show the 
 
 Inside a selected multi-scope vault, write actions need a current-turn explicit target. A target is explicit only when the current prompt names the target scope, domain, customer, project, or workstream, or the user confirms one after the agent asks. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.
 
-For runtimes with hooks, `scripts/guard_vault_write.js` can enforce that rule mechanically. Wire it as both a `UserPromptSubmit` hook and a `PreToolUse` hook for `Write|Edit|MultiEdit`.
-
 Safety rules:
 
 - Global files should point to `~/.ariadne/vaults.md`; they should not duplicate long vault instructions.

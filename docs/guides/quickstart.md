@@ -333,8 +333,6 @@ If several registered vaults look plausible, the agent should show the top match
 
 Inside a selected multi-scope vault, write actions still need a current-turn explicit target. If the user asks to add, create, update, file, or track something without naming the domain, customer, project, or workstream in the current prompt, the agent should search for likely homes only to prepare a confirmation question, then ask before editing. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.
 
-For stricter enforcement, wire `skills/obsidian-agentic-vault/scripts/guard_vault_write.js` into `UserPromptSubmit` and `PreToolUse` hooks. The guard records the current prompt, then blocks `Write`, `Edit`, and `MultiEdit` against registered-vault or Ariadne staging Markdown when no current-turn target is explicit.
-
 ---
 
 ## Skill Chains: Common Combinations

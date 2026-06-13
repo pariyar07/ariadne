@@ -107,48 +107,6 @@ After a multi-scope vault is selected, write actions still need a current-turn e
 
 This keeps ambiguous cold-start requests fast and token-light while preserving the vault as the source of truth.
 
-## Write Guard
-
-Agent instructions reduce mistakes, but ambiguous write safety needs a deterministic layer when the runtime supports hooks.
-
-Use `skills/obsidian-agentic-vault/scripts/guard_vault_write.js` as both:
-
-- a `UserPromptSubmit` command hook, to record the current prompt for the session
-- a `PreToolUse` command hook on `Write|Edit|MultiEdit`, to block registered-vault or Ariadne staging Markdown writes until the current prompt names or confirms the target scope
-
-Example direct hook shape:
-
-```json
-{
-  "UserPromptSubmit": [
-    {
-      "matcher": "*",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "node /path/to/ariadne/skills/obsidian-agentic-vault/scripts/guard_vault_write.js",
-          "timeout": 10
-        }
-      ]
-    }
-  ],
-  "PreToolUse": [
-    {
-      "matcher": "Write|Edit|MultiEdit",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "node /path/to/ariadne/skills/obsidian-agentic-vault/scripts/guard_vault_write.js",
-          "timeout": 10
-        }
-      ]
-    }
-  ]
-}
-```
-
-Set `ARIADNE_PROTECTED_WRITE_ROOTS` to a path-delimited list of extra roots when testing against staging vaults outside `~/.ariadne/vaults.json`. The guard also recognizes paths containing `ariadne-kanban-staging`.
-
 ## Discovery Doctor
 
 Use doctor mode to verify global discovery without writing files:
