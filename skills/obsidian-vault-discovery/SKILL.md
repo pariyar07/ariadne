@@ -98,6 +98,8 @@ If discovery produces multiple plausible vault matches for a request, do not gue
 
 After a vault is selected, write actions still need a current-turn explicit target in multi-scope vaults. A target is explicit only when the current prompt names the target scope, domain, customer, project, or workstream, or the user confirms one after the agent asks. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.
 
+For deterministic enforcement in runtimes with hooks, use `obsidian-agentic-vault/scripts/guard_vault_write.js` as both a `UserPromptSubmit` and `PreToolUse` command hook. The prompt hook records the current user turn; the pre-tool hook blocks `Write`, `Edit`, or `MultiEdit` against registered-vault or Ariadne staging Markdown until the current turn names or confirms the target.
+
 ## Remove Discovery
 
 Use `--remove` when the user wants to unregister a vault:
