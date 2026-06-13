@@ -22,7 +22,7 @@ Rules:
 - Distinguish source claims, interpretation, and decisions.
 - Search progressively. Do not read the whole vault by default.
 - Promote new workstream graphs only when recurring use needs a hub, routing rule, optional template, optional Base, and health-check coverage.
-- Before write actions in a multi-scope vault, confirm the target scope/domain/customer/project/workstream when the user has not named one. Search hits can suggest likely homes, but they are not permission to edit a scope.
+- Before write actions in a multi-scope vault, require a current-turn explicit target. A target is explicit only when the current prompt names the scope/domain/customer/project/workstream, or the user confirms one after being asked. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not permission to edit a scope.
 - Proactively call out navigation bloat: oversized entry files, folders without hubs, hubs that need sub-hubs, recurring workstreams missing routing, and raw/inbox/output buildup without compilation.
 - Propose a local folder `AGENTS.md` when global rules are too generic for repeated work in a specialized folder.
 

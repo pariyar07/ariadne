@@ -157,7 +157,7 @@ Use `--remove` through `obsidian-vault-discovery` when the user wants to unregis
 
 If a global discovery lookup returns multiple plausible vault matches, show the top matches with short reasons and ask which vault to use before creating, updating, or filing artifacts.
 
-Inside a selected multi-scope vault, write actions need an explicit target. If the user has not named the target scope, domain, customer, project, or workstream, search for likely homes, summarize the likely match, and ask for confirmation before editing. Search hits alone are not confirmation.
+Inside a selected multi-scope vault, write actions need a current-turn explicit target. A target is explicit only when the current prompt names the target scope, domain, customer, project, or workstream, or the user confirms one after the agent asks. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.
 
 Safety rules:
 

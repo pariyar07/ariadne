@@ -12,7 +12,7 @@ For action prompts like create, draft, write, plan, summarize, or update, if the
 
 If multiple plausible vault matches exist, show the top matches with short reasons and ask the user to choose before creating, updating, or filing artifacts.
 
-Inside a selected multi-scope vault, before write actions, if the prompt does not name the target scope, domain, customer, project, or workstream, ask for confirmation before editing. Search hits alone are not confirmation.
+Inside a selected multi-scope vault, write actions require a current-turn explicit target before editing. A target is explicit only when the current prompt names the target scope, domain, customer, project, or workstream, or the user confirms one after the agent asks. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.
 
 Do not scan the whole vault by default. Search progressively and prefer compiled notes, hubs, indexes, decisions, and synthesis notes over raw sources.
 <!-- ariadne:vault-discovery:end -->

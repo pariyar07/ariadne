@@ -278,7 +278,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 4. When useful, it creates `Dashboards/<Board Name> Dashboard.md` with Dataview task and note rollups.
 5. It updates `Kanban/00 Kanban Index.md`, dashboard indexes, and scope navigation links when the board becomes a recurring route.
 
-In a multi-scope vault, if the prompt does not name the target scope/domain/customer/project/workstream, the agent should ask for confirmation before writing to a board, even when search finds a likely existing board.
+In a multi-scope vault, if the current prompt does not name the target scope/domain/customer/project/workstream, the agent should ask for confirmation before writing to a board, even when search finds a likely existing board. Prior conversation, current working directory, and active skills do not count as confirmation.
 
 **Plugin note:** The board remains readable Markdown without plugins. Obsidian Kanban is required for visual drag-and-drop board rendering. Obsidian Dataview is required for dynamic dashboard query rendering.
 
@@ -331,7 +331,7 @@ If the session starts outside the vault and the vault has been registered global
 
 If several registered vaults look plausible, the agent should show the top matches with short reasons and ask before creating, updating, or filing artifacts.
 
-Inside a selected multi-scope vault, write actions still need a named or confirmed target scope. If the user asks to add, create, update, file, or track something without naming the domain, customer, project, or workstream, the agent should search for likely homes and ask for confirmation before editing. Search hits alone are not confirmation.
+Inside a selected multi-scope vault, write actions still need a current-turn explicit target. If the user asks to add, create, update, file, or track something without naming the domain, customer, project, or workstream in the current prompt, the agent should search for likely homes only to prepare a confirmation question, then ask before editing. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.
 
 ---
 

@@ -42,10 +42,12 @@ function assertIncludesMultipleMatchConfirmationRule(text) {
 }
 
 function assertIncludesScopeConfirmationRule(text) {
-  assert.match(text, /Inside a selected multi-scope vault, before write actions/i);
+  assert.match(text, /Inside a selected multi-scope vault, write actions require a current-turn explicit target before editing/i);
+  assert.match(text, /A target is explicit only when the current prompt names/i);
   assert.match(text, /target scope, domain, customer, project, or workstream/i);
-  assert.match(text, /ask for confirmation before editing/i);
-  assert.match(text, /Search hits alone are not confirmation/i);
+  assert.match(text, /the user confirms one after the agent asks/i);
+  assert.match(text, /Search hits, a single likely match/i);
+  assert.match(text, /prior conversation, current working directory, and active skills are not confirmation/i);
 }
 
 function tempHome() {
@@ -175,7 +177,7 @@ const tests = [
 
     const adapterFile = path.join(home, ".codex", "AGENTS.md");
     const oldBlock = discoveryBlock("~/.ariadne/vaults.md").replace(
-      "Inside a selected multi-scope vault, before write actions, if the prompt does not name the target scope, domain, customer, project, or workstream, ask for confirmation before editing. Search hits alone are not confirmation.\n",
+      "Inside a selected multi-scope vault, write actions require a current-turn explicit target before editing. A target is explicit only when the current prompt names the target scope, domain, customer, project, or workstream, or the user confirms one after the agent asks. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.\n",
       "",
     );
     fs.writeFileSync(adapterFile, oldBlock);
@@ -185,7 +187,35 @@ const tests = [
     assert.strictEqual(result.status, 1);
     assert.match(result.stdout, /Discovery check found \d+ issue/);
     assert.match(result.stdout, /Adapter block has stale target-scope confirmation instructions/);
+    assert.match(result.stdout, /Adapter block has stale current-turn target confirmation guard/);
     assert.match(result.stdout, /Adapter block has stale search-hit confirmation guard/);
+    assert.match(result.stdout, /Adapter block has stale context inference confirmation guard/);
+  },
+
+  function checkReportsStaleDiscoveryWhenAdapterBlockUsesOldScopeRule() {
+    const home = tempHome();
+    const vault = path.join(home, "Vault");
+    fs.mkdirSync(path.join(vault, "Agent"), { recursive: true });
+    fs.writeFileSync(path.join(vault, "00 Global Index.md"), "# Global\n");
+    fs.writeFileSync(path.join(vault, "AGENTS.md"), "# Agents\n");
+    fs.writeFileSync(path.join(vault, "Agent", "00 Agent Navigation.md"), "# Navigation\n");
+
+    assertSuccess(runRegister(registerArgs(home, vault, { agents: "codex" })));
+
+    const adapterFile = path.join(home, ".codex", "AGENTS.md");
+    const staleBlock = discoveryBlock("~/.ariadne/vaults.md").replace(
+      "Inside a selected multi-scope vault, write actions require a current-turn explicit target before editing. A target is explicit only when the current prompt names the target scope, domain, customer, project, or workstream, or the user confirms one after the agent asks. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.",
+      "Inside a selected multi-scope vault, before write actions, if the prompt does not name the target scope, domain, customer, project, or workstream, ask for confirmation before editing. Search hits alone are not confirmation.",
+    );
+    fs.writeFileSync(adapterFile, staleBlock);
+
+    const result = runRegister(["--home", home, "--agents", "codex", "--doctor"]);
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stdout, /Discovery check found \d+ issue/);
+    assert.match(result.stdout, /Adapter block has stale current-turn target confirmation guard/);
+    assert.match(result.stdout, /Adapter block has stale search-hit confirmation guard/);
+    assert.match(result.stdout, /Adapter block has stale context inference confirmation guard/);
   },
 
   function checkReportsStaleOrMissingDiscovery() {

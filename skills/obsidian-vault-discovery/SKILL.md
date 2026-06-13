@@ -96,7 +96,7 @@ If discovery produces multiple plausible vault matches for a request, do not gue
 
 ## Target-Scope Confirmation Policy
 
-After a vault is selected, write actions still need an explicit target in multi-scope vaults. If the user has not named the target scope, domain, customer, project, or workstream, search for likely homes, summarize the likely match, and ask for confirmation before editing. Search hits alone are not confirmation.
+After a vault is selected, write actions still need a current-turn explicit target in multi-scope vaults. A target is explicit only when the current prompt names the target scope, domain, customer, project, or workstream, or the user confirms one after the agent asks. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not confirmation.
 
 ## Remove Discovery
 

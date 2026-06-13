@@ -22,6 +22,6 @@ Conventions:
 - Update indexes and decisions as work evolves.
 - Use `Bases/00 Bases Index.md` for the view layer.
 - Register durable workstream graphs through the navigation standard.
-- Before write actions in a multi-scope vault, confirm the target scope/domain/customer/project/workstream when the user has not named one. Search hits can suggest likely homes, but they are not permission to edit a scope.
+- Before write actions in a multi-scope vault, require a current-turn explicit target. A target is explicit only when the current prompt names the scope/domain/customer/project/workstream, or the user confirms one after being asked. Search hits, a single likely match, existing matching cards, prior conversation, current working directory, and active skills are not permission to edit a scope.
 - Proactively call out navigation bloat: oversized entry files, folders without hubs, hubs that need sub-hubs, recurring workstreams missing routing, and raw/inbox/output buildup without compilation.
 - When working inside a durable workstream folder, check for a local `AGENTS.md` and follow it if present. Propose one when repeated local guidance is needed.
