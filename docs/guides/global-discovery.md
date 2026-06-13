@@ -103,6 +103,8 @@ This applies to vague questions, terse keyword prompts, and empty-workspace ambi
 
 If multiple registered vaults plausibly match the request, the agent should show the top matches with short reasons and ask which vault to use before creating, updating, or filing artifacts.
 
+After a multi-scope vault is selected, write actions still need a confirmed target scope. If the user has not named the target scope, domain, customer, project, or workstream, the agent should search for likely homes, summarize the likely match, and ask for confirmation before editing. Search hits alone are not confirmation.
+
 This keeps ambiguous cold-start requests fast and token-light while preserving the vault as the source of truth.
 
 ## Discovery Doctor

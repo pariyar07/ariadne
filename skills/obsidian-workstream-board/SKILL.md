@@ -26,6 +26,8 @@ Do not block the workflow when plugins are missing or unknown. The files still r
 4. Inspect existing `Kanban/`, `Dashboards/`, `Bases/`, and relevant roadmap or implementation notes.
 5. Decide whether the task is create, audit, improve, or dashboard-only.
 
+For create, update, or add-tracking requests in a multi-scope vault, confirm the target scope before editing when the prompt does not name a scope, domain, customer, project, or workstream. Search hits may identify likely boards, but search hits alone are not confirmation. Show the likely target with a short reason and ask before writing.
+
 Use `obsidian-navigation-architect` when the board requires broader scope routing or structural navigation changes.
 
 ## Board Creation

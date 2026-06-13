@@ -229,6 +229,7 @@ function discoveryBlock(registryPathDisplay) {
     "For vague questions, terse keyword prompts, or empty-workspace ambiguity about prior projects, documents, meetings, research, decisions, customers, work history, personal knowledge, or \"what was I working on\", read the vault registry first before creating new artifacts. Then enter the relevant vault through its listed cold-start entry order.",
     "For action prompts like create, draft, write, plan, summarize, or update, if the object may refer to prior projects, customers, documents, contracts, proposals, meetings, decisions, or workstreams, read the vault registry first before creating a new artifact.",
     "If multiple plausible vault matches exist, show the top matches with short reasons and ask the user to choose before creating, updating, or filing artifacts.",
+    "Inside a selected multi-scope vault, before write actions, if the prompt does not name the target scope, domain, customer, project, or workstream, ask for confirmation before editing. Search hits alone are not confirmation.",
     "",
     "Do not scan the whole vault by default. Search progressively and prefer compiled notes, hubs, indexes, decisions, and synthesis notes over raw sources.",
     MARKER_END,
@@ -323,10 +324,22 @@ function checkDiscovery(options) {
     const text = fs.readFileSync(file, "utf8");
     if (!text.includes(MARKER_START) || !text.includes(MARKER_END)) {
       issues.push(`Adapter file missing marker block: ${file}`);
-    } else if (!text.includes("~/.ariadne/vaults.md")) {
-      issues.push(`Adapter block missing registry path: ${file}`);
-    } else if (!text.includes("listed cold-start entry order")) {
-      issues.push(`Adapter block has stale entrypoint instructions: ${file}`);
+      continue;
+    }
+
+    const requiredPhrases = [
+      ["registry path", "~/.ariadne/vaults.md"],
+      ["entrypoint instructions", "listed cold-start entry order"],
+      ["action-prompt discovery instructions", "For action prompts like create, draft, write, plan, summarize, or update"],
+      ["multiple-match confirmation instructions", "multiple plausible vault matches"],
+      ["target-scope confirmation instructions", "target scope, domain, customer, project, or workstream"],
+      ["search-hit confirmation guard", "Search hits alone are not confirmation"],
+    ];
+
+    for (const [label, phrase] of requiredPhrases) {
+      if (!text.includes(phrase)) {
+        issues.push(`Adapter block has stale ${label}: ${file}`);
+      }
     }
   }
 

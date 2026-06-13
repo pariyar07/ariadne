@@ -278,6 +278,8 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 4. When useful, it creates `Dashboards/<Board Name> Dashboard.md` with Dataview task and note rollups.
 5. It updates `Kanban/00 Kanban Index.md`, dashboard indexes, and scope navigation links when the board becomes a recurring route.
 
+In a multi-scope vault, if the prompt does not name the target scope/domain/customer/project/workstream, the agent should ask for confirmation before writing to a board, even when search finds a likely existing board.
+
 **Plugin note:** The board remains readable Markdown without plugins. Obsidian Kanban is required for visual drag-and-drop board rendering. Obsidian Dataview is required for dynamic dashboard query rendering.
 
 **When to use:** Evaluation plans, implementation boards, QA boards, roadmap shaping, release tracking, customer discovery, or any recurring workflow where state should stay visible inside the vault.
@@ -328,6 +330,8 @@ That's the full cold-start context. The agent should not read more until it know
 If the session starts outside the vault and the vault has been registered globally, the agent should first read `~/.ariadne/vaults.md`, choose the relevant vault, then follow the entry order above.
 
 If several registered vaults look plausible, the agent should show the top matches with short reasons and ask before creating, updating, or filing artifacts.
+
+Inside a selected multi-scope vault, write actions still need a named or confirmed target scope. If the user asks to add, create, update, file, or track something without naming the domain, customer, project, or workstream, the agent should search for likely homes and ask for confirmation before editing. Search hits alone are not confirmation.
 
 ---
 

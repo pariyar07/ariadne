@@ -157,6 +157,8 @@ Use `--remove` through `obsidian-vault-discovery` when the user wants to unregis
 
 If a global discovery lookup returns multiple plausible vault matches, show the top matches with short reasons and ask which vault to use before creating, updating, or filing artifacts.
 
+Inside a selected multi-scope vault, write actions need an explicit target. If the user has not named the target scope, domain, customer, project, or workstream, search for likely homes, summarize the likely match, and ask for confirmation before editing. Search hits alone are not confirmation.
+
 Safety rules:
 
 - Global files should point to `~/.ariadne/vaults.md`; they should not duplicate long vault instructions.

@@ -79,7 +79,7 @@ The doctor checks:
 - registered entrypoints exist in each vault.
 - detected root entrypoints are registered.
 - selected global adapter files have Ariadne marker blocks.
-- adapter blocks point to `~/.ariadne/vaults.md` and tell agents to use the listed cold-start entry order.
+- adapter blocks point to `~/.ariadne/vaults.md` and include current discovery rules for listed cold-start entry order, action prompts, multiple vault matches, and target-scope confirmation.
 
 If doctor reports issues, re-run registration for the affected vault to repair registry and adapter blocks.
 
@@ -93,6 +93,10 @@ When doctor reports issues during a broader task, do not only say that discovery
 ## Multiple-Match Policy
 
 If discovery produces multiple plausible vault matches for a request, do not guess. Show the top matches with short reasons, then ask which vault to use before creating, updating, or filing artifacts.
+
+## Target-Scope Confirmation Policy
+
+After a vault is selected, write actions still need an explicit target in multi-scope vaults. If the user has not named the target scope, domain, customer, project, or workstream, search for likely homes, summarize the likely match, and ask for confirmation before editing. Search hits alone are not confirmation.
 
 ## Remove Discovery
 

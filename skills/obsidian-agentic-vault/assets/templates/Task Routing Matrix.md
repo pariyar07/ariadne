@@ -30,6 +30,7 @@ Use this matrix to choose the smallest useful context set for a task.
 - If the task changes durable structure, read [[Agent/Knowledge Processing Architecture]].
 - If the task changes navigation, read [[Agent/Vault Navigation Standard]].
 - If the task introduces a new durable workstream graph, register it through the navigation standard.
+- If a write action does not name the target scope, domain, customer, project, or workstream, search for likely homes, then ask for confirmation before editing. Do not treat search hits alone as confirmation.
 - If the task creates a commitment, add a dated note in [[Decisions/00 Decisions Index]].
 - If the task creates an unresolved follow-up, add a question note or processing item.
 

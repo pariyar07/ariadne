@@ -41,6 +41,13 @@ function assertIncludesMultipleMatchConfirmationRule(text) {
   assert.match(text, /ask the user to choose before creating, updating, or filing artifacts/i);
 }
 
+function assertIncludesScopeConfirmationRule(text) {
+  assert.match(text, /Inside a selected multi-scope vault, before write actions/i);
+  assert.match(text, /target scope, domain, customer, project, or workstream/i);
+  assert.match(text, /ask for confirmation before editing/i);
+  assert.match(text, /Search hits alone are not confirmation/i);
+}
+
 function tempHome() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-register-"));
 }
@@ -118,6 +125,7 @@ const tests = [
       assert.strictEqual(text, discoveryBlock("~/.ariadne/vaults.md"));
       assertIncludesActionPromptRule(text);
       assertIncludesMultipleMatchConfirmationRule(text);
+      assertIncludesScopeConfirmationRule(text);
       assert.doesNotMatch(text, /This machine has one or more Ariadne/);
     }
   },
@@ -153,6 +161,31 @@ const tests = [
 
     assertSuccess(result);
     assert.match(result.stdout, /Discovery check passed/);
+  },
+
+  function checkReportsStaleDiscoveryWhenAdapterBlockMissesScopeRule() {
+    const home = tempHome();
+    const vault = path.join(home, "Vault");
+    fs.mkdirSync(path.join(vault, "Agent"), { recursive: true });
+    fs.writeFileSync(path.join(vault, "00 Global Index.md"), "# Global\n");
+    fs.writeFileSync(path.join(vault, "AGENTS.md"), "# Agents\n");
+    fs.writeFileSync(path.join(vault, "Agent", "00 Agent Navigation.md"), "# Navigation\n");
+
+    assertSuccess(runRegister(registerArgs(home, vault, { agents: "codex" })));
+
+    const adapterFile = path.join(home, ".codex", "AGENTS.md");
+    const oldBlock = discoveryBlock("~/.ariadne/vaults.md").replace(
+      "Inside a selected multi-scope vault, before write actions, if the prompt does not name the target scope, domain, customer, project, or workstream, ask for confirmation before editing. Search hits alone are not confirmation.\n",
+      "",
+    );
+    fs.writeFileSync(adapterFile, oldBlock);
+
+    const result = runRegister(["--home", home, "--agents", "codex", "--doctor"]);
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stdout, /Discovery check found \d+ issue/);
+    assert.match(result.stdout, /Adapter block has stale target-scope confirmation instructions/);
+    assert.match(result.stdout, /Adapter block has stale search-hit confirmation guard/);
   },
 
   function checkReportsStaleOrMissingDiscovery() {
