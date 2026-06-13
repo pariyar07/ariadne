@@ -30,9 +30,11 @@ function read(file) {
 }
 
 function assertIncludesActionPromptRule(text) {
-  assert.match(text, /For action prompts like create, draft, write, plan, summarize, or update/);
+  assert.match(text, /For action prompts like add, create, draft, write, plan, summarize, update, track, log, or record/);
   assert.match(text, /prior projects, customers, documents, contracts, proposals, meetings, decisions, or workstreams/);
-  assert.match(text, /read the vault registry first before creating a new artifact/);
+  assert.match(text, /read the vault registry before asking whether to start from scratch, where the code lives, or what project to use/);
+  assert.match(text, /An empty current directory is not evidence that no prior project context exists/);
+  assert.match(text, /check registered vaults before proposing a new project or codebase workflow/);
 }
 
 function assertIncludesMultipleMatchConfirmationRule(text) {
