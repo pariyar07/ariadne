@@ -101,7 +101,9 @@ Suggested routing:
 
 ## Report Format
 
-Create a dated note in `Outputs/` using [[Templates/Knowledge Health Check]].
+For interactive or scheduled maintenance, a chat or automation-run summary is enough by default.
+
+Create a dated note in `Outputs/` using [[Templates/Knowledge Health Check]] when the user asks for a durable health record, a major maintenance pass needs an audit trail, or unresolved follow-ups should be visible inside the vault.
 
 Use statuses:
 

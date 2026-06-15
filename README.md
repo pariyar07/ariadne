@@ -172,6 +172,12 @@ Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills o
 | `obsidian-vault-maintainer` | Run health checks and repair navigability drift |
 | `obsidian-vault-validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
+## Weekly Maintenance Automation
+
+Recurring maintenance is best handled as an automation prompt that invokes the existing skills, not as a separate skill. Start with `obsidian-vault-validator`, follow with `obsidian-vault-maintainer`, and only call navigation, ingest, synthesis, Bases, or discovery skills when the weekly run finds drift in those areas.
+
+See `docs/guides/weekly-maintenance-automation.md` for a Codex-ready prompt, Claude Code adaptation notes, subagent boundaries, and the optional durable report variant.
+
 ## What's Coming
 
 Ariadne's next direction is cross-domain synthesis and feedback loops.
@@ -265,6 +271,7 @@ See `docs/guides/validator.md` for the full counter reference.
 | --- | --- |
 | `docs/guides/quickstart.md` | Full usage guide — every skill, every scenario, cold-start phrases, skill chains, and common mistakes |
 | `docs/guides/global-discovery.md` | Optional machine-level vault registration so cold agents can find local vaults from any folder |
+| `docs/guides/weekly-maintenance-automation.md` | Weekly maintenance prompt, Codex setup notes, Claude Code adaptation, and subagent boundaries |
 | `docs/guides/validator.md` | Validator counter reference |
 
 ## Global Discovery

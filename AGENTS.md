@@ -24,6 +24,7 @@ skills/
   obsidian-vault-discovery/      ← workflow skill for registering existing vaults
 docs/
   guides/global-discovery.md     ← cold-agent vault discovery registration
+  guides/weekly-maintenance-automation.md ← recurring maintenance automation prompt
   guides/validator.md            ← validator counter reference
   pressure-scenarios/            ← edge case documentation
 ```
@@ -53,6 +54,7 @@ Each skill is a folder with:
 | Run registration tests | `node skills/obsidian-agentic-vault/test/test_register_vault.js` |
 | Read validator counter docs | `docs/guides/validator.md` |
 | Read global discovery docs | `docs/guides/global-discovery.md` |
+| Read weekly automation prompt | `docs/guides/weekly-maintenance-automation.md` |
 
 ## Rules
 

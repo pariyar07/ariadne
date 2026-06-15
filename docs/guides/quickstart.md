@@ -40,6 +40,7 @@ Examples:
 - `"Synthesize the context graph research thread"` → routes to OCG synthesis
 - `"Add a new scope for customer discovery"` → routes to scope creation
 - `"Run a vault health check"` → routes to maintenance
+- `"Create a weekly vault maintenance automation"` → uses the public automation prompt template
 - `"Bootstrap a new vault for my gym training"` → routes to vault creation
 
 ---
@@ -311,7 +312,21 @@ See `docs/guides/validator.md` for the full counter reference.
 
 ---
 
-## Scenario 11: Cold Start in an Existing Vault
+## Scenario 11: Weekly Maintenance Automation
+
+**What to say:**
+> "Create a weekly vault maintenance automation"
+> "Run Ariadne maintenance once a week"
+
+**What it should be:** a scheduled prompt that invokes existing skills, not a new skill. Use `obsidian-vault-validator` first, then `obsidian-vault-maintainer`, then conditional repair skills only when the run finds drift.
+
+**Recommended output:** keep the weekly result in the automation chat or run output by default. Write durable vault notes only for real fixes, unresolved follow-ups, or an explicitly requested dated health report.
+
+See `docs/guides/weekly-maintenance-automation.md` for the copy-paste prompt, Codex setup notes, Claude Code adaptation notes, and subagent boundaries.
+
+---
+
+## Scenario 12: Cold Start in an Existing Vault
 
 If you open a new agent session and want it to orient fast:
 
@@ -394,6 +409,14 @@ obsidian-vault-validator      → confirms links remain valid
 obsidian-vault-validator  → find structural issues
 obsidian-vault-maintainer → find content/navigation issues
 obsidian-ingest-compile   → process any stale raw/inbox items
+```
+
+### Weekly maintenance automation
+
+```
+obsidian-vault-validator    → deterministic baseline and final check
+obsidian-vault-maintainer   → stale queues, routing drift, and repair triage
+conditional repair skills   → navigation, ingest, synthesis, Bases, or discovery only when needed
 ```
 
 ---

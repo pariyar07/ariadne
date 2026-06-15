@@ -1,6 +1,6 @@
 ---
 name: obsidian-vault-maintainer
-description: "Run maintenance and health checks for agent-maintained Obsidian vaults: broken links, orphan notes, stale hubs, invalid frontmatter, uncompiled raw sources, stale queues, unresolved questions, Base coverage, and dated reports."
+description: "Run maintenance and health checks for agent-maintained Obsidian vaults: broken links, orphan notes, stale hubs, invalid frontmatter, uncompiled raw sources, stale queues, unresolved questions, Base coverage, and optional health reports."
 ---
 
 # Obsidian Vault Maintainer
@@ -68,7 +68,9 @@ Keep the repair scoped to the nearest responsible folder or domain. Ask before r
 
 ## Report
 
-Save dated reports in `Outputs/` using the vault's health-check template when available.
+Report findings in the chat or automation output by default.
+
+Save dated reports in `Outputs/` using the vault's health-check template when the user asks for a durable health record, the vault's local procedure requires it, or unresolved follow-ups need a durable note. Do not create recurring report notes just because a scheduled automation ran.
 
 Use statuses such as:
 
