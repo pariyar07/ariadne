@@ -26,6 +26,10 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
 - no worker lease fields for heartbeat, budget, approval boundaries, runtime reference, or hard stop defaults
 - no runtime adapter map for Codex parallel chats versus Claude Code subagents
 - false assumption that a per-chat `AGENTS.md` or `CLAUDE.md` will carry active workstream state on every turn
+- no standardized searchable `active_skill` / `workstream_status` marker for cold-start resume
+- no disambiguation when multiple active workstreams exist
+- no requirement to persist worker leases when workers span turns
+- no smoke-test recipe for "new chat resumes an active workstream"
 
 ## Scenarios
 
@@ -103,3 +107,18 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
 
 25. Per-chat instruction file assumption
    - Expected: agent does not invent or require a per-chat `AGENTS.md`/`CLAUDE.md`; stable rules stay in global/project instructions, active state stays in the workstream control record, and worker-specific rules stay in prompts/subagent configs.
+
+26. Standardized control record marker
+   - Expected: durable workstream records use a searchable `active_skill: obsidian-feature-workstream` marker, a `workstream_status`, and a stable workstream id/name plus scope. Note-level records use `## Workstream Control Record`; embedded board cards keep the same key names inside the card.
+
+27. Multiple active workstreams
+   - Expected: agent does not treat `active_skill: obsidian-feature-workstream` as one global active state. It narrows by vault, scope, workstream id/name, coordinator thread/chat id, repo, branch, linked files, and user wording; if more than one candidate remains, it asks which one to resume before mutation.
+
+28. Cold-start active workstream lookup
+   - Expected: after vault discovery, a vague continuation prompt searches progressively for active, blocked, and paused feature-workstream records before asking generic location questions. It still asks the user to choose when several plausible active records exist.
+
+29. Worker lease spans turns
+   - Expected: before launching a worker or parallel chat that may outlive the current turn, coordinator persists a lease/status record with runtime, thread/chat reference, scope, status, heartbeat, timeout, budget, approval, verification, done, pause, and stop fields.
+
+30. New chat resume smoke
+   - Expected: create a tiny vault-only workstream record, start a fresh chat with "what next?", and verify the agent locates the record, names the phase/gate, avoids repo edits, and refuses to mutate if multiple active workstreams are plausible.

@@ -134,11 +134,23 @@ For an active workstream, every later coordinator turn starts by treating this s
 
 Because runtimes may load global/project instruction files at session start rather than per turn, the control record is the durable continuity mechanism for active workstream state. Update it or reconstruct it from the latest coordinator summary when the phase, gate, worker set, or approval boundary changes.
 
-Use a compact workstream control record when the work has a board, dashboard, ADR, HLD, LLD, inventory, release gate, or worker set. The record can live in the workstream note, board, inventory, or another existing vault artifact. It does not need a separate file unless the workstream needs one.
+Use one compact workstream control record per active workstream when the work has a board, dashboard, ADR, HLD, LLD, inventory, release gate, or worker set. The record can live in the workstream note, board, inventory, or another existing vault artifact. It does not need a separate file unless the workstream needs one.
+
+When creating or repairing a durable record, add a searchable marker. Prefer frontmatter in a note-level artifact; for embedded board cards or task items, use the same key names inside the card. The minimum marker is:
+
+- `active_skill: obsidian-feature-workstream`
+- `workstream_status: active`, `paused`, `blocked`, `complete`, or `closed`
+- `workstream_id` or a stable workstream name
+- `workstream_scope`: vault, domain, repo, customer, or project scope
+
+Use `## Workstream Control Record` as the heading in note-level artifacts. In an embedded card, label the block `Workstream control record:` and keep the key names searchable.
 
 Record:
 
 - active skill
+- workstream status
+- workstream id or stable name
+- workstream scope
 - workstream name
 - coordinator thread/chat id, if available
 - current phase
@@ -154,7 +166,11 @@ Record:
 
 On later turns in the same workstream, re-check the control record or reconstruct it from the latest coordinator summary before answering, delegating, or mutating code, docs, git state, global skills, or configuration. State the current phase before acting when the user asks "what next?" or resumes after a pause.
 
-For parallel chats, subagents, or workers, pass a compact workstream contract in the worker prompt: active skill, workstream name, goal, phase, execution mode, owned scope, forbidden actions, current gates, stop condition, and return format. Workers should not invent a separate lifecycle unless their delegated task becomes its own durable workstream; they should report findings back to the coordinator.
+Do not treat `active_skill: obsidian-feature-workstream` as a global singleton. Multiple active workstreams may exist in the same vault or across vaults. If the current workstream is not explicit from the current thread and prompt, search progressively for candidates with `active_skill: obsidian-feature-workstream` and `workstream_status: active`, `blocked`, or `paused`, then narrow by vault, scope, workstream id/name, coordinator thread/chat id, repo, branch, linked files, and the user's wording. If more than one plausible candidate remains, show the top matches with short reasons and ask which one to resume before mutating anything. Never merge, close, pause, or update multiple active workstreams from an ambiguous continuation prompt.
+
+For parallel chats, subagents, or workers, pass a compact workstream contract in the worker prompt: active skill, workstream status, workstream id/name, workstream scope, goal, phase, execution mode, owned scope, forbidden actions, current gates, stop condition, and return format. Workers should not invent a separate lifecycle unless their delegated task becomes its own durable workstream; they should report findings back to the coordinator.
+
+When workers or parallel chats span turns, run in a separate thread, or may need follow-up after the current response, persist a worker lease/status record in the same control record or a linked worker-status artifact before launch. The lease should include worker id, runtime, thread/chat reference, owned scope, status, phase, heartbeat due, timeout, budget, approval boundaries, verification status, done condition, pause condition, and stop condition. Same-turn read-only subagents can stay ephemeral only when no worker state needs to survive the turn.
 
 Before first code or vault mutation in mature, production-facing, multi-repo, API, schema, package-boundary, integration, or agent-workflow changes, record an execution-mode decision:
 
