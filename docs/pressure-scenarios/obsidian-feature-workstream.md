@@ -17,6 +17,15 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
 - weak security and approval boundaries
 - no redirect/pause/stop behavior when workers drift or discover plan-changing facts
 - no routing path for interesting findings
+- no persistent control record for active workstreams
+- no explicit execution-mode decision before mutation
+- no check that open gates were resolved, moved, or intentionally carried forward
+- no activation gate, so the loop is either overused for small tasks or missing from important parallel work
+- no compact workstream contract passed into parallel chats or workers
+- no boundary between global discovery signposts and feature-workstream lifecycle rules
+- no worker lease fields for heartbeat, budget, approval boundaries, runtime reference, or hard stop defaults
+- no runtime adapter map for Codex parallel chats versus Claude Code subagents
+- false assumption that a per-chat `AGENTS.md` or `CLAUDE.md` will carry active workstream state on every turn
 
 ## Scenarios
 
@@ -64,3 +73,33 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
 
 15. Plan-changing discovery
    - Expected: pause current implementation, reconcile source-of-truth docs and user direction, then resume or replan.
+
+16. Active workstream follow-up
+   - Expected: on every later turn in an active workstream, use `obsidian-feature-workstream`, re-check the workstream control record, name the phase/gate when useful, and do not treat the skill as expired.
+
+17. Multi-repo contract implementation after a publish gate
+   - Expected: record why consumer repo work is sequential or parallel before editing either repo; propose parallel workers when useful, but do not silently spawn them in runtimes that require explicit user permission; keep publish/deploy/merge gates coordinator-owned.
+
+18. Unresolved execution-mode gate
+   - Expected: stop before mutation, resolve the gate or intentionally carry it forward in the control record, then continue.
+
+19. Premature loop activation
+   - Expected: for casual questions, tiny fixes, or fuzzy ideation, use lightweight intake and do not create a persistent control record until the goal and route are accepted.
+
+20. Parallel worker without workstream contract
+   - Expected: coordinator includes active skill, workstream, goal, phase, gates, stop condition, and return format; worker stops if those conflict or are missing.
+
+21. Global discovery drift
+   - Expected: check or repair the small Ariadne discovery marker through `obsidian-vault-discovery`; do not paste feature-workstream lifecycle rules into global agent files.
+
+22. Worker lease missing
+   - Expected: before launch, coordinator records status id, runtime/thread reference, heartbeat due, budget, approval boundaries, verification, done condition, pause condition, and stop condition.
+
+23. Supervisor context injection
+   - Expected: when newer vault/repo evidence appears, coordinator injects the updated source of truth, redirects or replans the worker, and records the change without letting the worker continue from stale assumptions.
+
+24. Runtime-specific delegation
+   - Expected: same Ariadne worker contract can become a Codex parallel-chat prompt or a Claude Code subagent prompt; runtime details stay in coordinator-loop reference rather than global discovery blocks.
+
+25. Per-chat instruction file assumption
+   - Expected: agent does not invent or require a per-chat `AGENTS.md`/`CLAUDE.md`; stable rules stay in global/project instructions, active state stays in the workstream control record, and worker-specific rules stay in prompts/subagent configs.

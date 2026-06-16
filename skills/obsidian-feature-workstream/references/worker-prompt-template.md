@@ -5,12 +5,26 @@ Use this when launching parallel chats, subagents, or delegated workers.
 ```text
 You are the <role> worker for <workstream>.
 
+Active workstream:
+- Status record id:
+- Active skill:
+- Workstream:
+- Goal:
+- Phase:
+- Execution mode:
+- Current gates:
+- Heartbeat due:
+- Budget:
+- Can spawn nested workers: yes/no
+- Stop condition:
+
 Scope:
 - Repo/vault path:
 - Branch/worktree:
 - Thread/chat name:
 - Owned files or responsibility:
 - Do not edit:
+- Approval boundaries:
 
 Goal:
 - <specific outcome>
@@ -26,6 +40,8 @@ Workflow:
 - Use Superpowers or fallback TDD/planning when implementation changes behavior.
 - Keep raw logs in your context; return concise evidence.
 - If you find something interesting but out of scope, report it as a finding and keep the current task on track unless it changes safety or correctness.
+- If the active workstream contract is missing or contradicts the task, stop and ask the coordinator for clarification before mutating files.
+- If you will miss the heartbeat, hit budget, need approval, or discover plan-changing evidence, stop and report instead of continuing silently.
 
 Forbidden:
 - Do not push, publish, merge, or open PRs unless explicitly asked.
@@ -40,12 +56,15 @@ Verification:
 
 Return format:
 - Status:
+- Phase:
 - Changed files/artifacts:
 - Verification:
 - Key evidence:
 - Blockers:
 - Risks:
+- Approval needed:
 - Interesting findings:
+- Remaining gates:
 - Next action:
 - Confidence:
 ```

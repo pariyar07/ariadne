@@ -11,6 +11,7 @@ Use this for significant work before implementation starts. Keep it compact.
 | OpenSpec change | Repo worker | Repo path | OpenSpec | optional | ask | repo reviewer | openspec validate |
 | Implementation plan | Repo worker | Repo/local path | Superpowers or fallback | optional | ask | coordinator | plan reviewed |
 | Workstream board | Coordinator | Vault path | Vault | optional | vault-versioned | user | board/dashboard linked |
+| Workstream control record | Coordinator | Existing board/note/inventory path | Vault | active | vault-versioned | coordinator | phase, gates, mode, and next approval are current |
 | Release notes / RCA / lessons | Coordinator | Vault path | Vault | later | vault-versioned | user | final review |
 | Interesting finding / follow-up | Coordinator or worker | Vault board/note path | Vault | optional | vault-versioned | coordinator | routed or explicitly skipped |
 
@@ -33,3 +34,49 @@ Use this for significant work before implementation starts. Keep it compact.
 - Code and tests own final implementation behavior.
 
 If two artifacts disagree, pause and reconcile before continuing.
+
+## Workstream Control Record
+
+Use this when the work is durable enough to have a board, dashboard, ADR, HLD, LLD, inventory, release gate, or worker set. Keep it compact and place it in the existing workstream artifact when possible.
+
+```text
+active_skill:
+workstream:
+coordinator_thread:
+phase:
+lifecycle_class:
+execution_mode:
+execution_mode_rationale:
+unresolved_gates:
+worker_policy:
+model_thinking_defaults:
+next_verification_or_approval:
+vault_capture_destination:
+stop_condition:
+done_condition:
+pause_condition:
+```
+
+## Worker Workstream Contract
+
+Pass this compact contract to parallel chats, subagents, or delegated workers when persistent mode is active.
+
+```text
+active_skill:
+workstream:
+goal:
+phase:
+execution_mode:
+status_record_id:
+owned_scope:
+forbidden_actions:
+current_gates:
+heartbeat_due:
+budget:
+approval_boundaries:
+nested_workers_allowed:
+stop_condition:
+return_format:
+```
+
+Do not use this contract for casual one-off tasks. Use it when the coordinator has an accepted goal and a clear implementation or investigation route.
