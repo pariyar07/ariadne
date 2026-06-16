@@ -78,7 +78,7 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
    - Expected: when the user asks "what next?" or resumes the same workstream, re-check the workstream control record, name the phase, and do not treat the skill as expired.
 
 17. Multi-repo contract implementation after a publish gate
-   - Expected: record why consumer repo work is sequential or parallel before editing either repo; keep publish/deploy/merge gates coordinator-owned.
+   - Expected: record why consumer repo work is sequential or parallel before editing either repo; propose parallel workers when useful, but do not silently spawn them in runtimes that require explicit user permission; keep publish/deploy/merge gates coordinator-owned.
 
 18. Unresolved execution-mode gate
    - Expected: stop before mutation, resolve the gate or intentionally carry it forward in the control record, then continue.

@@ -165,7 +165,7 @@ Before first code or vault mutation in mature, production-facing, multi-repo, AP
 - verification gate
 - stop condition
 
-If two or more repos can proceed independently after the current gate, default to parallel read-only inventory or worker implementation. Same-chat multi-repo implementation is allowed only when dependency order, shared-state risk, or contract coupling makes it safer, and that reason is recorded. Keep package publish, deploy, migration, merge, production access, and customer-data gates coordinator-owned.
+If two or more repos can proceed independently after the current gate, prefer proposing parallel read-only inventory or worker implementation when the user and runtime permit it. In runtimes such as Codex where subagents require an explicit user request, do not silently spawn workers; record the parallelization recommendation and ask or wait for permission. Same-chat multi-repo implementation is allowed only when dependency order, shared-state risk, or contract coupling makes it safer, and that reason is recorded. Keep package publish, deploy, migration, merge, production access, and customer-data gates coordinator-owned.
 
 Treat the loop as stateful orchestration: clear delegation, bounded context, guardrails before sensitive actions, human review at approval gates, and explicit stop conditions. Tight loops are for safety and drift correction, not noisy polling.
 

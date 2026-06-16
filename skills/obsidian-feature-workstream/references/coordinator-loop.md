@@ -106,7 +106,7 @@ Avoid pasting worker logs. Summarize at most: status, evidence, blockers, change
 ## Runtime Adapter Map
 
 - Codex same chat: coordinator does the work directly; keep the control record in the vault or final summary when the work is durable.
-- Codex parallel chat: coordinator acts as supervisor; each chat gets a worker contract, lease fields, heartbeat expectation, and summary-only return.
+- Codex parallel chat: when the user explicitly requests or permits parallel agents, coordinator acts as supervisor; each chat gets a worker contract, lease fields, heartbeat expectation, and summary-only return.
 - Claude Code subagent: use the same worker contract as the subagent prompt; rely on isolated context and require concise final synthesis.
 - Claude Agent SDK subagent: map the worker contract to agent instructions, tools, handoffs, and approval boundaries.
 - LangGraph: map the control record to graph state/checkpointer, approval gates to interrupts, redirects to commands, and workers to nodes/subgraphs.
