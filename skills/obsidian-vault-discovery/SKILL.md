@@ -30,6 +30,20 @@ The vault remains the source of truth. Global discovery only creates a small loc
 
 The global blocks point to `~/.ariadne/vaults.md`; they should never duplicate long vault instructions. Updating an existing registration should refresh stale marker-managed blocks in place instead of adding another global block.
 
+## Post-Discovery Routing
+
+This skill gets agents to the right vault. It should not take over feature execution.
+
+After a vault is selected:
+
+- For navigation, routing, registration, or marker repair, continue with this skill.
+- For new vault bootstrap, use `obsidian-agentic-vault`.
+- For scope creation or promotion, use `obsidian-scope-manager`.
+- For significant idea, product, architecture, implementation, API/schema, integration, multi-repo, production, or agent-workflow work, use `obsidian-feature-workstream` after the target vault/scope/workstream is explicit.
+- For small note edits, simple lookups, casual questions, or tiny fixes, do not force the feature-workstream lifecycle.
+
+Global discovery remains a signpost. Persistent workstream control records, coordinator loops, worker contracts, ADR/HLD/LLD routes, and execution-mode decisions belong in `obsidian-feature-workstream`, the selected vault's local instructions, or the workstream artifact itself.
+
 ## Start Workflow
 
 1. Determine the vault path.
@@ -80,6 +94,7 @@ The doctor checks:
 - detected root entrypoints are registered.
 - selected global adapter files have Ariadne marker blocks.
 - adapter blocks point to `~/.ariadne/vaults.md` and include current discovery rules for listed cold-start entry order, action prompts, multiple vault matches, and target-scope confirmation.
+- adapter blocks remain small signposts and do not duplicate feature-workstream lifecycle rules.
 
 If doctor reports issues, re-run registration for the affected vault to repair registry and adapter blocks.
 
@@ -147,5 +162,6 @@ If adapter blocks exist but the registry path is missing, offer to recreate the 
 ## Related Skills
 
 - Use `obsidian-agentic-vault` to create a new vault.
+- Use `obsidian-feature-workstream` after discovery when the selected vault/scope has significant product, architecture, implementation, integration, multi-repo, production, API/schema, package-boundary, or agent-workflow work.
 - Use `obsidian-vault-maintainer` to check vault health after registration.
 - Use `obsidian-scope-manager` when the user wants to make a new domain inside an existing vault discoverable through vault navigation.
