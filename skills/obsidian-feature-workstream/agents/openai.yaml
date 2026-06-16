@@ -1,0 +1,3 @@
+display_name: Obsidian Feature Workstream
+short_description: Coordinate important feature work from Ariadne vault context.
+default_prompt: Plan and coordinate this important feature work from the relevant Ariadne/Obsidian vault context.

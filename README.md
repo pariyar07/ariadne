@@ -169,6 +169,7 @@ Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills o
 | `obsidian-research-synthesis` | Synthesize multi-source research threads and debate hubs |
 | `obsidian-research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
 | `obsidian-workstream-board` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
+| `obsidian-feature-workstream` | Coordinate important feature work from Ariadne vault context across same-chat, subagent, parallel-chat, OpenSpec, and Superpowers workflows |
 | `obsidian-vault-maintainer` | Run health checks and repair navigability drift |
 | `obsidian-vault-validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
