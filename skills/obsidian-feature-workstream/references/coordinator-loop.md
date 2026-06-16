@@ -8,7 +8,7 @@ Use the persistent loop only when the work has an accepted goal and clear route:
 
 Do not activate the loop for casual questions, tiny fixes, or early fuzzy ideation. Use lightweight intake first, then switch on the loop when the user accepts the goal and execution mode.
 
-When active, the loop applies to both the coordinator and delegated workers. The coordinator keeps the control record; workers receive a compact workstream contract and report back instead of inventing a separate lifecycle.
+When active, the loop applies to both the coordinator and delegated workers. The coordinator keeps one control record per active workstream; workers receive a compact workstream contract and report back instead of inventing a separate lifecycle.
 
 ## Loop Primitives
 
@@ -55,6 +55,7 @@ For durable workstreams, also keep a compact workstream control record in the va
 Record:
 
 - active skill and workstream name
+- workstream status, id, and scope
 - coordinator thread/chat id, if available
 - current phase and lifecycle class
 - execution mode and rationale
@@ -66,7 +67,13 @@ Record:
 - pause condition
 - done condition
 
-At the start of each later coordinator turn, treat `obsidian-feature-workstream` as the active operating guide and re-check this record or reconstruct it from the latest coordinator summary before answering, delegating, or mutating code, docs, git state, global skills, or configuration.
+Use `active_skill: obsidian-feature-workstream` plus `workstream_status: active`, `blocked`, or `paused` as the searchable marker. Do not treat this marker as a global singleton. Multiple active workstreams may exist in the same vault or across vaults.
+
+At the start of each later coordinator turn for a known workstream, treat `obsidian-feature-workstream` as the active operating guide and re-check this record or reconstruct it from the latest coordinator summary before answering, delegating, or mutating code, docs, git state, global skills, or configuration.
+
+If the current workstream is ambiguous, search progressively for active/blocked/paused candidates, then narrow by vault, scope, workstream id/name, coordinator thread/chat id, repo, branch, linked files, and the user's wording. If more than one plausible candidate remains, ask which one to resume before mutation. Do not pause, stop, close, advance, or merge multiple workstreams from one ambiguous prompt.
+
+When a worker spans turns, runs in a separate thread, or may need follow-up after the current response, persist its lease/status record in the control record or a linked worker-status artifact before launch. Same-turn read-only subagents may stay ephemeral only when no worker state needs to survive the turn.
 
 ## Loop Invariants
 
@@ -106,8 +113,8 @@ Avoid pasting worker logs. Summarize at most: status, evidence, blockers, change
 ## Runtime Adapter Map
 
 - Codex same chat: coordinator does the work directly; keep the control record in the vault or final summary when the work is durable.
-- Codex parallel chat: when the user explicitly requests or permits parallel agents, coordinator acts as supervisor; each chat gets a worker contract, lease fields, heartbeat expectation, and summary-only return.
-- Claude Code subagent: use the same worker contract as the subagent prompt; rely on isolated context and require concise final synthesis.
+- Codex parallel chat: when the user explicitly requests or permits parallel agents, coordinator acts as supervisor; each chat gets a worker contract, persisted lease fields when it spans turns, heartbeat expectation, and summary-only return.
+- Claude Code subagent: use the same worker contract as the subagent prompt; rely on isolated context, persist a lease when follow-up must survive the turn, and require concise final synthesis.
 - Claude Agent SDK subagent: map the worker contract to agent instructions, tools, handoffs, and approval boundaries.
 - LangGraph: map the control record to graph state/checkpointer, approval gates to interrupts, redirects to commands, and workers to nodes/subgraphs.
 - AutoGen: map the coordinator to the team manager, workers to team agents, lease limits to termination conditions, and user approval to a human/user proxy.
@@ -129,7 +136,7 @@ The coordinator may:
 - replan when verification or new evidence invalidates the current route
 - route durable findings to the vault, board, decision log, or follow-up list
 
-These actions should be explicit in the control record or status update when they change phase, ownership, safety, or verification.
+These actions should be explicit in the control record or status update when they change phase, ownership, safety, or verification. Apply them only to the selected workstream or worker lease. If multiple active workstreams are plausible, disambiguate first.
 
 ## Escalation Triggers
 

@@ -40,6 +40,7 @@ After a vault is selected:
 - For new vault bootstrap, use `obsidian-agentic-vault`.
 - For scope creation or promotion, use `obsidian-scope-manager`.
 - For significant idea, product, architecture, implementation, API/schema, integration, multi-repo, production, or agent-workflow work, use `obsidian-feature-workstream` after the target vault/scope/workstream is explicit.
+- For continuation prompts such as "continue", "what next", "resume this", or "what was I working on", search the selected vault progressively for `active_skill: obsidian-feature-workstream` and `workstream_status: active`, `blocked`, or `paused`, then narrow by the user's wording, scope, workstream id/name, repo, branch, linked files, and coordinator thread/chat id. If multiple plausible active workstreams remain, show the top matches and ask which one to resume before writing or routing into `obsidian-feature-workstream`.
 - For small note edits, simple lookups, casual questions, or tiny fixes, do not force the feature-workstream lifecycle.
 
 Global discovery remains a signpost. Persistent workstream control records, coordinator loops, worker contracts, ADR/HLD/LLD routes, and execution-mode decisions belong in `obsidian-feature-workstream`, the selected vault's local instructions, or the workstream artifact itself.
