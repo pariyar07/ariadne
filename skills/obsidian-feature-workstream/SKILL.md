@@ -130,6 +130,8 @@ Do not activate it for casual questions, early fuzzy ideation, tiny fixes, or ex
 
 When activated, keep the workstream active until the user pauses, closes, or replaces it. Do not treat the skill as a one-turn planning aid.
 
+For an active workstream, every later coordinator turn starts by treating this skill as active: use this skill, identify the current phase and gate from the control record or latest coordinator summary, then answer, delegate, or act. This applies to status questions, "what next" prompts, planning, and implementation; do not wait for the user to re-name the skill.
+
 Because runtimes may load global/project instruction files at session start rather than per turn, the control record is the durable continuity mechanism for active workstream state. Update it or reconstruct it from the latest coordinator summary when the phase, gate, worker set, or approval boundary changes.
 
 Use a compact workstream control record when the work has a board, dashboard, ADR, HLD, LLD, inventory, release gate, or worker set. The record can live in the workstream note, board, inventory, or another existing vault artifact. It does not need a separate file unless the workstream needs one.
@@ -150,7 +152,7 @@ Record:
 - pause condition
 - done condition
 
-On later turns in the same workstream, re-check the control record or reconstruct it from the latest coordinator summary before mutating code, docs, git state, global skills, or configuration. State the current phase before acting when the user asks "what next?" or resumes after a pause.
+On later turns in the same workstream, re-check the control record or reconstruct it from the latest coordinator summary before answering, delegating, or mutating code, docs, git state, global skills, or configuration. State the current phase before acting when the user asks "what next?" or resumes after a pause.
 
 For parallel chats, subagents, or workers, pass a compact workstream contract in the worker prompt: active skill, workstream name, goal, phase, execution mode, owned scope, forbidden actions, current gates, stop condition, and return format. Workers should not invent a separate lifecycle unless their delegated task becomes its own durable workstream; they should report findings back to the coordinator.
 

@@ -66,7 +66,7 @@ Record:
 - pause condition
 - done condition
 
-At the start of each later turn, re-check this record or reconstruct it from the latest coordinator summary before mutating code, docs, git state, global skills, or configuration.
+At the start of each later coordinator turn, treat `obsidian-feature-workstream` as the active operating guide and re-check this record or reconstruct it from the latest coordinator summary before answering, delegating, or mutating code, docs, git state, global skills, or configuration.
 
 ## Loop Invariants
 

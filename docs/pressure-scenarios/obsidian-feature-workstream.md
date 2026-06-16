@@ -75,7 +75,7 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
    - Expected: pause current implementation, reconcile source-of-truth docs and user direction, then resume or replan.
 
 16. Active workstream follow-up
-   - Expected: when the user asks "what next?" or resumes the same workstream, re-check the workstream control record, name the phase, and do not treat the skill as expired.
+   - Expected: on every later turn in an active workstream, use `obsidian-feature-workstream`, re-check the workstream control record, name the phase/gate when useful, and do not treat the skill as expired.
 
 17. Multi-repo contract implementation after a publish gate
    - Expected: record why consumer repo work is sequential or parallel before editing either repo; propose parallel workers when useful, but do not silently spawn them in runtimes that require explicit user permission; keep publish/deploy/merge gates coordinator-owned.
