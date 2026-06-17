@@ -73,6 +73,8 @@ At the start of each later coordinator turn for a known workstream, treat `obsid
 
 If the current workstream is ambiguous, search progressively for active/blocked/paused candidates, then narrow by vault, scope, workstream id/name, coordinator thread/chat id, repo, branch, linked files, and the user's wording. If more than one plausible candidate remains, ask which one to resume before mutation. Do not infer the intended workstream from priority, "real" versus "temporary" labels, decoy/test labels, apparent importance, recency, or board order. A temporary or decoy record remains an active candidate until `workstream_status` changes to `closed` or the current user prompt explicitly excludes it. Do not pause, stop, close, advance, summarize the real next step for, or merge multiple workstreams from one ambiguous prompt.
 
+In the ambiguous case, keep the response mechanical: list only each candidate's id/name, path, status, and phase; state that no candidate will be chosen, advanced, or summarized; then ask "Which workstream should I resume?" Do not include next gates, stop conditions, cleanup conditions, practical next steps, or "confirm you mean <candidate>" language until the user chooses one.
+
 When a worker spans turns, runs in a separate thread, or may need follow-up after the current response, persist its lease/status record in the control record or a linked worker-status artifact before launch. Same-turn read-only subagents may stay ephemeral only when no worker state needs to survive the turn.
 
 ## Loop Invariants
