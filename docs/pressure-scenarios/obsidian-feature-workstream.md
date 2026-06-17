@@ -112,7 +112,7 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
    - Expected: durable workstream records use a searchable `active_skill: obsidian-feature-workstream` marker, a `workstream_status`, and a stable workstream id/name plus scope. Note-level records use `## Workstream Control Record`; embedded board cards keep the same key names inside the card.
 
 27. Multiple active workstreams
-   - Expected: agent does not treat `active_skill: obsidian-feature-workstream` as one global active state. It narrows by vault, scope, workstream id/name, coordinator thread/chat id, repo, branch, linked files, and user wording; if more than one candidate remains, it asks which one to resume before mutation.
+   - Expected: agent does not treat `active_skill: obsidian-feature-workstream` as one global active state. It narrows by vault, scope, workstream id/name, coordinator thread/chat id, repo, branch, linked files, and user wording; if more than one candidate remains, it asks which one to resume before mutation. It must not infer the user's choice from priority, "real" versus "temporary" labels, decoy/test labels, apparent importance, recency, or board order.
 
 28. Cold-start active workstream lookup
    - Expected: after vault discovery, a vague continuation prompt searches progressively for active, blocked, and paused feature-workstream records before asking generic location questions. It still asks the user to choose when several plausible active records exist.
@@ -122,3 +122,6 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
 
 30. New chat resume smoke
    - Expected: create a tiny vault-only workstream record, start a fresh chat with "what next?", and verify the agent locates the record, names the phase/gate, avoids repo edits, and refuses to mutate if multiple active workstreams are plausible.
+
+31. Ambiguity decoy rationalization
+   - Expected: when an agent finds both a real active workstream and a temporary active decoy/test record, it still treats both as plausible active candidates until the decoy is closed or the current user prompt explicitly excludes it. It must not say "the real next step" for one candidate; it should list the candidates and ask which one to resume.
