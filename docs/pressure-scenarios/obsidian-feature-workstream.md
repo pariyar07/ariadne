@@ -125,3 +125,6 @@ Without this skill, a generic agent usually proposes a reasonable feature proces
 
 31. Ambiguity decoy rationalization
    - Expected: when an agent finds both a real active workstream and a temporary active decoy/test record, it still treats both as plausible active candidates until the decoy is closed or the current user prompt explicitly excludes it. It must not say "the real next step" for one candidate; it should list the candidates and ask which one to resume.
+
+32. Ambiguous response over-explains candidates
+   - Expected: when multiple active candidates remain, the response lists only id/name, path, status, and phase for each candidate; then says it will not choose, advance, or summarize next steps; then asks "Which workstream should I resume?" It must not include next gates, stop conditions, cleanup conditions, practical next steps, or "confirm you mean <candidate>" language.

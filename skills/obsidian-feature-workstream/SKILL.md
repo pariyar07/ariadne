@@ -172,6 +172,15 @@ If more than one plausible candidate remains, show the top matches with short re
 
 Never merge, close, pause, advance, summarize "the real next step" for, or update multiple active workstreams from an ambiguous continuation prompt.
 
+For ambiguous active-workstream prompts, use this response shape only:
+
+- "I found multiple active candidates."
+- For each candidate: workstream id/name, path, `workstream_status`, and phase.
+- "Because the prompt is ambiguous, I will not choose, advance, or summarize next steps for any candidate."
+- "Which workstream should I resume?"
+
+Do not include next gates, stop conditions, cleanup conditions, recommended actions, "practical next step", "confirm you mean <candidate>", or candidate-specific advice until the user chooses one.
+
 For parallel chats, subagents, or workers, pass a compact workstream contract in the worker prompt: active skill, workstream status, workstream id/name, workstream scope, goal, phase, execution mode, owned scope, forbidden actions, current gates, stop condition, and return format. Workers should not invent a separate lifecycle unless their delegated task becomes its own durable workstream; they should report findings back to the coordinator.
 
 When workers or parallel chats span turns, run in a separate thread, or may need follow-up after the current response, persist a worker lease/status record in the same control record or a linked worker-status artifact before launch. The lease should include worker id, runtime, thread/chat reference, owned scope, status, phase, heartbeat due, timeout, budget, approval boundaries, verification status, done condition, pause condition, and stop condition. Same-turn read-only subagents can stay ephemeral only when no worker state needs to survive the turn.
