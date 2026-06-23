@@ -7,8 +7,6 @@ An agent skill package for building Obsidian vaults that AI agents can navigate,
 
 The core pattern: humans choose what enters, agents compile raw material into a linked wiki, Obsidian is the readable frontend, and Bases are live query views over the Markdown source of truth.
 
-**[Read the origin story →](https://satyampariyar.com/blog/circle-of-concern)**
-
 ```mermaid
 flowchart TD
   Human(["👤 Human\nRaw · Inbox · Brain dumps"])
@@ -46,14 +44,6 @@ flowchart TD
   V -.->|structural guarantee| Vault
   B -.->|surfaces gaps| Human
 ```
-
-## In Practice
-
-This is Satyam's vault after several months of active use — research threads, five active project scopes, a published essay scope, and the agent operating graph all wired together.
-
-![Obsidian vault graph — scope clusters connected through agent hub nodes](docs/assets/satyams-vault-graph.png)
-
-Each color cluster is a scope. The large hub nodes with many edges are the agent navigation files (`00 Index.md`, `Agent/00 Agent Navigation`, routing matrices). The graph shows what the scope model looks like when it's actually running: dense within boundaries, connected across them through deliberate navigation links.
 
 ## Requirements
 
@@ -169,7 +159,6 @@ Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills o
 | `obsidian-research-synthesis` | Synthesize multi-source research threads and debate hubs |
 | `obsidian-research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
 | `obsidian-workstream-board` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
-| `obsidian-feature-workstream` | Coordinate important feature work from Ariadne vault context across same-chat, subagent, parallel-chat, OpenSpec, and Superpowers workflows |
 | `obsidian-vault-maintainer` | Run health checks and repair navigability drift |
 | `obsidian-vault-validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
@@ -309,6 +298,8 @@ All reference docs live under `skills/obsidian-agentic-vault/references/`:
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome — please read the contributing guide before opening either.
+
+See [PUBLIC_BOUNDARY.md](PUBLIC_BOUNDARY.md) for the public repository boundary and [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## License
 

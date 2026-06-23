@@ -28,6 +28,10 @@ docs/
 
 ## How to Contribute
 
+Read `PUBLIC_BOUNDARY.md` before proposing new behavior. Ariadne owns Obsidian vault structure, scopes, navigation, Bases, validation, maintenance, ingest, and vault-specific adapters. Generic runtime-adaptive coordination belongs outside this repository.
+
+Read `SECURITY.md` before reporting a vulnerability. Do not paste private vault content, secrets, client data, production logs, or maintainer-local paths into public issues or pull requests.
+
 ### Improving a skill
 
 Each skill is a `SKILL.md` file — plain Markdown instructions for the agent. Edit the relevant `SKILL.md` directly.
@@ -50,6 +54,9 @@ Good contributions:
 1. Create `skills/<skill-name>/SKILL.md`
 2. Add an `agents/` folder with at least `openai.yaml` if you want multi-agent support
 3. Add a row to the Skills table in `README.md`
+4. Run `node scripts/validate_repo.js --skills-only`
+
+Do not add placeholder skill folders. Planned skills should stay in docs until they are ready to ship as complete skills.
 
 ### Changing global discovery
 
@@ -68,6 +75,19 @@ The validator has fixtures under `skills/obsidian-vault-validator/test/fixtures/
 - All checks must be deterministic — same vault always produces same output
 - New warnings should be non-fatal (don't add to the exit-code check) unless they represent a structural impossibility
 - Every new counter needs: logic in JS, entry in return object, entry in counters array, docs update, healthy output update
+
+## Repository guardrails
+
+Run these before opening a pull request:
+
+```bash
+node scripts/validate_repo.js
+node scripts/validate_repo.js --skills-only
+node skills/obsidian-vault-validator/test/test_recursive_scopes.js
+node skills/obsidian-agentic-vault/test/test_register_vault.js
+```
+
+The repo validator blocks placeholder skill folders, missing skill entrypoints, maintainer-local absolute paths, private vault references, OS metadata files, and local-only agent override files.
 
 ## Style
 

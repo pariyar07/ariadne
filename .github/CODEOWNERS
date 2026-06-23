@@ -1,2 +1,8 @@
 # All changes require review from the maintainer.
 * @pariyar07
+
+# Security, automation, and public-boundary changes are especially sensitive.
+/.github/ @pariyar07
+/scripts/ @pariyar07
+/SECURITY.md @pariyar07
+/PUBLIC_BOUNDARY.md @pariyar07
