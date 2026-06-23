@@ -22,6 +22,8 @@ skills/
     scripts/register_vault.js    ← optional machine-level vault registration
     test/test_register_vault.js  ← registration script tests
   obsidian-vault-discovery/      ← workflow skill for registering existing vaults
+scripts/
+  validate_repo.js               ← public-boundary and repository guardrail checks
 docs/
   guides/global-discovery.md     ← cold-agent vault discovery registration
   guides/weekly-maintenance-automation.md ← recurring maintenance automation prompt
@@ -52,9 +54,13 @@ Each skill is a folder with:
 | Run the validator | `node skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"` |
 | Run the test suite | `node skills/obsidian-vault-validator/test/test_recursive_scopes.js` |
 | Run registration tests | `node skills/obsidian-agentic-vault/test/test_register_vault.js` |
+| Run repo guardrails | `node scripts/validate_repo.js` |
+| Run skill guardrails | `node scripts/validate_repo.js --skills-only` |
 | Read validator counter docs | `docs/guides/validator.md` |
 | Read global discovery docs | `docs/guides/global-discovery.md` |
 | Read weekly automation prompt | `docs/guides/weekly-maintenance-automation.md` |
+| Read public boundary | `PUBLIC_BOUNDARY.md` |
+| Read security policy | `SECURITY.md` |
 
 ## Rules
 
@@ -65,6 +71,9 @@ Each skill is a folder with:
 - New validator warnings must be non-fatal unless they represent a structural impossibility.
 - Every new validator counter needs: logic in JS + return object entry + counters array entry + `docs/guides/validator.md` update + `SKILL.md` healthy output update + `README.md` healthy output update + test fixture.
 - `agents/openai.yaml` is required for each skill for Codex CLI display metadata.
+- Do not add placeholder skill folders; planned skills stay in docs until they are complete.
+- Public docs must not include private vault content, maintainer-local absolute paths, secrets, client data, or personal workflow defaults.
+- Ariadne behavior must stay Obsidian/vault-specific. Generic runtime-adaptive coordination belongs outside this repo.
 - Do not commit `CLAUDE.local.md`, `GEMINI.local.md`, or `AGENTS.override.md` — these are machine-local.
 
 ## Local Setup (gitignored files)

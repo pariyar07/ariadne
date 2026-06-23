@@ -19,5 +19,8 @@ labels: bug
 **Vault snapshot (if relevant)**
 <!-- Paste the validator output or a minimal folder tree showing the issue -->
 
+**Public safety**
+<!-- Do not paste private vault dumps, secrets, tokens, credentials, client data, or production logs. Use a minimal redacted fixture. -->
+
 **Agent and version**
 <!-- e.g. Claude Code 1.x, Codex CLI 1.x -->

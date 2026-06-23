@@ -15,3 +15,6 @@ labels: enhancement
 
 **Proposed fix**
 <!-- Optional: paste a diff or rewrite of the specific SKILL.md lines -->
+
+**Public boundary check**
+<!-- Confirm this is Obsidian/vault-specific behavior, not generic runtime coordination. Do not include private vault content or maintainer-local paths. -->

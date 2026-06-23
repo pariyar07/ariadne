@@ -1,4 +1,4 @@
-name: Validate
+name: Validate Repo
 
 on:
   push:
@@ -6,14 +6,19 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  validate-repo:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+      - name: Run repository guardrails
+        run: node scripts/validate_repo.js
       - name: Run validator test suite
         run: node skills/obsidian-vault-validator/test/test_recursive_scopes.js
       - name: Run vault registration test suite
