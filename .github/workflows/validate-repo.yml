@@ -20,6 +20,6 @@ jobs:
       - name: Run repository guardrails
         run: node scripts/validate_repo.js
       - name: Run validator test suite
-        run: node skills/obsidian-vault-validator/test/test_recursive_scopes.js
+        run: node skills/validator/test/test_recursive_scopes.js
       - name: Run vault registration test suite
-        run: node skills/obsidian-agentic-vault/test/test_register_vault.js
+        run: node skills/vault/test/test_register_vault.js
