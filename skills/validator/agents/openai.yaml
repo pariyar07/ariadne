@@ -1,0 +1,3 @@
+display_name: Ariadne Validator
+short_description: Run deterministic structure checks for Obsidian vault navigability.
+default_prompt: Validate this Obsidian vault and report broken links, orphan notes, Base links, and YAML issues.

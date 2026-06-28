@@ -36,7 +36,7 @@ flowchart TD
 
   end
 
-  Human -->|"obsidian-research-ingest\nobsidian-ingest-compile\nobsidian-research-synthesis"| KG
+  Human -->|"ariadne:research-ingest\nariadne:ingest\nariadne:synthesis"| KG
   Agent -->|enters via| OG
   OG -->|"routes to smallest\nrelevant context"| Scopes
   Scopes --> KG
@@ -140,31 +140,31 @@ npx skills list -g
 Updating skills does not migrate existing vault content. After updating, run the validator against important vaults, and run global discovery doctor if you use machine-level vault discovery:
 
 ```bash
-node skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"
-node skills/obsidian-agentic-vault/scripts/register_vault.js --agents codex,claude,gemini --doctor
+node skills/validator/scripts/validate_vault.js "/path/to/vault"
+node skills/vault/scripts/register_vault.js --agents codex,claude,gemini --doctor
 ```
 
 ## Skills
 
-Start with `obsidian-agentic-vault` to bootstrap a new vault. All other skills operate on an existing vault.
+Start with `ariadne:vault` to bootstrap a new vault. All other skills operate on an existing vault.
 
 | Skill | Purpose |
 | --- | --- |
-| `obsidian-agentic-vault` | **Start here** — Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
-| `obsidian-vault-discovery` | Register existing Obsidian vaults so cold agents can find them from any workspace |
-| `obsidian-scope-manager` | Create, promote, import, and nest durable knowledge scopes |
-| `obsidian-navigation-architect` | Design hubs, routing, workstream graphs, templates, and view layers |
-| `obsidian-ingest-compile` | Turn links, documents, and brain dumps into durable wiki notes |
-| `obsidian-research-ingest` | Cold-start research source ingest into the right scope |
-| `obsidian-research-synthesis` | Synthesize multi-source research threads and debate hubs |
-| `obsidian-research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
-| `obsidian-workstream-board` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
-| `obsidian-vault-maintainer` | Run health checks and repair navigability drift |
-| `obsidian-vault-validator` | Deterministic structural validation — 11 checks, zero-warnings target |
+| `ariadne:vault` | **Start here** — Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
+| `ariadne:discovery` | Register existing Obsidian vaults so cold agents can find them from any workspace |
+| `ariadne:scope` | Create, promote, import, and nest durable knowledge scopes |
+| `ariadne:navigation` | Design hubs, routing, workstream graphs, templates, and view layers |
+| `ariadne:ingest` | Turn links, documents, and brain dumps into durable wiki notes |
+| `ariadne:research-ingest` | Cold-start research source ingest into the right scope |
+| `ariadne:synthesis` | Synthesize multi-source research threads and debate hubs |
+| `ariadne:research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
+| `ariadne:workstream-board` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
+| `ariadne:maintainer` | Run health checks and repair navigability drift |
+| `ariadne:validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
 ## Weekly Maintenance Automation
 
-Recurring maintenance is best handled as an automation prompt that invokes the existing skills, not as a separate skill. Start with `obsidian-vault-validator`, follow with `obsidian-vault-maintainer`, and only call navigation, ingest, synthesis, Bases, or discovery skills when the weekly run finds drift in those areas.
+Recurring maintenance is best handled as an automation prompt that invokes the existing skills, not as a separate skill. Start with `ariadne:validator`, follow with `ariadne:maintainer`, and only call navigation, ingest, synthesis, Bases, or discovery skills when the weekly run finds drift in those areas.
 
 See `docs/guides/weekly-maintenance-automation.md` for a Codex-ready prompt, Claude Code adaptation notes, subagent boundaries, and the optional durable report variant.
 
@@ -234,7 +234,7 @@ The validator resolves wikilinks to real vault files, including Markdown notes, 
 Run the validator from a vault root:
 
 ```bash
-node /path/to/skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"
+node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
 
 A healthy vault reports all zeros:
@@ -266,10 +266,10 @@ See `docs/guides/validator.md` for the full counter reference.
 
 ## Global Discovery
 
-After bootstrapping a vault, Ariadne can optionally register the vault on the user's machine. For existing vaults, use `obsidian-vault-discovery`.
+After bootstrapping a vault, Ariadne can optionally register the vault on the user's machine. For existing vaults, use `ariadne:discovery`.
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --vault "/path/to/vault" \
   --name "My Knowledge Vault" \
   --purpose "Long-term project and research knowledge." \
@@ -283,7 +283,7 @@ Use this when you want future cold agent sessions, launched from any folder, to 
 
 ## References
 
-All reference docs live under `skills/obsidian-agentic-vault/references/`:
+All reference docs live under `skills/vault/references/`:
 
 | Reference | Contents |
 | --- | --- |

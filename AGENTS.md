@@ -6,22 +6,22 @@ Ariadne is a skill package for building Obsidian vaults that AI agents can navig
 
 ```
 skills/
-  obsidian-agentic-vault/        ← vault bootstrap skill + templates
-  obsidian-scope-manager/        ← scope creation and wiring
-  obsidian-navigation-architect/ ← hub and routing design
-  obsidian-ingest-compile/       ← raw input → durable notes
-  obsidian-research-ingest/      ← cold-start research source routing
-  obsidian-research-synthesis/   ← multi-source synthesis
-  obsidian-research-pipeline/    ← domain research pipeline setup
-  obsidian-vault-maintainer/     ← health checks and repair
-  obsidian-vault-validator/      ← deterministic structural validation
+  vault/        ← vault bootstrap skill + templates (`ariadne:vault`)
+    scripts/register_vault.js    ← optional machine-level vault registration
+    test/test_register_vault.js  ← registration script tests
+  discovery/    ← workflow skill for registering existing vaults (`ariadne:discovery`)
+  scope/        ← scope creation and wiring (`ariadne:scope`)
+  navigation/   ← hub and routing design (`ariadne:navigation`)
+  ingest/       ← raw input → durable notes (`ariadne:ingest`)
+  research-ingest/      ← cold-start research source routing (`ariadne:research-ingest`)
+  research-pipeline/    ← domain research pipeline setup (`ariadne:research-pipeline`)
+  synthesis/    ← multi-source synthesis (`ariadne:synthesis`)
+  workstream-board/     ← Kanban boards and Dataview dashboards (`ariadne:workstream-board`)
+  maintainer/   ← health checks and repair (`ariadne:maintainer`)
+  validator/    ← deterministic structural validation (`ariadne:validator`)
     scripts/validate_vault.js    ← the validator (Node.js, no deps)
     scripts/validate_vault.sh    ← shell wrapper
     test/                        ← test fixtures and runner
-  obsidian-agentic-vault/
-    scripts/register_vault.js    ← optional machine-level vault registration
-    test/test_register_vault.js  ← registration script tests
-  obsidian-vault-discovery/      ← workflow skill for registering existing vaults
 scripts/
   validate_repo.js               ← public-boundary and repository guardrail checks
 docs/
@@ -36,7 +36,7 @@ docs/
 Each skill is a folder with:
 - `SKILL.md` — the agent instructions (this is what Claude Code, Gemini CLI, and others read)
 - `agents/openai.yaml` — display metadata for Codex CLI UI
-- `assets/templates/` — files the skill copies into the target vault (obsidian-agentic-vault only)
+- `assets/templates/` — files the skill copies into the target vault (`ariadne:vault` only)
 - `references/` — supporting documentation the agent can read for deeper context
 
 ## Routing
@@ -44,16 +44,16 @@ Each skill is a folder with:
 | Task | Where to look |
 | --- | --- |
 | Edit skill instructions | `skills/<skill-name>/SKILL.md` |
-| Edit vault templates | `skills/obsidian-agentic-vault/assets/templates/` |
-| Edit global discovery registration | `skills/obsidian-agentic-vault/scripts/register_vault.js` |
-| Edit vault discovery skill | `skills/obsidian-vault-discovery/SKILL.md` |
-| Edit reference documentation | `skills/obsidian-agentic-vault/references/` |
-| Edit cold-start research ingest | `skills/obsidian-research-ingest/SKILL.md` |
-| Edit domain research pipeline setup | `skills/obsidian-research-pipeline/SKILL.md` |
-| Edit the validator | `skills/obsidian-vault-validator/scripts/validate_vault.js` |
-| Run the validator | `node skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"` |
-| Run the test suite | `node skills/obsidian-vault-validator/test/test_recursive_scopes.js` |
-| Run registration tests | `node skills/obsidian-agentic-vault/test/test_register_vault.js` |
+| Edit vault templates | `skills/vault/assets/templates/` |
+| Edit global discovery registration | `skills/vault/scripts/register_vault.js` |
+| Edit vault discovery skill | `skills/discovery/SKILL.md` |
+| Edit reference documentation | `skills/vault/references/` |
+| Edit cold-start research ingest | `skills/research-ingest/SKILL.md` |
+| Edit domain research pipeline setup | `skills/research-pipeline/SKILL.md` |
+| Edit the validator | `skills/validator/scripts/validate_vault.js` |
+| Run the validator | `node skills/validator/scripts/validate_vault.js "/path/to/vault"` |
+| Run the test suite | `node skills/validator/test/test_recursive_scopes.js` |
+| Run registration tests | `node skills/vault/test/test_register_vault.js` |
 | Run repo guardrails | `node scripts/validate_repo.js` |
 | Run skill guardrails | `node scripts/validate_repo.js --skills-only` |
 | Read validator counter docs | `docs/guides/validator.md` |

@@ -1,0 +1,3 @@
+display_name: Ariadne Discovery
+short_description: Register existing Obsidian vaults so cold agents can find them from any workspace.
+default_prompt: Register this Obsidian vault for machine-level agent discovery.

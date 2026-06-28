@@ -8,17 +8,17 @@ Ariadne is a skill package for Claude Code and other AI agents. Skills are Markd
 
 ```
 skills/
-  obsidian-agentic-vault/     ← vault bootstrap skill + templates
-  obsidian-scope-manager/     ← scope creation and wiring
-  obsidian-navigation-architect/ ← hub and routing design
-  obsidian-ingest-compile/    ← raw input → durable notes
-  obsidian-research-ingest/   ← cold-start research source routing
-  obsidian-research-synthesis/ ← multi-source synthesis
-  obsidian-research-pipeline/ ← domain research pipeline setup
-  obsidian-workstream-board/  ← Kanban boards and Dataview dashboards
-  obsidian-vault-discovery/   ← existing vault discovery registration
-  obsidian-vault-maintainer/  ← health checks and repair
-  obsidian-vault-validator/   ← deterministic structural validation
+  vault/     ← vault bootstrap skill + templates (`ariadne:vault`)
+  scope/     ← scope creation and wiring (`ariadne:scope`)
+  navigation/ ← hub and routing design (`ariadne:navigation`)
+  ingest/    ← raw input → durable notes (`ariadne:ingest`)
+  research-ingest/   ← cold-start research source routing (`ariadne:research-ingest`)
+  synthesis/ ← multi-source synthesis (`ariadne:synthesis`)
+  research-pipeline/ ← domain research pipeline setup (`ariadne:research-pipeline`)
+  workstream-board/  ← Kanban boards and Dataview dashboards (`ariadne:workstream-board`)
+  discovery/   ← existing vault discovery registration (`ariadne:discovery`)
+  maintainer/  ← health checks and repair (`ariadne:maintainer`)
+  validator/   ← deterministic structural validation (`ariadne:validator`)
     scripts/validate_vault.js ← the validator (Node.js, no deps)
 docs/
   guides/global-discovery.md  ← global discovery registration guide
@@ -43,11 +43,11 @@ Good contributions:
 
 ### Adding a new check to the validator
 
-1. Add the check logic in `skills/obsidian-vault-validator/scripts/validate_vault.js`
+1. Add the check logic in `skills/validator/scripts/validate_vault.js`
 2. Add the counter to the `return` object and the `counters` print loop in `printResults()`
 3. Add a row to the counter reference table in `docs/guides/validator.md`
 4. Add the counter to the healthy output in `SKILL.md` and `README.md`
-5. Add a test fixture under `skills/obsidian-vault-validator/test/fixtures/`
+5. Add a test fixture under `skills/validator/test/fixtures/`
 
 ### Adding a new skill
 
@@ -60,14 +60,14 @@ Do not add placeholder skill folders. Planned skills should stay in docs until t
 
 ### Changing global discovery
 
-1. Update `skills/obsidian-agentic-vault/scripts/register_vault.js`
-2. Update `skills/obsidian-agentic-vault/test/test_register_vault.js`
-3. Update `skills/obsidian-vault-discovery/SKILL.md`
+1. Update `skills/vault/scripts/register_vault.js`
+2. Update `skills/vault/test/test_register_vault.js`
+3. Update `skills/discovery/SKILL.md`
 4. Update `docs/guides/global-discovery.md`
 
 ### Test fixtures
 
-The validator has fixtures under `skills/obsidian-vault-validator/test/fixtures/`. Each fixture is a minimal vault that exercises one check. Add a fixture for any new check.
+The validator has fixtures under `skills/validator/test/fixtures/`. Each fixture is a minimal vault that exercises one check. Add a fixture for any new check.
 
 ## Validator rules
 
@@ -83,8 +83,8 @@ Run these before opening a pull request:
 ```bash
 node scripts/validate_repo.js
 node scripts/validate_repo.js --skills-only
-node skills/obsidian-vault-validator/test/test_recursive_scopes.js
-node skills/obsidian-agentic-vault/test/test_register_vault.js
+node skills/validator/test/test_recursive_scopes.js
+node skills/vault/test/test_register_vault.js
 ```
 
 The repo validator blocks placeholder skill folders, missing skill entrypoints, maintainer-local absolute paths, private vault references, OS metadata files, and local-only agent override files.

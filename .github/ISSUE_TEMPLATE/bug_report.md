@@ -5,7 +5,7 @@ labels: bug
 ---
 
 **Which skill or component?**
-<!-- e.g. obsidian-vault-validator, obsidian-scope-manager -->
+<!-- e.g. ariadne:validator, ariadne:scope -->
 
 **What did you ask the agent?**
 <!-- The exact prompt or trigger phrase you used -->

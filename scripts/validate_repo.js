@@ -3,6 +3,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { execFileSync } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 
@@ -57,6 +58,25 @@ function walk(dir, results = []) {
   return results;
 }
 
+function listRepoFiles() {
+  try {
+    const output = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
+      cwd: ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return output
+      .split("\0")
+      .filter(Boolean)
+      .filter((file) => fs.existsSync(path.join(ROOT, file)) && fs.statSync(path.join(ROOT, file)).isFile())
+      .sort();
+  } catch {
+    return walk(ROOT)
+      .filter((file) => fs.statSync(path.join(ROOT, file)).isFile())
+      .sort();
+  }
+}
+
 function read(file) {
   return fs.readFileSync(path.join(ROOT, file), "utf8");
 }
@@ -100,7 +120,7 @@ function validateSkillFolders(errors) {
     if (!/^---\n[\s\S]*?\n---\n/u.test(skillText)) {
       fail(errors, `skill missing YAML frontmatter: ${skillFile}`);
     }
-    if (!/^name:\s*[A-Za-z0-9_-]+$/mu.test(skillText)) {
+    if (!/^name:\s*(?:[A-Za-z0-9_-]+:)?[A-Za-z0-9_-]+$/mu.test(skillText)) {
       fail(errors, `skill frontmatter missing name: ${skillFile}`);
     }
     if (!/^description:\s*.+$/mu.test(skillText)) {
@@ -148,7 +168,7 @@ function validateWorkflows(errors) {
 function main() {
   const skillsOnly = process.argv.includes("--skills-only");
   const errors = [];
-  const files = walk(ROOT).filter((file) => fs.statSync(path.join(ROOT, file)).isFile()).sort();
+  const files = listRepoFiles();
 
   validatePathSafety(errors, files);
   validateSkillFolders(errors);

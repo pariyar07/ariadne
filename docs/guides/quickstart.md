@@ -49,17 +49,17 @@ Examples:
 
 | What you want to do | Skill to invoke | Trigger phrase |
 | --- | --- | --- |
-| Create a new vault from scratch | `obsidian-agentic-vault` | "Bootstrap a new vault for..." |
-| Register, update, or repair global discovery | `obsidian-vault-discovery` | "Make this vault discoverable" / "Register this vault globally" / "Repair Ariadne discovery" |
-| Add a new domain or scope | `obsidian-scope-manager` | "Add a scope for..." / "Create a domain for..." |
-| Add research infrastructure inside a domain | `obsidian-research-pipeline` | "Add a research pipeline to..." |
-| Cold-start research source ingest | `obsidian-research-ingest` | "Research ingest..." / "Save this research..." |
-| Ingest a link, article, or brain dump | `obsidian-ingest-compile` | "Ingest this..." / "Add this to..." |
-| Synthesize multiple sources | `obsidian-research-synthesis` | "Synthesize the ... research" / "Update the ... thread" |
-| Redesign navigation or routing | `obsidian-navigation-architect` | "Redesign navigation for..." / "Add a workstream for..." |
-| Create or improve a work board or dashboard | `obsidian-workstream-board` | "Create a Kanban for..." / "Make a dashboard for..." / "Improve this board" |
-| Run health checks and repair | `obsidian-vault-maintainer` | "Run a vault health check" / "Fix navigation drift" |
-| Validate structure deterministically | `obsidian-vault-validator` | "Validate the vault" / "Check for broken links" |
+| Create a new vault from scratch | `ariadne:vault` | "Bootstrap a new vault for..." |
+| Register, update, or repair global discovery | `ariadne:discovery` | "Make this vault discoverable" / "Register this vault globally" / "Repair Ariadne discovery" |
+| Add a new domain or scope | `ariadne:scope` | "Add a scope for..." / "Create a domain for..." |
+| Add research infrastructure inside a domain | `ariadne:research-pipeline` | "Add a research pipeline to..." |
+| Cold-start research source ingest | `ariadne:research-ingest` | "Research ingest..." / "Save this research..." |
+| Ingest a link, article, or brain dump | `ariadne:ingest` | "Ingest this..." / "Add this to..." |
+| Synthesize multiple sources | `ariadne:synthesis` | "Synthesize the ... research" / "Update the ... thread" |
+| Redesign navigation or routing | `ariadne:navigation` | "Redesign navigation for..." / "Add a workstream for..." |
+| Create or improve a work board or dashboard | `ariadne:workstream-board` | "Create a Kanban for..." / "Make a dashboard for..." / "Improve this board" |
+| Run health checks and repair | `ariadne:maintainer` | "Run a vault health check" / "Fix navigation drift" |
+| Validate structure deterministically | `ariadne:validator` | "Validate the vault" / "Check for broken links" |
 
 ---
 
@@ -69,8 +69,8 @@ Examples:
 > "Bootstrap a new vault for [purpose] at [path]"
 
 **What happens:**
-1. `obsidian-agentic-vault` creates the base folder structure, `AGENTS.md`, `CLAUDE.md`, `00 Index.md`, `Agent/` navigation files, `Bases/`, `Templates/`, intake folders, and mode-specific folders.
-2. The agent explicitly offers machine-level registration or repair through `obsidian-vault-discovery` when discovery is absent or stale, so future cold agents can discover this vault from outside the vault.
+1. `ariadne:vault` creates the base folder structure, `AGENTS.md`, `CLAUDE.md`, `00 Index.md`, `Agent/` navigation files, `Bases/`, `Templates/`, intake folders, and mode-specific folders.
+2. The agent explicitly offers machine-level registration or repair through `ariadne:discovery` when discovery is absent or stale, so future cold agents can discover this vault from outside the vault.
 3. You get a vault that a cold agent can navigate immediately.
 
 **When to use:** First time setting up any vault. Works for research, startups, personal life systems, content operations, engineering, or any other purpose.
@@ -85,7 +85,7 @@ Examples:
 If you want agents launched from any folder on your machine to find this vault for vague long-term-context questions, register it:
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --vault "/path/to/vault" \
   --name "My Knowledge Vault" \
   --purpose "Long-term project and research knowledge." \
@@ -105,7 +105,7 @@ This writes or refreshes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and t
 > "Make agents find this vault from anywhere"
 
 **What happens:**
-1. `obsidian-vault-discovery` checks the target path for Ariadne entry files.
+1. `ariadne:discovery` checks the target path for Ariadne entry files.
 2. It creates or updates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`.
 3. It optionally updates selected global agent instruction files with tiny marker-managed pointers.
 4. Future cold agents can read the registry first, then enter the vault through the listed cold-start entry order.
@@ -115,7 +115,7 @@ This writes or refreshes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and t
 **Command:**
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --vault "/path/to/vault" \
   --name "My Knowledge Vault" \
   --purpose "Long-term project and research knowledge." \
@@ -126,7 +126,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 To unregister a vault later:
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --vault "/path/to/vault" \
   --agents codex,claude,gemini \
   --remove
@@ -135,7 +135,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 To check global discovery health without writing files:
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --agents codex,claude,gemini \
   --doctor
 ```
@@ -148,12 +148,12 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 > "Add a scope for [domain name] — it will [describe the recurring job]"
 
 **What happens:**
-1. `obsidian-scope-manager` reads the root `AGENTS.md` and `Agent/Task Routing Matrix.md`.
+1. `ariadne:scope` reads the root `AGENTS.md` and `Agent/Task Routing Matrix.md`.
 2. Creates the scope folder, hub, local `AGENTS.md` (delta only), routing row, parent/child nav links.
 3. If the scope will ingest raw material, creates `Raw/Sources/`, `Inbox/`, `Processing Queue/`, and a local `Agent/Ingest Compile Workflow.md`.
 4. Updates root `Bases/*.base` scope formulas so notes in the new scope appear correctly in global views.
 5. Validates — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm it's fully wired.
-6. If the parent vault is not globally registered or discovery is stale, the agent offers `obsidian-vault-discovery` for the parent vault. Scope creation does not add scope-specific global discovery rules.
+6. If the parent vault is not globally registered or discovery is stale, the agent offers `ariadne:discovery` for the parent vault. Scope creation does not add scope-specific global discovery rules.
 
 **When to use:** Adding a new project, content brand, research area, or life domain to an existing vault that already has the root layer.
 
@@ -170,7 +170,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 > "Set up research intake and synthesis for [domain]"
 
 **What happens:**
-1. `obsidian-research-pipeline` reads the scope hub, local agent navigation, routing matrix, and existing research folder.
+1. `ariadne:research-pipeline` reads the scope hub, local agent navigation, routing matrix, and existing research folder.
 2. Creates or updates the local research pipeline: `Raw/Sources/`, `Inbox/`, `Processing Queue/`, `Research/`, synthesis/thread hubs, `Concepts/`, `Entities`, `Relationships/`, `Questions/`, templates, and optional local Bases.
 3. Adds local ingest and knowledge-processing workflow notes when needed.
 4. Wires routing rows so future source intake and synthesis start from the smallest useful context set.
@@ -192,11 +192,11 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 > "Save this research source"
 
 **What happens:**
-1. `obsidian-research-ingest` reads the root routing layer and active domain registry.
+1. `ariadne:research-ingest` reads the root routing layer and active domain registry.
 2. If no domain is named, it asks which domain should receive the research.
 3. It checks whether the target domain has a research pipeline.
-4. If the pipeline is missing, it invokes `obsidian-research-pipeline` first.
-5. It uses `obsidian-ingest-compile` to capture raw source metadata and compile a source-backed research note.
+4. If the pipeline is missing, it invokes `ariadne:research-pipeline` first.
+5. It uses `ariadne:ingest` to capture raw source metadata and compile a source-backed research note.
 6. It updates synthesis/thread hubs only when the source changes the research map.
 
 **When to use:** You are entering a cold agent session with a source link or research material and do not want to remember the vault routing rules.
@@ -225,7 +225,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 - `Research/Source Title.md` — compiled synthesis note with source claims and interpretation separated
 - Updates to relevant concept notes, entity notes, synthesis hubs, and research index
 
-**If intake infrastructure doesn't exist yet** (new scope with no `Raw/Sources/`): `obsidian-ingest-compile` sets it up silently before the first ingest. You never need to create it manually.
+**If intake infrastructure doesn't exist yet** (new scope with no `Raw/Sources/`): `ariadne:ingest` sets it up silently before the first ingest. You never need to create it manually.
 
 **If you don't name a domain:** material lands in the root `Raw/Sources/` and `Processing Queue/` with a note to route it to a specific scope later.
 
@@ -238,7 +238,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 > "Update the [domain] research synthesis with recent sources"
 
 **What happens:**
-1. `obsidian-research-synthesis` reads the domain research hub and thread hub.
+1. `ariadne:synthesis` reads the domain research hub and thread hub.
 2. Gathers compiled research notes — does not re-read raw sources unless compiled notes are insufficient.
 3. Updates the synthesis note: what is known, what is inferred, what is contested, open questions, implications.
 4. Updates thread hub and relevant concept/entity notes.
@@ -257,7 +257,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 > "Wire up routing for [recurring task]"
 
 **What happens:**
-1. `obsidian-navigation-architect` reads the vault navigation layer.
+1. `ariadne:navigation` reads the vault navigation layer.
 2. Creates or updates: folder hub, thread hub, routing row in `Agent/Task Routing Matrix.md`, Base if metadata inspection helps, local `AGENTS.md` if specialized rules are needed.
 3. Calls out bloat signals proactively: entry files acting as tables of contents, hubs too long to scan, recurring workstreams with no routing row.
 
@@ -273,7 +273,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 > "Improve this existing board"
 
 **What happens:**
-1. `obsidian-workstream-board` reads the target scope hub, local agent instructions, navigation, and routing matrix.
+1. `ariadne:workstream-board` reads the target scope hub, local agent instructions, navigation, and routing matrix.
 2. It creates or updates `Kanban/<Board Name>.md` with Obsidian Kanban-compatible Markdown.
 3. It uses consistent task metadata such as `[area:: ...]` and `[priority:: high|medium|low]` so Dataview dashboards can query cards.
 4. When useful, it creates `Dashboards/<Board Name> Dashboard.md` with Dataview task and note rollups.
@@ -295,16 +295,16 @@ In a multi-scope vault, if the current prompt does not name the target scope/dom
 
 **Two tools work together:**
 
-`obsidian-vault-maintainer` — reads the vault, checks for:
+`ariadne:maintainer` — reads the vault, checks for:
 - raw sources never compiled
 - orphan notes with no links
 - stale inbox/queue/output buildup
 - hubs missing links, Bases missing scope filters
 - local AGENTS.md files repeating parent policy
 
-`obsidian-vault-validator` — deterministic CLI check (11 counters):
+`ariadne:validator` — deterministic CLI check (11 counters):
 ```bash
-node /path/to/skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"
+node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
 Target: all 11 counters at 0.
 
@@ -318,7 +318,7 @@ See `docs/guides/validator.md` for the full counter reference.
 > "Create a weekly vault maintenance automation"
 > "Run Ariadne maintenance once a week"
 
-**What it should be:** a scheduled prompt that invokes existing skills, not a new skill. Use `obsidian-vault-validator` first, then `obsidian-vault-maintainer`, then conditional repair skills only when the run finds drift.
+**What it should be:** a scheduled prompt that invokes existing skills, not a new skill. Use `ariadne:validator` first, then `ariadne:maintainer`, then conditional repair skills only when the run finds drift.
 
 **Recommended output:** keep the weekly result in the automation chat or run output by default. Write durable vault notes only for real fixes, unresolved follow-ups, or an explicitly requested dated health report.
 
@@ -355,67 +355,67 @@ Inside a selected multi-scope vault, write actions still need a current-turn exp
 ### New vault → first ingest
 
 ```
-obsidian-agentic-vault   → creates vault structure
-obsidian-research-ingest → first research source enters the right scope
-obsidian-vault-validator → confirms structure is clean
+ariadne:vault   → creates vault structure
+ariadne:research-ingest → first research source enters the right scope
+ariadne:validator → confirms structure is clean
 ```
 
 ### New scope → ready for ingest
 
 ```
-obsidian-scope-manager   → creates scope, hub, routing, intake infrastructure
-obsidian-research-ingest → first research source enters the new scope
-obsidian-vault-validator → confirms routing-matrix-warnings: 0, base-scope-formula-warnings: 0
+ariadne:scope   → creates scope, hub, routing, intake infrastructure
+ariadne:research-ingest → first research source enters the new scope
+ariadne:validator → confirms routing-matrix-warnings: 0, base-scope-formula-warnings: 0
 ```
 
 ### Existing scope → research pipeline
 
 ```
-obsidian-research-pipeline → creates research hubs, local intake, routing, optional Bases
-obsidian-research-ingest   → first source enters the scope
-obsidian-ingest-compile    → compiles the source once the scope is known
-obsidian-research-synthesis → updates synthesis and thread hub after multiple sources
-obsidian-vault-validator   → confirms structure is wired
+ariadne:research-pipeline → creates research hubs, local intake, routing, optional Bases
+ariadne:research-ingest   → first source enters the scope
+ariadne:ingest    → compiles the source once the scope is known
+ariadne:synthesis → updates synthesis and thread hub after multiple sources
+ariadne:validator   → confirms structure is wired
 ```
 
 ### Research sprint → synthesis
 
 ```
-obsidian-research-ingest    (×N sources, if scope may be unclear)
-obsidian-ingest-compile     (×N sources, if scope is known)
-obsidian-research-synthesis → synthesis note + thread hub
-obsidian-vault-maintainer   → confirm no orphans or stale queue items
+ariadne:research-ingest    (×N sources, if scope may be unclear)
+ariadne:ingest     (×N sources, if scope is known)
+ariadne:synthesis → synthesis note + thread hub
+ariadne:maintainer   → confirm no orphans or stale queue items
 ```
 
 ### Navigation drift repair
 
 ```
-obsidian-vault-maintainer    → identifies what's drifting
-obsidian-navigation-architect → fixes hubs, routing, Bases
-obsidian-vault-validator     → confirms all counters back to 0
+ariadne:maintainer    → identifies what's drifting
+ariadne:navigation → fixes hubs, routing, Bases
+ariadne:validator     → confirms all counters back to 0
 ```
 
 ### Recurring workstream tracking
 
 ```
-obsidian-navigation-architect → confirms the workstream belongs in the scope route
-obsidian-workstream-board     → creates or improves Kanban board and optional dashboard
-obsidian-vault-validator      → confirms links remain valid
+ariadne:navigation → confirms the workstream belongs in the scope route
+ariadne:workstream-board     → creates or improves Kanban board and optional dashboard
+ariadne:validator      → confirms links remain valid
 ```
 
 ### Periodic vault maintenance
 
 ```
-obsidian-vault-validator  → find structural issues
-obsidian-vault-maintainer → find content/navigation issues
-obsidian-ingest-compile   → process any stale raw/inbox items
+ariadne:validator  → find structural issues
+ariadne:maintainer → find content/navigation issues
+ariadne:ingest   → process any stale raw/inbox items
 ```
 
 ### Weekly maintenance automation
 
 ```
-obsidian-vault-validator    → deterministic baseline and final check
-obsidian-vault-maintainer   → stale queues, routing drift, and repair triage
+ariadne:validator    → deterministic baseline and final check
+ariadne:maintainer   → stale queues, routing drift, and repair triage
 conditional repair skills   → navigation, ingest, synthesis, Bases, or discovery only when needed
 ```
 

@@ -5,7 +5,7 @@ labels: enhancement
 ---
 
 **Which skill?**
-<!-- e.g. obsidian-ingest-compile -->
+<!-- e.g. ariadne:ingest -->
 
 **What scenario does this cover?**
 <!-- Describe the vault state and what you asked the agent to do -->
