@@ -3,19 +3,19 @@
 The validator is a deterministic health check for an Obsidian vault. Use the shell wrapper and pass the vault root path:
 
 ```bash
-/path/to/skills/obsidian-vault-validator/scripts/validate_vault.sh "/path/to/vault"
+/path/to/skills/validator/scripts/validate_vault.sh "/path/to/vault"
 ```
 
 Or run it from inside the vault root without an argument:
 
 ```bash
-/path/to/skills/obsidian-vault-validator/scripts/validate_vault.sh
+/path/to/skills/validator/scripts/validate_vault.sh
 ```
 
 The wrapper delegates to the Node.js implementation. You can also run the JavaScript file directly:
 
 ```bash
-node /path/to/skills/obsidian-vault-validator/scripts/validate_vault.js "/path/to/vault"
+node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
 
 ## Why Node

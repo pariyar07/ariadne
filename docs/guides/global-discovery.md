@@ -40,7 +40,7 @@ The default adapter set is `codex,claude,gemini`.
 From this repository or an installed skill copy, run:
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --vault "/path/to/vault" \
   --name "My Knowledge Vault" \
   --purpose "Long-term project and research knowledge." \
@@ -51,7 +51,7 @@ node skills/obsidian-agentic-vault/scripts/register_vault.js \
 Use `--dry-run` to preview files before writing:
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --vault "/path/to/vault" \
   --name "My Knowledge Vault" \
   --dry-run
@@ -64,7 +64,7 @@ Re-running registration for an existing vault is the normal way to update stale 
 To remove a vault from the registry:
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --vault "/path/to/vault" \
   --agents codex,claude,gemini \
   --remove
@@ -112,7 +112,7 @@ This keeps ambiguous cold-start requests fast and token-light while preserving t
 Use doctor mode to verify global discovery without writing files:
 
 ```bash
-node skills/obsidian-agentic-vault/scripts/register_vault.js \
+node skills/vault/scripts/register_vault.js \
   --agents codex,claude,gemini \
   --doctor
 ```
@@ -121,4 +121,4 @@ The doctor checks that the registry files exist, registry Markdown matches regis
 
 If doctor reports stale entrypoints or missing marker blocks, re-run registration for the vault to repair the registry and selected adapters.
 
-Agents should treat a doctor failure as actionable navigation drift. Report the failing registry, entrypoint, or adapter check, explain how it affects cold-start behavior, and offer to repair it with `obsidian-vault-discovery`. Repairs that modify global agent files should be explicit, because those files may contain user-maintained instructions outside Ariadne marker blocks.
+Agents should treat a doctor failure as actionable navigation drift. Report the failing registry, entrypoint, or adapter check, explain how it affects cold-start behavior, and offer to repair it with `ariadne:discovery`. Repairs that modify global agent files should be explicit, because those files may contain user-maintained instructions outside Ariadne marker blocks.
