@@ -53,11 +53,11 @@ Use `references/project-agent-files.md` when creating or restructuring files.
 Default shape:
 
 - `AGENTS.md` - canonical project instructions, usually public-safe.
-- `CLAUDE.md` - thin Claude adapter, usually `@AGENTS.md` plus Claude-only deltas.
-- `GEMINI.md` - thin Gemini adapter, usually `@AGENTS.md` plus Gemini-only deltas.
-- `AGENTS.override.md` - optional Codex local override, gitignored.
+- `CLAUDE.md` - thin Claude adapter, usually a short sentence plus `@AGENTS.md` and any Claude-only public deltas.
+- `GEMINI.md` - thin Gemini adapter when Gemini CLI support is requested, usually a short sentence plus `@AGENTS.md` and any Gemini-only public deltas.
+- `AGENTS.override.md` - optional Codex local replacement override, gitignored. Codex prefers this over `AGENTS.md` at the same directory level, so do not treat it as a small supplement.
 - `CLAUDE.local.md` - optional Claude local memory, gitignored.
-- `GEMINI.local.md` - optional Gemini local context, gitignored.
+- `GEMINI.local.md` - optional Ariadne local context convention for Gemini workflows, gitignored. Do not assume Gemini loads it automatically unless the local runtime configuration or user confirms that behavior.
 
 If the project already has a different valid pattern, preserve it and add the smallest compatible Ariadne link.
 
