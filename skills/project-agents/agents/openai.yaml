@@ -1,0 +1,3 @@
+display_name: Ariadne Project Agents
+short_description: Create project agent files linked to Ariadne context.
+default_prompt: Initialize project agent instructions and connect this workspace to Ariadne context.
