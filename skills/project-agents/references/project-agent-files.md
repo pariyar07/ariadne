@@ -32,18 +32,22 @@ Use adapter files to avoid duplicating instructions.
 `CLAUDE.md`:
 
 ```md
+Use AGENTS.md as the shared project guidance for this repository.
+
 @AGENTS.md
-@CLAUDE.local.md
 ```
 
 `GEMINI.md`:
 
 ```md
+Use AGENTS.md as the shared project guidance for this repository.
+
 @AGENTS.md
-@GEMINI.local.md
 ```
 
 Only add runtime-specific deltas when the runtime genuinely needs them.
+
+Do not import local ignored files from tracked adapter files by default. `CLAUDE.local.md` is Claude-specific local context and should be left for Claude's own local-memory behavior when present. `GEMINI.local.md` is an Ariadne convention for local Gemini notes, not a guaranteed Gemini CLI default; use it only when the user's Gemini setup explicitly loads it or the user asks for a local import.
 
 ## Local Files
 
@@ -56,6 +60,8 @@ Common local files:
 - `GEMINI.local.md`
 
 When creating any of these, ensure `.gitignore` includes them.
+
+Codex note: `AGENTS.override.md` replaces `AGENTS.md` for Codex at the same directory level. Use it only when the local file intentionally restates the needed project guidance plus local differences, or when a temporary full replacement is desired.
 
 Local files may include:
 
@@ -113,6 +119,7 @@ Use placeholders in public examples. Use private absolute paths only in ignored 
 - If no block exists, append it near the project overview or agent workflow section.
 - If multiple blocks exist, stop and ask whether to merge or remove duplicates.
 - If an existing `CLAUDE.md` or `GEMINI.md` already contains substantial custom guidance, do not collapse it to `@AGENTS.md` unless the user asks for normalization.
+- Do not add `@CLAUDE.local.md`, `@GEMINI.local.md`, absolute private paths, or home-directory imports to tracked adapter files unless the user explicitly asks and understands the portability tradeoff.
 - If a project has nested subprojects, add nested `AGENTS.md` files only when local rules differ from the root.
 
 ## Bounded Project Inspection
