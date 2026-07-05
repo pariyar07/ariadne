@@ -146,12 +146,13 @@ node skills/vault/scripts/register_vault.js --agents codex,claude,gemini --docto
 
 ## Skills
 
-Start with `ariadne:vault` to bootstrap a new vault. All other skills operate on an existing vault.
+Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate on an existing vault; `ariadne:project-agents` operates on a project workspace that may link back to registered Ariadne context.
 
 | Skill | Purpose |
 | --- | --- |
 | `ariadne:vault` | **Start here** — Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
 | `ariadne:discovery` | Register existing Obsidian vaults so cold agents can find them from any workspace |
+| `ariadne:project-agents` | Create or update project-level agent instruction files and connect project workspaces to Ariadne context |
 | `ariadne:scope` | Create, promote, import, and nest durable knowledge scopes |
 | `ariadne:navigation` | Design hubs, routing, workstream graphs, templates, and view layers |
 | `ariadne:ingest` | Turn links, documents, and brain dumps into durable wiki notes |
@@ -280,6 +281,8 @@ node skills/vault/scripts/register_vault.js \
 This creates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`, then adds a small marker-managed discovery block to selected global agent instruction files. The block points agents to the registry; it does not copy the whole vault context.
 
 Use this when you want future cold agent sessions, launched from any folder, to find the vault quickly for vague questions about prior projects, meetings, research, decisions, or "what was I working on?"
+
+Use `ariadne:project-agents` when a specific code repository or project folder needs local `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that point back to registered Ariadne context. Project files should stay small; the vault remains the source of truth.
 
 ## References
 
