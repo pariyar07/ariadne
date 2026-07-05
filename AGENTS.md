@@ -10,6 +10,7 @@ skills/
     scripts/register_vault.js    ← optional machine-level vault registration
     test/test_register_vault.js  ← registration script tests
   discovery/    ← workflow skill for registering existing vaults (`ariadne:discovery`)
+  project-agents/ ← project-level agent instruction files (`ariadne:project-agents`)
   scope/        ← scope creation and wiring (`ariadne:scope`)
   navigation/   ← hub and routing design (`ariadne:navigation`)
   ingest/       ← raw input → durable notes (`ariadne:ingest`)
@@ -47,6 +48,7 @@ Each skill is a folder with:
 | Edit vault templates | `skills/vault/assets/templates/` |
 | Edit global discovery registration | `skills/vault/scripts/register_vault.js` |
 | Edit vault discovery skill | `skills/discovery/SKILL.md` |
+| Edit project agent-file skill | `skills/project-agents/SKILL.md` |
 | Edit reference documentation | `skills/vault/references/` |
 | Edit cold-start research ingest | `skills/research-ingest/SKILL.md` |
 | Edit domain research pipeline setup | `skills/research-pipeline/SKILL.md` |
@@ -68,6 +70,7 @@ Each skill is a folder with:
 - The validator uses only built-in Node.js modules. Never add external dependencies to it.
 - All validator checks must be deterministic — same vault always produces same output.
 - Registration scripts must be idempotent and marker-managed. Never overwrite user global instructions outside Ariadne marker blocks.
+- Project agent-file updates must be bounded and marker-managed where possible. Preserve user instructions outside Ariadne project-vault-link markers.
 - New validator warnings must be non-fatal unless they represent a structural impossibility.
 - Every new validator counter needs: logic in JS + return object entry + counters array entry + `docs/guides/validator.md` update + `SKILL.md` healthy output update + `README.md` healthy output update + test fixture.
 - `agents/openai.yaml` is required for each skill for Codex CLI display metadata.
