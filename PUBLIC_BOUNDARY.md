@@ -10,6 +10,7 @@ Ariadne is an open-source skill package for Obsidian vault structure and navigat
 - Bases, Kanban boards, and Dataview dashboards as optional Obsidian view layers
 - source ingest, research synthesis, maintenance, and deterministic validation
 - marker-managed vault discovery adapters that point to user-owned local registries
+- marker-managed project agent-file links that connect project workspaces to registered vault context
 
 ## Out Of Scope
 
@@ -29,6 +30,7 @@ Generic runtime-adaptive coordination belongs in Kybernetes. Ariadne may provide
 - Do not include private vault screenshots or graph exports.
 - Do not ask users to paste secrets, production logs, or private vault dumps into issues.
 - Keep global agent discovery blocks as signposts to user-owned registry files.
+- Keep project agent-file links as signposts to registered vault context; do not copy private vault contents into public repositories.
 
 ## Branch Protection Plan
 

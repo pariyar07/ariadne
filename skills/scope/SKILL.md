@@ -39,6 +39,7 @@ Ask only what is missing:
 11. Add the new scope's folder path to every root `Bases/*.base` scope formula that contains `file.inFolder` — otherwise notes in this scope show as "Global" in all root views.
 12. Run validation — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm the scope is fully wired.
 13. If the parent vault is not globally registered, or its global discovery block is stale, offer `ariadne:discovery` for the parent vault. Scope creation should not write global files or add scope-specific global discovery rules.
+14. If an external code repository or project folder should point to this scope, offer `ariadne:project-agents`. Scope-specific project links require a current-turn explicit target or user confirmation and belong in project files, not global discovery.
 
 ## Import Existing Vault As Scope
 
@@ -58,11 +59,13 @@ Ask only what is missing:
 - Use path-qualified wikilinks across scope boundaries.
 - Do not create child scopes just because they might be useful.
 - Wire new scopes into vault-local navigation and routing only. Global discovery registers vaults, not individual scopes.
+- Project agent files may link to a confirmed scope, but they must not replace vault-local scope navigation.
 - If global discovery produces multiple plausible parent vault matches, show the top matches with short reasons and ask before creating, updating, or filing artifacts.
 
 ## Related Skills
 
 - Use `ariadne:vault` for new vault bootstrap.
+- Use `ariadne:project-agents` when an external project folder needs agent instructions or a link to this scope.
 - Use `ariadne:navigation` for route and hub design.
 - Use `ariadne:research-pipeline` when an existing scope needs a full research pipeline after creation.
 - Use `ariadne:research-ingest` for the first research source when scope routing may be unclear.

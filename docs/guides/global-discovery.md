@@ -4,6 +4,8 @@ Vaults created or maintained with Ariadne are easy for agents to navigate once t
 
 Global discovery is optional. It is useful when a user wants agents launched from any folder to treat an Obsidian vault as a long-term knowledge source. It is also the repair/update path for existing global marker blocks when Ariadne ships newer discovery rules.
 
+Global discovery is not the same as project-level agent files. Use `ariadne:project-agents` when a repository or ordinary project folder needs `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or a small Ariadne vault-link block. Project files may point toward registered vault context, but global discovery continues to register vaults rather than individual project scopes.
+
 ## What Registration Creates
 
 Registration writes an Ariadne-managed registry under the user's home directory:
@@ -87,6 +89,7 @@ If no vaults remain in the registry, the selected adapter blocks are removed fro
 
 - Existing user instructions outside the marker block are preserved.
 - The global block should stay small. It should point to the registry, not duplicate vault navigation rules.
+- Project-level agent files should use their own `ariadne:project-vault-link` marker block instead of copying the global discovery block.
 - Unregistering a vault removes only the matching registry entry and Ariadne marker blocks when no registered vaults remain.
 
 ## Cold-Start Behavior
