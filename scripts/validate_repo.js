@@ -165,6 +165,42 @@ function validateWorkflows(errors) {
   }
 }
 
+function validateRuntimeAdapters(errors) {
+  const sharedGuidance = "Use AGENTS.md as the shared project guidance for this repository.";
+  const adapterChecks = [
+    ["CLAUDE.md", "@CLAUDE.local.md"],
+    ["GEMINI.md", "@GEMINI.local.md"],
+  ];
+
+  for (const [file, localImport] of adapterChecks) {
+    if (!fs.existsSync(path.join(ROOT, file))) continue;
+    const text = read(file);
+    if (!text.includes(sharedGuidance)) {
+      fail(errors, `${file} must explain that AGENTS.md is the shared project guidance`);
+    }
+    if (!/^@AGENTS\.md$/mu.test(text)) {
+      fail(errors, `${file} must import AGENTS.md`);
+    }
+    if (text.includes(localImport)) {
+      fail(errors, `${file} must not import ignored local files by default: ${localImport}`);
+    }
+  }
+
+  const projectAgentReference = "skills/project-agents/references/project-agent-files.md";
+  if (fs.existsSync(path.join(ROOT, projectAgentReference))) {
+    const text = read(projectAgentReference);
+    if (!text.includes("Do not import local ignored files from tracked adapter files by default.")) {
+      fail(errors, `${projectAgentReference} must document the tracked-adapter local import guard`);
+    }
+    if (!text.includes("AGENTS.override.md` replaces `AGENTS.md` for Codex at the same directory level")) {
+      fail(errors, `${projectAgentReference} must document Codex AGENTS.override.md replacement semantics`);
+    }
+    if (/```md\n@AGENTS\.md\n@(?:CLAUDE|GEMINI)\.local\.md\n```/u.test(text)) {
+      fail(errors, `${projectAgentReference} must not show default tracked adapters importing ignored local files`);
+    }
+  }
+}
+
 function main() {
   const skillsOnly = process.argv.includes("--skills-only");
   const errors = [];
@@ -176,6 +212,7 @@ function main() {
   if (!skillsOnly) {
     validateRepoFiles(errors);
     validateWorkflows(errors);
+    validateRuntimeAdapters(errors);
   }
 
   if (errors.length > 0) {
