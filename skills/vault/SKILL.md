@@ -19,6 +19,7 @@ It also has workflow companion skills:
 
 - `ariadne:ingest` for raw inputs, links, documents, and brain dumps.
 - `ariadne:discovery` for registering existing vaults so cold agents can find them from any workspace.
+- `ariadne:project-agents` for creating or updating project-level `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that connect a project workspace to registered Ariadne context.
 - `ariadne:research-ingest` for cold-start research sources when the target scope is missing, unclear, or may need pipeline setup.
 - `ariadne:synthesis` for multi-source research threads.
 - `ariadne:research-pipeline` for adding research intake and synthesis infrastructure inside an existing scope.
@@ -75,6 +76,7 @@ This skill bootstraps the system. Use the companion skills for ongoing ingest, s
 10. Add Kanban boards or Dataview dashboards only when a recurring workstream needs visible status tracking.
 11. Validate that Markdown frontmatter and Base YAML parse.
 12. If machine-level discovery is absent or stale, explicitly offer `ariadne:discovery` so future cold agents can discover the vault from outside the vault. Do not silently write global files.
+13. If the user also has a code repository or project folder that should point at this vault or one of its scopes, offer `ariadne:project-agents` after the vault and discovery path are clear.
 
 ## Default Folder Structure
 

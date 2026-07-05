@@ -42,6 +42,7 @@ Examples:
 - `"Run a vault health check"` → routes to maintenance
 - `"Create a weekly vault maintenance automation"` → uses the public automation prompt template
 - `"Bootstrap a new vault for my gym training"` → routes to vault creation
+- `"Initialize agent files for this project"` → creates or updates project-level agent instructions and optional Ariadne context links
 
 ---
 
@@ -51,6 +52,7 @@ Examples:
 | --- | --- | --- |
 | Create a new vault from scratch | `ariadne:vault` | "Bootstrap a new vault for..." |
 | Register, update, or repair global discovery | `ariadne:discovery` | "Make this vault discoverable" / "Register this vault globally" / "Repair Ariadne discovery" |
+| Create or update project agent files | `ariadne:project-agents` | "Initialize agent files for this project" / "Connect this repo to Ariadne context" |
 | Add a new domain or scope | `ariadne:scope` | "Add a scope for..." / "Create a domain for..." |
 | Add research infrastructure inside a domain | `ariadne:research-pipeline` | "Add a research pipeline to..." |
 | Cold-start research source ingest | `ariadne:research-ingest` | "Research ingest..." / "Save this research..." |

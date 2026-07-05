@@ -20,6 +20,8 @@ Typical requests:
 
 This skill manages machine-level discovery. It does not create the vault. Use `ariadne:vault` to bootstrap a new vault.
 
+It also does not own project-level `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files. Use `ariadne:project-agents` when a code repository or ordinary project folder needs local agent instructions or a small Ariadne vault-link block.
+
 ## Core Model
 
 The vault remains the source of truth. Global discovery only creates a small local signpost:
@@ -41,6 +43,8 @@ After a vault is selected:
 - For scope creation or promotion, use `ariadne:scope`.
 
 Global discovery remains a signpost.
+
+Project-level agent files are also signposts when they connect to Ariadne. They may point agents toward registered vault discovery or a confirmed vault/scope, but they should not duplicate global discovery blocks or copy vault instructions into a repository.
 
 ## Start Workflow
 
@@ -160,5 +164,6 @@ If adapter blocks exist but the registry path is missing, offer to recreate the 
 ## Related Skills
 
 - Use `ariadne:vault` to create a new vault.
+- Use `ariadne:project-agents` to create or update project-level agent files that connect a workspace to registered Ariadne context.
 - Use `ariadne:maintainer` to check vault health after registration.
 - Use `ariadne:scope` when the user wants to make a new domain inside an existing vault discoverable through vault navigation.
