@@ -83,6 +83,6 @@ Each skill is a folder with:
 
 To connect this repo to a local Obsidian vault, create these files (all gitignored):
 
-- `CLAUDE.local.md` — appended to `CLAUDE.md` by Claude Code; add your vault path and routing
-- `GEMINI.local.md` — appended to `GEMINI.md` by Gemini CLI; same content
+- `CLAUDE.local.md` — optional Claude local memory/context; do not import it from tracked `CLAUDE.md` by default
+- `GEMINI.local.md` — optional Ariadne local context convention for Gemini workflows; only use it when your local Gemini setup loads it or you explicitly add a local import
 - `AGENTS.override.md` — replaces `AGENTS.md` for Codex CLI; copy `AGENTS.md` and add your local vault section at the bottom
