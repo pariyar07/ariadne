@@ -63,7 +63,7 @@ Common folders:
 - `People/`
 - `Datasets/`
 - `Bibliography/`
-- `Search/`
+- `Search/` for saved search strategies, query notes, and reviewed result sets
 
 Common flow:
 
