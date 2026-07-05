@@ -11,7 +11,12 @@ metadata:
     - true-orphans-md
     - unlinked-base-files
     - bloat-warnings
-    - recursive-scope-warnings
+    - local-base-scope-warnings
+    - local-agents-inheritance-warnings
+    - ambiguous-wikilink-warnings
+    - scope-navigation-warnings
+    - routing-matrix-warnings
+    - base-scope-formula-warnings
 ---
 
 # Ariadne Validator
@@ -76,7 +81,7 @@ Some vaults may intentionally keep raw captures or temporary files lightly linke
 
 Bloat warnings are not fatal. They are cues that an agent should call out possible navigation drift and suggest a maintenance pass.
 
-Recursive-scope warnings are non-fatal. Treat them as prompts to tighten local Base filters, reduce duplicated local policy text, disambiguate basename wikilinks, or repair parent/child hub navigation.
+Recursive scope-related warnings are non-fatal. Treat them as prompts to tighten local Base filters, reduce duplicated local policy text, disambiguate basename wikilinks, or repair parent/child hub navigation.
 
 The validator also warns when a large specialized folder may need a local `AGENTS.md`. Treat that as a prompt to inspect the folder's workflow, not as an automatic requirement.
 

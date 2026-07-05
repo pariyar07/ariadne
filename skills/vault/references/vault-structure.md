@@ -59,7 +59,7 @@ Add when the vault is about understanding a topic:
 - `Claims/`
 - `Bibliography/`
 - `Artifacts/`
-- `Search/`
+- `Search/` - saved search strategies, query notes, and reviewed result sets that support research synthesis without becoming canonical source notes.
 
 ## Learning Mode
 
