@@ -2,6 +2,17 @@
 
 Use these patterns when `ariadne:workspace-instructions` creates or updates workspace-level instruction files.
 
+## Sharing Modes
+
+Choose a mode before writing files:
+
+- Shared repo: tracked files carry public-safe guidance for collaborators and future agents.
+- Local-only Git workspace: ignored files carry machine-specific guidance; tracked files are left alone unless the user asks.
+- Shared plus local: tracked files carry portable rules; ignored local files carry private paths and personal workflow.
+- Non-Git folder: files can be local, but keep them portable unless the user confirms they will never be shared.
+
+When the mode is ambiguous and it changes the file shape, ask whether the user wants shared, local-only, or shared plus local instructions.
+
 ## Public-Safe Canonical File
 
 Use `AGENTS.md` as the canonical workspace file when the workspace should share instructions across agent runtimes.
@@ -63,6 +74,14 @@ When creating any of these, ensure `.gitignore` includes them.
 
 Codex note: `AGENTS.override.md` replaces `AGENTS.md` for Codex at the same directory level. Use it only when the local file intentionally restates the needed project guidance plus local differences, or when a temporary full replacement is desired.
 
+Do not create `AGENTS.local.md` as a generic convention. Codex does not use it by default. For Codex local-only behavior, use `AGENTS.override.md` only when replacement semantics are acceptable, or keep the private details in another ignored file that the user explicitly asks agents to read.
+
+Claude note: `CLAUDE.local.md` is appropriate for local project-specific notes and should be gitignored.
+
+Gemini note: `GEMINI.md` is the default context filename. `GEMINI.local.md` is not a guaranteed default; create or import it only when the user's Gemini configuration loads that filename or the user explicitly asks for it.
+
+Copilot note: repository custom instructions are shared repo guidance. Do not invent a local Copilot instruction filename unless the user's tool configuration documents it.
+
 Local files may include:
 
 - private Ariadne vault paths
@@ -74,6 +93,39 @@ Local files may include:
 
 Do not copy local-file content into tracked files.
 
+## Proactive Cleanup Signals
+
+When updating an existing workspace, treat these as cleanup signals:
+
+- tracked files include private absolute paths, private vault paths, client details, personal workflow defaults, or sandbox paths
+- `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` copy long vault navigation, destination maps, scope catalogs, or raw context
+- runtime adapter files repeat the canonical `AGENTS.md` without real runtime-specific deltas
+- local-only files exist but `.gitignore` does not cover them
+- a workspace has both tracked and local files but no clear shared/local split
+- Ariadne marker blocks are duplicated, malformed, or mixed with copied global discovery blocks
+
+Safe cleanup:
+
+- compact copied vault context into the small Ariadne vault-link block
+- preserve commands, repo maps, tests, coding conventions, safety rules, and other real workspace guidance
+- move private/local details to ignored local files when local mode is clear
+- normalize adapters to thin imports when they only duplicate `AGENTS.md`
+
+Ask first when content ownership is ambiguous, when a local-only mode would leave collaborators without needed repo guidance, or when changing `AGENTS.override.md` would replace shared Codex guidance.
+
+## Scenario Coverage
+
+Future tests or guardrails should cover:
+
+- Git shared mode creates or updates compact public-safe tracked instructions
+- Git local-only mode avoids tracked instruction changes and ensures local files are ignored
+- shared plus local mode splits portable rules from private paths
+- non-Git mode keeps files portable unless local-only intent is explicit
+- bulky tracked files are compacted without losing useful workspace rules
+- private path leakage is detected before tracked files are written
+- verbose adapters are normalized when they only duplicate canonical guidance
+- duplicate or malformed Ariadne markers stop the update and ask for confirmation
+
 ## Ariadne Vault-Link Block
 
 Use this marker block in tracked or local workspace files:
@@ -84,7 +136,7 @@ Use this marker block in tracked or local workspace files:
 
 This workspace may have related long-term context in a registered Ariadne vault.
 
-When project history, decisions, roadmap, research, customers, or workstream state may matter:
+When workspace history, decisions, roadmap, research, customers, or workstream state may matter:
 
 1. Use registered vault discovery from the active agent runtime.
 2. Select the relevant vault from the registry.
@@ -114,15 +166,15 @@ Use placeholders in public examples. Use private absolute paths only in ignored 
 
 ## Update Rules
 
-- Preserve all content outside Ariadne markers.
+- Preserve useful workspace-specific content outside Ariadne markers, but proactively compact or move content that clearly belongs to the vault or ignored local files.
 - Replace exactly one existing `ariadne:workspace-vault-link` block in place.
-- If no block exists, append it near the project overview or agent workflow section.
+- If no block exists, append it near the workspace overview or agent workflow section.
 - If multiple blocks exist, stop and ask whether to merge or remove duplicates.
-- If an existing `CLAUDE.md` or `GEMINI.md` already contains substantial custom guidance, do not collapse it to `@AGENTS.md` unless the user asks for normalization.
+- If an existing `CLAUDE.md` or `GEMINI.md` already contains substantial runtime-specific custom guidance, do not collapse it to `@AGENTS.md` unless the user asks for normalization or the duplicated content clearly belongs in canonical `AGENTS.md`.
 - Do not add `@CLAUDE.local.md`, `@GEMINI.local.md`, absolute private paths, or home-directory imports to tracked adapter files unless the user explicitly asks and understands the portability tradeoff.
-- If a project has nested subprojects, add nested `AGENTS.md` files only when local rules differ from the root.
+- If a workspace has nested subprojects, add nested `AGENTS.md` files only when local rules differ from the root.
 
-## Bounded Project Inspection
+## Bounded Workspace Inspection
 
 Prefer these files:
 

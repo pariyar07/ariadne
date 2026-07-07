@@ -22,13 +22,14 @@ Keep the bridge small. Do not copy vault navigation, private absolute paths, or 
 
 ## Bounded Discovery
 
-Inspect only the smallest useful project context:
+Inspect only the smallest useful workspace context:
 
-1. Current directory and parents up to the nearest project root.
+1. Current directory and parents up to the nearest workspace root.
 2. Existing `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and local override files in that root.
 3. `.gitignore`.
 4. High-signal workspace files such as `README.md`, package or build manifests, test config, and existing docs indexes.
-5. Registered vault metadata only when the user asks to connect the project to Ariadne context, repair stale global discovery, or the prompt is ambiguous about which known project/vault it refers to.
+5. Git state when relevant: whether the folder is inside a worktree, the repository root, tracked instruction files, ignored local files, and whether remotes suggest the workspace is shared.
+6. Registered vault metadata only when the user asks to connect the workspace to Ariadne context, repair stale global discovery, or the prompt is ambiguous about which known workspace/vault it refers to.
 
 Do not scan the whole computer. Do not scan an entire vault or repository to infer intent. Use filenames, manifests, and existing entry files first.
 
@@ -38,13 +39,14 @@ Ask adaptively when missing information changes the files to write.
 
 Useful questions:
 
-- Which project root should receive these files?
+- Which workspace root should receive these files?
+- Is this workspace shared through Git, local-only on this machine, or should it have both shared and local/private instruction files?
 - Which runtimes should be supported: Codex, Claude Code, Gemini CLI, or another adapter?
 - Should the vault connection be public-safe in tracked files, private in local ignored files, or both?
-- Which registered vault or scope should this project link to?
+- Which registered vault or scope should this workspace link to?
 - Should existing instruction files be updated, split into canonical plus adapters, or left unchanged except for the Ariadne marker block?
 
-When multiple vaults, scopes, or project roots are plausible, show the top matches with short reasons and ask the user to choose. Search hits, current directory, or prior conversation alone are not permission to write an ambiguous vault/scope link.
+When multiple vaults, scopes, or workspace roots are plausible, show the top matches with short reasons and ask the user to choose. Search hits, current directory, or prior conversation alone are not permission to write an ambiguous vault/scope link.
 
 ## Workspace File Pattern
 
@@ -59,7 +61,36 @@ Default shape:
 - `CLAUDE.local.md` - optional Claude local memory, gitignored.
 - `GEMINI.local.md` - optional Ariadne local context convention for Gemini workflows, gitignored. Do not assume Gemini loads it automatically unless the local runtime configuration or user confirms that behavior.
 
-If the project already has a different valid pattern, preserve it and add the smallest compatible Ariadne link.
+If the workspace already has a different valid pattern, preserve it and add the smallest compatible Ariadne link.
+
+## Sharing Mode
+
+Before writing or restructuring files, decide the sharing mode.
+
+Check whether the workspace is inside Git. If it is, inspect whether instruction files are tracked and whether local-only filenames are covered by `.gitignore`. If the answer changes what you would write and the prompt does not make the intent clear, ask one short question: should these instructions be shared in the repo, local-only for this machine, or split into shared plus local/private files?
+
+Use this mapping:
+
+- Shared repo: tracked `AGENTS.md` contains public-safe workspace rules and a compact Ariadne link. Tracked `CLAUDE.md` and `GEMINI.md` stay thin adapters unless they have real runtime-specific public deltas.
+- Local-only in a Git repo: prefer ignored local files and add `.gitignore` coverage before creating them. Do not create or modify tracked instruction files unless the user asks.
+- Shared plus local: put stable team/workspace rules in tracked files and put private vault paths, exact scope paths, personal workflow, sandbox paths, and machine-only commands in ignored local files.
+- Non-Git folder: ask only when sharing intent is unclear and materially affects the file shape. If the user does not care, keep files portable and avoid private absolute paths in files likely to be copied elsewhere.
+
+Do not invent a generic `AGENTS.local.md` convention. Use `AGENTS.override.md` only when a Codex replacement file is intended. Use `CLAUDE.local.md` for Claude local project memory. Use `GEMINI.local.md` only as an explicit local convention when the user's Gemini setup loads it or the user asks for it.
+
+## Proactive Maintenance Pass
+
+When creating, refreshing, or connecting workspace instructions, do not only add or replace the Ariadne marker block. First classify existing content:
+
+- Keep in shared workspace instructions: purpose, boundaries, repo map, commands, test/build/validation workflow, coding conventions, review expectations, and compact safety rules.
+- Keep local-only: private vault paths, exact private scope paths, client names not meant for collaborators, personal defaults, machine-local commands, sandbox paths, and temporary migration notes.
+- Leave in the vault: long navigation lists, destination maps, scope catalogs, decision history, roadmap details, customer context, raw transcripts, and long copied vault instructions.
+- Keep as adapter deltas only when needed: runtime-specific instructions for Claude, Gemini, Copilot, or another adapter.
+- Ask about: content that could be either repo operating policy or private/vault-owned context.
+
+Act without asking when the cleanup is clearly low-risk: compact copied vault navigation into a small vault-link block, remove private/local details from tracked files, add missing `.gitignore` coverage for local files, and normalize verbose adapters that only duplicate `AGENTS.md`.
+
+Ask before removing or moving ambiguous workspace-specific rules, changing a confirmed scope link, merging duplicate marker blocks, replacing a substantial runtime-specific adapter, or converting between shared/local modes when the user has not made sharing intent clear.
 
 ## Ariadne Vault Links
 
@@ -85,31 +116,35 @@ Rules:
 
 ## Creation Workflow
 
-1. Identify the project root. Prefer the current directory when it is already the root; otherwise use the nearest `.git` root or ask.
+1. Identify the workspace root. Prefer the current directory when it is already the root; otherwise use the nearest `.git` root or ask.
 2. Read existing workspace instruction files and `.gitignore`.
 3. Inspect high-signal workspace files to infer workspace name, commands, tests, and public-safe context.
-4. Decide the runtime file set.
-5. Decide whether the Ariadne connection belongs in tracked files, local ignored files, or both.
-6. If vault or scope target is ambiguous, ask before writing.
-7. Create or update files using the patterns reference.
-8. Add local-only filenames to `.gitignore` when local files are created.
-9. Report which files changed and which context is intentionally left for the vault.
+4. Decide sharing mode: shared, local-only, shared plus local, or non-Git portable.
+5. Decide the runtime file set.
+6. Decide whether the Ariadne connection belongs in tracked files, local ignored files, or both.
+7. Run the proactive maintenance pass before writing.
+8. If vault or scope target is ambiguous, ask before writing.
+9. Create or update files using the patterns reference.
+10. Add local-only filenames to `.gitignore` when local files exist or are created in a Git workspace.
+11. Report which files changed, which mode was used, and which context is intentionally left for the vault or local-only files.
 
 ## Update Workflow
 
 When files already exist:
 
-1. Preserve existing instructions.
-2. Replace the Ariadne marker block in place when exactly one block exists.
-3. Add a marker block only when the user asked for an Ariadne/vault connection or existing files clearly intend one.
-4. Refuse to guess if duplicate or malformed Ariadne marker blocks exist. Name the markers, say which file contains them, and ask whether to merge, remove duplicates, or leave the file unchanged before editing.
-5. Avoid converting a project to a new adapter layout unless the user asked for normalization or the current files duplicate large instruction blocks.
+1. Preserve useful workspace-specific instructions.
+2. Run the sharing-mode check and proactive maintenance pass.
+3. Replace the Ariadne marker block in place when exactly one block exists.
+4. Add a marker block only when the user asked for an Ariadne/vault connection or existing files clearly intend one.
+5. Refuse to guess if duplicate or malformed Ariadne marker blocks exist. Name the markers, say which file contains them, and ask whether to merge, remove duplicates, or leave the file unchanged before editing.
+6. Compact duplicated vault navigation, private/local details, and adapter duplication when the ownership is clear.
+7. Avoid converting to a new adapter layout unless the user asked for normalization, the current files duplicate large instruction blocks, or the existing layout conflicts with the selected sharing mode.
 
 ## Global Discovery
 
 If machine-level discovery is absent or stale, offer `ariadne:global-discovery`. Do not silently modify global agent files from this skill.
 
-When called from outside a clear project:
+When called from outside a clear workspace:
 
 - If the user asks for global discovery, route to `ariadne:global-discovery`.
 - If the user asks to initialize workspace instruction files, ask for the workspace folder or use an explicit path from the prompt.

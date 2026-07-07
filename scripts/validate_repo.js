@@ -195,6 +195,21 @@ function validateRuntimeAdapters(errors) {
     if (!text.includes("AGENTS.override.md` replaces `AGENTS.md` for Codex at the same directory level")) {
       fail(errors, `${workspaceInstructionReference} must document Codex AGENTS.override.md replacement semantics`);
     }
+    for (const required of [
+      "## Sharing Modes",
+      "Do not create `AGENTS.local.md` as a generic convention.",
+      "Claude note: `CLAUDE.local.md` is appropriate for local project-specific notes and should be gitignored.",
+      "`GEMINI.local.md` is not a guaranteed default",
+      "Copilot note: repository custom instructions are shared repo guidance.",
+      "## Proactive Cleanup Signals",
+      "## Scenario Coverage",
+      "Git local-only mode avoids tracked instruction changes and ensures local files are ignored",
+      "duplicate or malformed Ariadne markers stop the update and ask for confirmation",
+    ]) {
+      if (!text.includes(required)) {
+        fail(errors, `${workspaceInstructionReference} must document workspace instruction guidance: ${required}`);
+      }
+    }
     if (/```md\n@AGENTS\.md\n@(?:CLAUDE|GEMINI)\.local\.md\n```/u.test(text)) {
       fail(errors, `${workspaceInstructionReference} must not show default tracked adapters importing ignored local files`);
     }
