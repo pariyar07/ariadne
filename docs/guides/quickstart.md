@@ -60,6 +60,7 @@ Examples:
 | Synthesize multiple sources | `ariadne:synthesis` | "Synthesize the ... research" / "Update the ... thread" |
 | Redesign navigation or routing | `ariadne:navigation` | "Redesign navigation for..." / "Add a workstream for..." |
 | Create or improve a work board or dashboard | `ariadne:workstream-tracking` | "Create a Kanban for..." / "Make a dashboard for..." / "Improve this board" |
+| Close or checkpoint meaningful work | `ariadne:closeout` | "Run Ariadne closeout" / "Checkpoint this work" / "Can I close this chat?" |
 | Run health checks and repair | `ariadne:maintenance` | "Run a vault health check" / "Fix navigation drift" |
 | Validate structure deterministically | `ariadne:validator` | "Validate the vault" / "Check for broken links" |
 
@@ -403,6 +404,13 @@ ariadne:validator     → confirms all counters back to 0
 ariadne:navigation → confirms the workstream belongs in the scope route
 ariadne:workstream-tracking     → creates or improves Kanban board and optional dashboard
 ariadne:validator      → confirms links remain valid
+```
+
+### Work completion closeout
+
+```
+ariadne:closeout → checks completion, selects durable artifacts, updates the target scope when warranted
+conditional repair skills → knowledge capture, synthesis, workstream tracking, navigation, maintenance, or validator only when needed
 ```
 
 ### Periodic vault maintenance

@@ -18,6 +18,7 @@ skills/
   research-pipeline/    ← domain research pipeline setup (`ariadne:research-pipeline`)
   synthesis/    ← multi-source synthesis (`ariadne:synthesis`)
   workstream-tracking/     ← Kanban boards and Dataview dashboards (`ariadne:workstream-tracking`)
+  closeout/     ← work checkpoint, durable capture, and safe-to-close decisions (`ariadne:closeout`)
   maintenance/  ← health checks and repair (`ariadne:maintenance`)
   validator/    ← deterministic structural validation (`ariadne:validator`)
     scripts/validate_vault.js    ← the validator (Node.js, no deps)

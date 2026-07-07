@@ -1,0 +1,3 @@
+display_name: Ariadne Closeout
+short_description: Close the loop on completed vault-backed work.
+default_prompt: Use $ariadne:closeout to make this work durable and decide whether the chat can close.

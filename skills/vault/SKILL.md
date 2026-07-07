@@ -24,6 +24,7 @@ It also has workflow companion skills:
 - `ariadne:synthesis` for multi-source research threads.
 - `ariadne:research-pipeline` for adding research intake and synthesis infrastructure inside an existing scope.
 - `ariadne:workstream-tracking` for Kanban work boards, Dataview dashboards, and workstream status tracking.
+- `ariadne:closeout` for post-work capture, checkpoints, handoffs, and safe-to-close decisions.
 - `ariadne:maintenance` for health checks and recurring maintenance.
 - `ariadne:navigation` for hubs, routing, workstream graphs, and Base/view-layer changes.
 

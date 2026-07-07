@@ -160,6 +160,7 @@ Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate o
 | `ariadne:synthesis` | Synthesize multi-source research threads and debate hubs |
 | `ariadne:research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
 | `ariadne:workstream-tracking` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
+| `ariadne:closeout` | Checkpoint completed work, update durable vault memory, and decide whether a chat can safely close |
 | `ariadne:maintenance` | Run health checks and repair navigability drift |
 | `ariadne:validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
