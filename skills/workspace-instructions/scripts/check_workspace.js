@@ -295,7 +295,7 @@ function main() {
   const args = process.argv.slice(2);
   const target = args.find((arg) => !arg.startsWith("-"));
   if (!target) {
-    console.error("usage: node skills/workspace-instructions/scripts/check_workspace.js /path/to/workspace [--json]");
+    console.error("usage: node scripts/check_workspace.js /path/to/workspace [--json]");
     process.exit(2);
   }
 

@@ -2,7 +2,7 @@
 
 Use these scenarios to interpret `ariadne:workspace-instructions` behavior and to keep deterministic tests aligned with the skill contract.
 
-The checker at `skills/workspace-instructions/scripts/check_workspace.js` reports mechanical signals only. The skill decides what to do with those signals.
+The checker at `scripts/check_workspace.js` reports mechanical signals only. Resolve that path relative to `SKILL.md`; in the Ariadne repo checkout it lives at `skills/workspace-instructions/scripts/check_workspace.js`. The skill decides what to do with those signals.
 
 ## Signal Boundary
 
@@ -61,6 +61,12 @@ Run:
 
 ```bash
 node skills/workspace-instructions/test/test_workspace_instructions.js
+```
+
+Installed or copied skill bundle:
+
+```bash
+node test/test_workspace_instructions.js
 ```
 
 The fixtures materialize local-only filenames only in temporary directories. Do not commit `CLAUDE.local.md`, `GEMINI.local.md`, or `AGENTS.override.md` files to this repository.
