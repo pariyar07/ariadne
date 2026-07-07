@@ -51,7 +51,7 @@ Common choices:
 - Decision note: use for accepted product, architecture, process, scope, naming, release, safety, or implementation commitments. Separate context, options, rationale, consequences, and evidence links.
 - RCA or incident content: use for failures, outages, regressions, production-relevant errors, security concerns, production/preprod issues, data drift, or substantial debugging lessons. Capture symptom, cause, impact, fix, verification, prevention, and follow-ups inside the nearest existing local convention.
 - Verification content: use for manual QA, preprod/prod validation, migrations, dry-runs, evals, or environment-specific proof. Capture what was checked, where, when, result, evidence pointer, and residual risk. Create a standalone note only when the scope already has that convention or the proof needs its own route.
-- Raw source note: use only when the source itself must be inspectable later, such as a review thread, external report, transcript, user artifact, evaluation transcript, or important incident excerpt.
+- Raw source note: use only when the source itself must be inspectable later, such as a review thread, external report, transcript, user artifact, evaluation transcript, or important incident excerpt. For review threads, command output, PRs, and eval transcripts, save pointers and short excerpts by default; store the full raw source only when the user asks or the source itself must be independently inspectable later.
 - Processing item or question: use for follow-up, ambiguity, research, monitoring, cleanup, or risk that should not block closing the current chat.
 - Board or dashboard update: use when a recurring workstream already tracks this work. Do not create a board just because a closeout happened.
 - Achievement or impact content: use only when the selected vault already has an achievement, impact, milestone, release, customer-evidence, or progress convention.
@@ -91,6 +91,8 @@ Before staging or committing in a git-backed vault:
 - Scan closeout-owned files for secrets, tokens, credentials, private production payloads, and sensitive customer identifiers before staging. Abort and report if found.
 
 Push only when the user explicitly asks to push or sync in the current session, the commit contains only closeout-owned files, branch and remote are clear, no unrelated dirty files are staged, and the repo is not on detached HEAD.
+
+Hedged phrasing such as "commit/push if needed", "as appropriate", or "if you think so" is not sufficient authorization to push. Treat it as permission to assess whether git action would be useful, then ask for explicit current-session confirmation before pushing.
 
 For non-git vaults, update docs only when explicitly targeted and report that commit/push is unavailable.
 
