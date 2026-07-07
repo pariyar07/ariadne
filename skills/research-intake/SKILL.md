@@ -1,13 +1,13 @@
 ---
-name: ariadne:research-ingest
-description: Cold-start research source ingest for Obsidian vaults. Use when a user gives a link, article, paper, repo, tweet, transcript, PDF, or rough research source and wants it saved into the right domain/scope, especially when the domain is missing, unclear, or may need a research pipeline created before ingest.
+name: ariadne:research-intake
+description: Cold-start research source intake for Obsidian vaults. Use when a user gives a link, article, paper, repo, tweet, transcript, PDF, or rough research source and wants it saved into the right domain/scope, especially when the domain is missing, unclear, or may need a research pipeline created before capture.
 ---
 
-# Ariadne Research Ingest
+# Ariadne Research Intake
 
 Use this skill when the user gives research material and expects the agent to figure out where it belongs, create missing research infrastructure if needed, and compile it into durable vault knowledge.
 
-This is a cold-start orchestration skill. It routes to the correct scope, then uses the existing pipeline and ingest skills instead of duplicating their work.
+This is a cold-start orchestration skill. It routes to the correct scope, then uses the existing pipeline and capture skills instead of duplicating their work.
 
 ## Start
 
@@ -23,10 +23,10 @@ This is a cold-start orchestration skill. It routes to the correct scope, then u
 Use the smallest sufficient path:
 
 - If the target scope has no research pipeline, use `ariadne:research-pipeline` first.
-- If the target scope has intake infrastructure and this is one source, use `ariadne:ingest`.
+- If the target scope has intake infrastructure and this is one source, use `ariadne:knowledge-capture`.
 - If the source updates an ongoing multi-source argument, use `ariadne:synthesis` after ingesting.
 - If the source belongs to multiple scopes, capture it once in the best primary scope and link to related scopes through relationship or synthesis notes at the nearest common parent.
-- If the source is not research and is just an operational note, use `ariadne:ingest` directly.
+- If the source is not research and is just an operational note, use `ariadne:knowledge-capture` directly.
 
 ## Workflow
 

@@ -92,10 +92,10 @@ If a problem appears during ordinary vault work, report it before continuing as 
 
 Suggested routing:
 
-- Discovery registry, entrypoint, or adapter marker issues: `ariadne:discovery` and the Ariadne discovery doctor.
-- Broken links, orphan notes, invalid frontmatter, invalid Bases, or unlinked Bases: `ariadne:validator`, then `ariadne:maintainer`.
+- Discovery registry, entrypoint, or adapter marker issues: `ariadne:global-discovery` and the Ariadne discovery doctor.
+- Broken links, orphan notes, invalid frontmatter, invalid Bases, or unlinked Bases: `ariadne:validator`, then `ariadne:maintenance`.
 - Oversized hubs, missing hubs, unclear scope boundaries, or routing drift: `ariadne:navigation`.
-- Raw, inbox, processing, or output buildup: `ariadne:ingest` or `ariadne:research-ingest`.
+- Raw, inbox, processing, or output buildup: `ariadne:knowledge-capture` or `ariadne:research-intake`.
 - Missing research pipeline structure: `ariadne:research-pipeline`.
 - Stale conclusions, assumptions, or unresolved questions: `ariadne:synthesis`.
 

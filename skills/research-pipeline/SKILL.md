@@ -17,7 +17,7 @@ This skill promotes research from "a folder of notes" into a navigable pipeline:
 4. Read the existing `Research/00 Research Index.md` if it exists.
 5. Read `Agent/Knowledge Processing Architecture.md` or the local equivalent before structural changes.
 
-Use `ariadne:navigation` with this skill when the change affects hubs, routing, Bases, or recurring traversal. Use `ariadne:research-ingest` when a user gives a source and the target scope may be unclear. Use `ariadne:ingest` after the pipeline exists and a concrete source needs ingestion. Use `ariadne:synthesis` when updating the actual synthesis content.
+Use `ariadne:navigation` with this skill when the change affects hubs, routing, Bases, or recurring traversal. Use `ariadne:research-intake` when a user gives a source and the target scope may be unclear. Use `ariadne:knowledge-capture` after the pipeline exists and a concrete source needs ingestion. Use `ariadne:synthesis` when updating the actual synthesis content.
 
 ## Pipeline Shape
 

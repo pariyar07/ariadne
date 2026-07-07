@@ -9,16 +9,16 @@ skills/
   vault/        ← vault bootstrap skill + templates (`ariadne:vault`)
     scripts/register_vault.js    ← optional machine-level vault registration
     test/test_register_vault.js  ← registration script tests
-  discovery/    ← workflow skill for registering existing vaults (`ariadne:discovery`)
-  project-agents/ ← project-level agent instruction files (`ariadne:project-agents`)
+  global-discovery/ ← workflow skill for registering existing vaults (`ariadne:global-discovery`)
+  workspace-instructions/ ← workspace instruction files (`ariadne:workspace-instructions`)
   scope/        ← scope creation and wiring (`ariadne:scope`)
   navigation/   ← hub and routing design (`ariadne:navigation`)
-  ingest/       ← raw input → durable notes (`ariadne:ingest`)
-  research-ingest/      ← cold-start research source routing (`ariadne:research-ingest`)
+  knowledge-capture/ ← raw input → durable notes (`ariadne:knowledge-capture`)
+  research-intake/      ← cold-start research source routing (`ariadne:research-intake`)
   research-pipeline/    ← domain research pipeline setup (`ariadne:research-pipeline`)
   synthesis/    ← multi-source synthesis (`ariadne:synthesis`)
-  workstream-board/     ← Kanban boards and Dataview dashboards (`ariadne:workstream-board`)
-  maintainer/   ← health checks and repair (`ariadne:maintainer`)
+  workstream-tracking/     ← Kanban boards and Dataview dashboards (`ariadne:workstream-tracking`)
+  maintenance/  ← health checks and repair (`ariadne:maintenance`)
   validator/    ← deterministic structural validation (`ariadne:validator`)
     scripts/validate_vault.js    ← the validator (Node.js, no deps)
     scripts/validate_vault.sh    ← shell wrapper
@@ -47,10 +47,10 @@ Each skill is a folder with:
 | Edit skill instructions | `skills/<skill-name>/SKILL.md` |
 | Edit vault templates | `skills/vault/assets/templates/` |
 | Edit global discovery registration | `skills/vault/scripts/register_vault.js` |
-| Edit vault discovery skill | `skills/discovery/SKILL.md` |
-| Edit project agent-file skill | `skills/project-agents/SKILL.md` |
+| Edit vault discovery skill | `skills/global-discovery/SKILL.md` |
+| Edit workspace instruction skill | `skills/workspace-instructions/SKILL.md` |
 | Edit reference documentation | `skills/vault/references/` |
-| Edit cold-start research ingest | `skills/research-ingest/SKILL.md` |
+| Edit cold-start research intake | `skills/research-intake/SKILL.md` |
 | Edit domain research pipeline setup | `skills/research-pipeline/SKILL.md` |
 | Edit the validator | `skills/validator/scripts/validate_vault.js` |
 | Run the validator | `node skills/validator/scripts/validate_vault.js "/path/to/vault"` |
@@ -70,7 +70,7 @@ Each skill is a folder with:
 - The validator uses only built-in Node.js modules. Never add external dependencies to it.
 - All validator checks must be deterministic — same vault always produces same output.
 - Registration scripts must be idempotent and marker-managed. Never overwrite user global instructions outside Ariadne marker blocks.
-- Project agent-file updates must be bounded and marker-managed where possible. Preserve user instructions outside Ariadne project-vault-link markers.
+- Workspace instruction-file updates must be bounded and marker-managed where possible. Preserve user instructions outside Ariadne workspace-vault-link markers.
 - New validator warnings must be non-fatal unless they represent a structural impossibility.
 - Every new validator counter needs: logic in JS + return object entry + counters array entry + `docs/guides/validator.md` update + `SKILL.md` healthy output update + `README.md` healthy output update + test fixture.
 - `agents/openai.yaml` is required for each skill for Codex CLI display metadata.

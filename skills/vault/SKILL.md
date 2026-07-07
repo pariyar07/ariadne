@@ -17,14 +17,14 @@ This skill complements Obsidian mechanics skills:
 
 It also has workflow companion skills:
 
-- `ariadne:ingest` for raw inputs, links, documents, and brain dumps.
-- `ariadne:discovery` for registering existing vaults so cold agents can find them from any workspace.
-- `ariadne:project-agents` for creating or updating project-level `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that connect a project workspace to registered Ariadne context.
-- `ariadne:research-ingest` for cold-start research sources when the target scope is missing, unclear, or may need pipeline setup.
+- `ariadne:knowledge-capture` for raw inputs, links, documents, and brain dumps.
+- `ariadne:global-discovery` for registering existing vaults so cold agents can find them from any workspace.
+- `ariadne:workspace-instructions` for creating or updating workspace-level `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that connect a workspace to registered Ariadne context.
+- `ariadne:research-intake` for cold-start research sources when the target scope is missing, unclear, or may need pipeline setup.
 - `ariadne:synthesis` for multi-source research threads.
 - `ariadne:research-pipeline` for adding research intake and synthesis infrastructure inside an existing scope.
-- `ariadne:workstream-board` for Kanban work boards, Dataview dashboards, and workstream status tracking.
-- `ariadne:maintainer` for health checks and recurring maintenance.
+- `ariadne:workstream-tracking` for Kanban work boards, Dataview dashboards, and workstream status tracking.
+- `ariadne:maintenance` for health checks and recurring maintenance.
 - `ariadne:navigation` for hubs, routing, workstream graphs, and Base/view-layer changes.
 
 ## Prerequisites
@@ -75,8 +75,8 @@ This skill bootstraps the system. Use the companion skills for ongoing ingest, s
 9. Add `Bases/00 Bases Index.md` and link each Base from it.
 10. Add Kanban boards or Dataview dashboards only when a recurring workstream needs visible status tracking.
 11. Validate that Markdown frontmatter and Base YAML parse.
-12. If machine-level discovery is absent or stale, explicitly offer `ariadne:discovery` so future cold agents can discover the vault from outside the vault. Do not silently write global files.
-13. If the user also has a code repository or project folder that should point at this vault or one of its scopes, offer `ariadne:project-agents` after the vault and discovery path are clear.
+12. If machine-level discovery is absent or stale, explicitly offer `ariadne:global-discovery` so future cold agents can discover the vault from outside the vault. Do not silently write global files.
+13. If the user also has a code repository or folder that should point at this vault or one of its scopes, offer `ariadne:workspace-instructions` after the vault and discovery path are clear.
 
 ## Default Folder Structure
 
@@ -120,7 +120,7 @@ Use progressive discovery:
 
 ## Machine-Level Vault Registration
 
-After bootstrapping or refreshing a vault, check whether machine-level discovery is absent or stale enough to affect cold agents. If so, explicitly offer to use `ariadne:discovery` to register, update, or repair discovery for the vault.
+After bootstrapping or refreshing a vault, check whether machine-level discovery is absent or stale enough to affect cold agents. If so, explicitly offer to use `ariadne:global-discovery` to register, update, or repair discovery for the vault.
 
 Registration and repair are optional and should be explicit. Do not silently write global agent instruction files.
 
@@ -155,7 +155,7 @@ Use `--agents all` only when the user wants all supported adapters. Use `--agent
 
 Use `--dry-run` before writing when the user wants to inspect changes.
 
-Use `--remove` through `ariadne:discovery` when the user wants to unregister a vault.
+Use `--remove` through `ariadne:global-discovery` when the user wants to unregister a vault.
 
 If a global discovery lookup returns multiple plausible vault matches, show the top matches with short reasons and ask which vault to use before creating, updating, or filing artifacts.
 

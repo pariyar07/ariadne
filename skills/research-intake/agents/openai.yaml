@@ -1,0 +1,3 @@
+display_name: Ariadne Research Intake
+short_description: Cold-start research source intake for scopes.
+default_prompt: Intake this research source into the right Obsidian scope.

@@ -36,7 +36,7 @@ flowchart TD
 
   end
 
-  Human -->|"ariadne:research-ingest\nariadne:ingest\nariadne:synthesis"| KG
+  Human -->|"ariadne:research-intake\nariadne:knowledge-capture\nariadne:synthesis"| KG
   Agent -->|enters via| OG
   OG -->|"routes to smallest\nrelevant context"| Scopes
   Scopes --> KG
@@ -146,26 +146,26 @@ node skills/vault/scripts/register_vault.js --agents codex,claude,gemini --docto
 
 ## Skills
 
-Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate on an existing vault; `ariadne:project-agents` operates on a project workspace that may link back to registered Ariadne context.
+Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate on an existing vault; `ariadne:workspace-instructions` operates on a workspace that may link back to registered Ariadne context.
 
 | Skill | Purpose |
 | --- | --- |
 | `ariadne:vault` | **Start here** — Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
-| `ariadne:discovery` | Register existing Obsidian vaults so cold agents can find them from any workspace |
-| `ariadne:project-agents` | Create or update project-level agent instruction files and connect project workspaces to Ariadne context |
+| `ariadne:global-discovery` | Register existing Obsidian vaults so cold agents can find them from any workspace |
+| `ariadne:workspace-instructions` | Create or update workspace instruction files and connect workspaces to Ariadne context |
 | `ariadne:scope` | Create, promote, import, and nest durable knowledge scopes |
 | `ariadne:navigation` | Design hubs, routing, workstream graphs, templates, and view layers |
-| `ariadne:ingest` | Turn links, documents, and brain dumps into durable wiki notes |
-| `ariadne:research-ingest` | Cold-start research source ingest into the right scope |
+| `ariadne:knowledge-capture` | Turn links, documents, and brain dumps into durable wiki notes |
+| `ariadne:research-intake` | Cold-start research source intake into the right scope |
 | `ariadne:synthesis` | Synthesize multi-source research threads and debate hubs |
 | `ariadne:research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
-| `ariadne:workstream-board` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
-| `ariadne:maintainer` | Run health checks and repair navigability drift |
+| `ariadne:workstream-tracking` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
+| `ariadne:maintenance` | Run health checks and repair navigability drift |
 | `ariadne:validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
 ## Weekly Maintenance Automation
 
-Recurring maintenance is best handled as an automation prompt that invokes the existing skills, not as a separate skill. Start with `ariadne:validator`, follow with `ariadne:maintainer`, and only call navigation, ingest, synthesis, Bases, or discovery skills when the weekly run finds drift in those areas.
+Recurring maintenance is best handled as an automation prompt that invokes the existing skills, not as a separate skill. Start with `ariadne:validator`, follow with `ariadne:maintenance`, and only call navigation, knowledge capture, synthesis, Bases, or global discovery skills when the weekly run finds drift in those areas.
 
 See `docs/guides/weekly-maintenance-automation.md` for a Codex-ready prompt, Claude Code adaptation notes, subagent boundaries, and the optional durable report variant.
 
@@ -267,7 +267,7 @@ See `docs/guides/validator.md` for the full counter reference.
 
 ## Global Discovery
 
-After bootstrapping a vault, Ariadne can optionally register the vault on the user's machine. For existing vaults, use `ariadne:discovery`.
+After bootstrapping a vault, Ariadne can optionally register the vault on the user's machine. For existing vaults, use `ariadne:global-discovery`.
 
 ```bash
 node skills/vault/scripts/register_vault.js \
@@ -282,7 +282,7 @@ This creates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`, then adds a sm
 
 Use this when you want future cold agent sessions, launched from any folder, to find the vault quickly for vague questions about prior projects, meetings, research, decisions, or "what was I working on?"
 
-Use `ariadne:project-agents` when a specific code repository or project folder needs local `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that point back to registered Ariadne context. Project files should stay small; the vault remains the source of truth.
+Use `ariadne:workspace-instructions` when a specific code repository or folder needs local `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that point back to registered Ariadne context. Workspace files should stay small; the vault remains the source of truth.
 
 ## References
 

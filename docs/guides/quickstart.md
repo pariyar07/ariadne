@@ -35,14 +35,14 @@ Vaults created or maintained with Ariadne are designed so a cold agent — one t
 > **verb + optional scope + optional material**
 
 Examples:
-- `"Research ingest https://example.com"` → asks for a domain if needed, then routes into the right research pipeline
-- `"Ingest this link into OCG"` → routes directly to OCG ingest workflow
+- `"Research intake https://example.com"` → asks for a domain if needed, then routes into the right research pipeline
+- `"Capture this link into OCG"` → routes directly to OCG capture workflow
 - `"Synthesize the context graph research thread"` → routes to OCG synthesis
 - `"Add a new scope for customer discovery"` → routes to scope creation
 - `"Run a vault health check"` → routes to maintenance
 - `"Create a weekly vault maintenance automation"` → uses the public automation prompt template
 - `"Bootstrap a new vault for my gym training"` → routes to vault creation
-- `"Initialize agent files for this project"` → creates or updates project-level agent instructions and optional Ariadne context links
+- `"Initialize workspace instructions"` → creates or updates workspace-level instructions and optional Ariadne context links
 
 ---
 
@@ -51,16 +51,16 @@ Examples:
 | What you want to do | Skill to invoke | Trigger phrase |
 | --- | --- | --- |
 | Create a new vault from scratch | `ariadne:vault` | "Bootstrap a new vault for..." |
-| Register, update, or repair global discovery | `ariadne:discovery` | "Make this vault discoverable" / "Register this vault globally" / "Repair Ariadne discovery" |
-| Create or update project agent files | `ariadne:project-agents` | "Initialize agent files for this project" / "Connect this repo to Ariadne context" |
+| Register, update, or repair global discovery | `ariadne:global-discovery` | "Make this vault discoverable" / "Register this vault globally" / "Repair Ariadne discovery" |
+| Create or update workspace instructions | `ariadne:workspace-instructions` | "Initialize workspace instructions" / "Connect this repo to Ariadne context" |
 | Add a new domain or scope | `ariadne:scope` | "Add a scope for..." / "Create a domain for..." |
 | Add research infrastructure inside a domain | `ariadne:research-pipeline` | "Add a research pipeline to..." |
-| Cold-start research source ingest | `ariadne:research-ingest` | "Research ingest..." / "Save this research..." |
-| Ingest a link, article, or brain dump | `ariadne:ingest` | "Ingest this..." / "Add this to..." |
+| Cold-start research source intake | `ariadne:research-intake` | "Research intake..." / "Save this research..." |
+| Capture a link, article, or brain dump | `ariadne:knowledge-capture` | "Capture this..." / "Add this to..." |
 | Synthesize multiple sources | `ariadne:synthesis` | "Synthesize the ... research" / "Update the ... thread" |
 | Redesign navigation or routing | `ariadne:navigation` | "Redesign navigation for..." / "Add a workstream for..." |
-| Create or improve a work board or dashboard | `ariadne:workstream-board` | "Create a Kanban for..." / "Make a dashboard for..." / "Improve this board" |
-| Run health checks and repair | `ariadne:maintainer` | "Run a vault health check" / "Fix navigation drift" |
+| Create or improve a work board or dashboard | `ariadne:workstream-tracking` | "Create a Kanban for..." / "Make a dashboard for..." / "Improve this board" |
+| Run health checks and repair | `ariadne:maintenance` | "Run a vault health check" / "Fix navigation drift" |
 | Validate structure deterministically | `ariadne:validator` | "Validate the vault" / "Check for broken links" |
 
 ---
@@ -72,7 +72,7 @@ Examples:
 
 **What happens:**
 1. `ariadne:vault` creates the base folder structure, `AGENTS.md`, `CLAUDE.md`, `00 Index.md`, `Agent/` navigation files, `Bases/`, `Templates/`, intake folders, and mode-specific folders.
-2. The agent explicitly offers machine-level registration or repair through `ariadne:discovery` when discovery is absent or stale, so future cold agents can discover this vault from outside the vault.
+2. The agent explicitly offers machine-level registration or repair through `ariadne:global-discovery` when discovery is absent or stale, so future cold agents can discover this vault from outside the vault.
 3. You get a vault that a cold agent can navigate immediately.
 
 **When to use:** First time setting up any vault. Works for research, startups, personal life systems, content operations, engineering, or any other purpose.
@@ -107,7 +107,7 @@ This writes or refreshes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and t
 > "Make agents find this vault from anywhere"
 
 **What happens:**
-1. `ariadne:discovery` checks the target path for Ariadne entry files.
+1. `ariadne:global-discovery` checks the target path for Ariadne entry files.
 2. It creates or updates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`.
 3. It optionally updates selected global agent instruction files with tiny marker-managed pointers.
 4. Future cold agents can read the registry first, then enter the vault through the listed cold-start entry order.
@@ -155,7 +155,7 @@ node skills/vault/scripts/register_vault.js \
 3. If the scope will ingest raw material, creates `Raw/Sources/`, `Inbox/`, `Processing Queue/`, and a local `Agent/Ingest Compile Workflow.md`.
 4. Updates root `Bases/*.base` scope formulas so notes in the new scope appear correctly in global views.
 5. Validates — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm it's fully wired.
-6. If the parent vault is not globally registered or discovery is stale, the agent offers `ariadne:discovery` for the parent vault. Scope creation does not add scope-specific global discovery rules.
+6. If the parent vault is not globally registered or discovery is stale, the agent offers `ariadne:global-discovery` for the parent vault. Scope creation does not add scope-specific global discovery rules.
 
 **When to use:** Adding a new project, content brand, research area, or life domain to an existing vault that already has the root layer.
 
@@ -187,18 +187,18 @@ node skills/vault/scripts/register_vault.js \
 
 ---
 
-## Scenario 5: Cold-Start Research Ingest
+## Scenario 5: Cold-Start Research Intake
 
 **What to say:**
-> "Research ingest https://example.com"
+> "Research intake https://example.com"
 > "Save this research source"
 
 **What happens:**
-1. `ariadne:research-ingest` reads the root routing layer and active domain registry.
+1. `ariadne:research-intake` reads the root routing layer and active domain registry.
 2. If no domain is named, it asks which domain should receive the research.
 3. It checks whether the target domain has a research pipeline.
 4. If the pipeline is missing, it invokes `ariadne:research-pipeline` first.
-5. It uses `ariadne:ingest` to capture raw source metadata and compile a source-backed research note.
+5. It uses `ariadne:knowledge-capture` to capture raw source metadata and compile a source-backed research note.
 6. It updates synthesis/thread hubs only when the source changes the research map.
 
 **When to use:** You are entering a cold agent session with a source link or research material and do not want to remember the vault routing rules.
@@ -213,7 +213,7 @@ node skills/vault/scripts/register_vault.js \
 ## Scenario 6: Direct Ingest Into a Specific Domain
 
 **What to say:**
-> "Ingest this link into [domain]" or "Add this to [domain] research"
+> "Capture this link into [domain]" or "Add this to [domain] research"
 
 **Cold start routing chain** (what the agent does automatically):
 1. Reads root `AGENTS.md` → sees the read-first list including `Agent/Task Routing Matrix.md`
@@ -227,7 +227,7 @@ node skills/vault/scripts/register_vault.js \
 - `Research/Source Title.md` — compiled synthesis note with source claims and interpretation separated
 - Updates to relevant concept notes, entity notes, synthesis hubs, and research index
 
-**If intake infrastructure doesn't exist yet** (new scope with no `Raw/Sources/`): `ariadne:ingest` sets it up silently before the first ingest. You never need to create it manually.
+**If intake infrastructure doesn't exist yet** (new scope with no `Raw/Sources/`): `ariadne:knowledge-capture` sets it up silently before the first capture. You never need to create it manually.
 
 **If you don't name a domain:** material lands in the root `Raw/Sources/` and `Processing Queue/` with a note to route it to a specific scope later.
 
@@ -267,7 +267,7 @@ node skills/vault/scripts/register_vault.js \
 
 ---
 
-## Scenario 9: Create Or Improve A Workstream Board
+## Scenario 9: Create Or Improve Workstream Tracking
 
 **What to say:**
 > "Create a Kanban board for [workstream]"
@@ -275,7 +275,7 @@ node skills/vault/scripts/register_vault.js \
 > "Improve this existing board"
 
 **What happens:**
-1. `ariadne:workstream-board` reads the target scope hub, local agent instructions, navigation, and routing matrix.
+1. `ariadne:workstream-tracking` reads the target scope hub, local agent instructions, navigation, and routing matrix.
 2. It creates or updates `Kanban/<Board Name>.md` with Obsidian Kanban-compatible Markdown.
 3. It uses consistent task metadata such as `[area:: ...]` and `[priority:: high|medium|low]` so Dataview dashboards can query cards.
 4. When useful, it creates `Dashboards/<Board Name> Dashboard.md` with Dataview task and note rollups.
@@ -297,7 +297,7 @@ In a multi-scope vault, if the current prompt does not name the target scope/dom
 
 **Two tools work together:**
 
-`ariadne:maintainer` — reads the vault, checks for:
+`ariadne:maintenance` — reads the vault, checks for:
 - raw sources never compiled
 - orphan notes with no links
 - stale inbox/queue/output buildup
@@ -320,7 +320,7 @@ See `docs/guides/validator.md` for the full counter reference.
 > "Create a weekly vault maintenance automation"
 > "Run Ariadne maintenance once a week"
 
-**What it should be:** a scheduled prompt that invokes existing skills, not a new skill. Use `ariadne:validator` first, then `ariadne:maintainer`, then conditional repair skills only when the run finds drift.
+**What it should be:** a scheduled prompt that invokes existing skills, not a new skill. Use `ariadne:validator` first, then `ariadne:maintenance`, then conditional repair skills only when the run finds drift.
 
 **Recommended output:** keep the weekly result in the automation chat or run output by default. Write durable vault notes only for real fixes, unresolved follow-ups, or an explicitly requested dated health report.
 
@@ -354,11 +354,11 @@ Inside a selected multi-scope vault, write actions still need a current-turn exp
 
 ## Skill Chains: Common Combinations
 
-### New vault → first ingest
+### New vault → first capture
 
 ```
 ariadne:vault   → creates vault structure
-ariadne:research-ingest → first research source enters the right scope
+ariadne:research-intake → first research source enters the right scope
 ariadne:validator → confirms structure is clean
 ```
 
@@ -366,7 +366,7 @@ ariadne:validator → confirms structure is clean
 
 ```
 ariadne:scope   → creates scope, hub, routing, intake infrastructure
-ariadne:research-ingest → first research source enters the new scope
+ariadne:research-intake → first research source enters the new scope
 ariadne:validator → confirms routing-matrix-warnings: 0, base-scope-formula-warnings: 0
 ```
 
@@ -374,8 +374,8 @@ ariadne:validator → confirms routing-matrix-warnings: 0, base-scope-formula-wa
 
 ```
 ariadne:research-pipeline → creates research hubs, local intake, routing, optional Bases
-ariadne:research-ingest   → first source enters the scope
-ariadne:ingest    → compiles the source once the scope is known
+ariadne:research-intake   → first source enters the scope
+ariadne:knowledge-capture    → compiles the source once the scope is known
 ariadne:synthesis → updates synthesis and thread hub after multiple sources
 ariadne:validator   → confirms structure is wired
 ```
@@ -383,16 +383,16 @@ ariadne:validator   → confirms structure is wired
 ### Research sprint → synthesis
 
 ```
-ariadne:research-ingest    (×N sources, if scope may be unclear)
-ariadne:ingest     (×N sources, if scope is known)
+ariadne:research-intake    (×N sources, if scope may be unclear)
+ariadne:knowledge-capture     (×N sources, if scope is known)
 ariadne:synthesis → synthesis note + thread hub
-ariadne:maintainer   → confirm no orphans or stale queue items
+ariadne:maintenance   → confirm no orphans or stale queue items
 ```
 
 ### Navigation drift repair
 
 ```
-ariadne:maintainer    → identifies what's drifting
+ariadne:maintenance    → identifies what's drifting
 ariadne:navigation → fixes hubs, routing, Bases
 ariadne:validator     → confirms all counters back to 0
 ```
@@ -401,7 +401,7 @@ ariadne:validator     → confirms all counters back to 0
 
 ```
 ariadne:navigation → confirms the workstream belongs in the scope route
-ariadne:workstream-board     → creates or improves Kanban board and optional dashboard
+ariadne:workstream-tracking     → creates or improves Kanban board and optional dashboard
 ariadne:validator      → confirms links remain valid
 ```
 
@@ -409,16 +409,16 @@ ariadne:validator      → confirms links remain valid
 
 ```
 ariadne:validator  → find structural issues
-ariadne:maintainer → find content/navigation issues
-ariadne:ingest   → process any stale raw/inbox items
+ariadne:maintenance → find content/navigation issues
+ariadne:knowledge-capture   → process any stale raw/inbox items
 ```
 
 ### Weekly maintenance automation
 
 ```
 ariadne:validator    → deterministic baseline and final check
-ariadne:maintainer   → stale queues, routing drift, and repair triage
-conditional repair skills   → navigation, ingest, synthesis, Bases, or discovery only when needed
+ariadne:maintenance   → stale queues, routing drift, and repair triage
+conditional repair skills   → navigation, knowledge capture, synthesis, Bases, or global discovery only when needed
 ```
 
 ---

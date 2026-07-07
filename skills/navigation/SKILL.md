@@ -114,7 +114,7 @@ Use local `AGENTS.md` files for:
 
 Do not create local `AGENTS.md` files just to repeat global rules. A good trigger is repeated user guidance for the same folder-specific behavior.
 
-For `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files in an external code repository or ordinary project folder, use `ariadne:project-agents`. This navigation skill owns vault-local hubs, routing, and folder rules; project-agent files own the workspace bridge back to registered Ariadne context.
+For `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files in an external code repository or ordinary folder, use `ariadne:workspace-instructions`. This navigation skill owns vault-local hubs, routing, and folder rules; workspace instruction files own the bridge back to registered Ariadne context.
 
 ## Base Layer
 
@@ -143,8 +143,8 @@ Before finishing:
 ## Related Skills
 
 - Use `ariadne:vault` for new vault bootstrap.
-- Use `ariadne:project-agents` for project-level agent instruction files outside the vault.
-- Use `ariadne:workstream-board` for Kanban work boards and Dataview dashboards.
-- Use `ariadne:maintainer` for health checks.
+- Use `ariadne:workspace-instructions` for workspace instruction files outside the vault.
+- Use `ariadne:workstream-tracking` for Kanban work boards and Dataview dashboards.
+- Use `ariadne:maintenance` for health checks.
 - Use `ariadne:research-pipeline` for domain research pipeline setup.
-- Use `ariadne:research-ingest`, `ariadne:ingest`, and `ariadne:synthesis` for content flow.
+- Use `ariadne:research-intake`, `ariadne:knowledge-capture`, and `ariadne:synthesis` for content flow.

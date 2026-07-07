@@ -31,10 +31,10 @@ Proactive repair routing:
 - If you notice broken discovery, stale registry entrypoints, missing adapter marker blocks, broken wikilinks, invalid Bases, ambiguous navigation, scope drift, raw-source buildup, stale queues, or missing local guidance while doing any task, do not silently ignore it.
 - Tell the user what appears broken, why it matters, and the smallest safe repair path.
 - Offer the relevant skill or check:
-  - Global discovery or cold-start registry issues: `ariadne:discovery` and the Ariadne discovery doctor.
-  - Broken links, orphan notes, invalid frontmatter, invalid Bases, or stale queues: `ariadne:validator` followed by `ariadne:maintainer`.
+  - Global discovery or cold-start registry issues: `ariadne:global-discovery` and the Ariadne discovery doctor.
+  - Broken links, orphan notes, invalid frontmatter, invalid Bases, or stale queues: `ariadne:validator` followed by `ariadne:maintenance`.
   - Navigation bloat, routing drift, missing hubs, or unclear scope boundaries: `ariadne:navigation`.
-  - Raw material, inbox items, or uncompiled sources piling up: `ariadne:ingest` or `ariadne:research-ingest`.
+  - Raw material, inbox items, or uncompiled sources piling up: `ariadne:knowledge-capture` or `ariadne:research-intake`.
   - Missing research workflow infrastructure: `ariadne:research-pipeline`.
   - Stale synthesis, old assumptions, or unresolved questions: `ariadne:synthesis`.
 - Prefer deterministic checks before broad rewrites. Ask before changing global agent files, installing skills, or restructuring vault navigation unless the user already asked for that maintenance.

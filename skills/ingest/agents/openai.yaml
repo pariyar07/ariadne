@@ -1,3 +1,0 @@
-display_name: Ariadne Ingest
-short_description: Capture raw inputs and compile them into linked Obsidian notes.
-default_prompt: Ingest this material into the vault and compile the durable knowledge.

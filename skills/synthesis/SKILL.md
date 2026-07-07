@@ -70,8 +70,8 @@ Before finishing:
 
 ## Related Skills
 
-- Use `ariadne:research-ingest` for cold-start single-source research ingest when scope routing is unclear.
-- Use `ariadne:ingest` for new single-source material.
+- Use `ariadne:research-intake` for cold-start single-source research ingest when scope routing is unclear.
+- Use `ariadne:knowledge-capture` for new single-source material.
 - Use `ariadne:research-pipeline` when the target scope lacks research infrastructure.
 - Use `ariadne:navigation` if a research thread becomes a new workstream graph.
-- Use `ariadne:maintainer` for stale synthesis and source coverage checks.
+- Use `ariadne:maintenance` for stale synthesis and source coverage checks.
