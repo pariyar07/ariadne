@@ -1,0 +1,28 @@
+{
+  "name": "legacy_marker_migrate_in_place",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n<!-- ariadne:legacy-vault-link:start -->\nLegacy link text.\n<!-- ariadne:legacy-vault-link:end -->\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "legacyMarkerFiles": ["AGENTS.md"],
+      "duplicateCurrentMarkerFiles": [],
+      "malformedMarkerFiles": []
+    }
+  }
+}

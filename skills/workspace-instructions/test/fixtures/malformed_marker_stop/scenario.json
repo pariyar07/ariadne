@@ -1,0 +1,27 @@
+{
+  "name": "malformed_marker_stop",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n<!-- ariadne:workspace-vault-link:start -->\nMissing end marker.\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "malformedMarkerFiles": ["AGENTS.md"],
+      "duplicateCurrentMarkerFiles": []
+    }
+  }
+}

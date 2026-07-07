@@ -1,0 +1,27 @@
+{
+  "name": "duplicate_current_markers_stop",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n<!-- ariadne:workspace-vault-link:start -->\nFirst link.\n<!-- ariadne:workspace-vault-link:end -->\n\n<!-- ariadne:workspace-vault-link:start -->\nSecond link.\n<!-- ariadne:workspace-vault-link:end -->\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "duplicateCurrentMarkerFiles": ["AGENTS.md"],
+      "malformedMarkerFiles": []
+    }
+  }
+}

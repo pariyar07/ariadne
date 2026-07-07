@@ -33,6 +33,18 @@ Inspect only the smallest useful workspace context:
 
 Do not scan the whole computer. Do not scan an entire vault or repository to infer intent. Use filenames, manifests, and existing entry files first.
 
+## Mechanical Signal Check
+
+When the workspace shape is uncertain, or when repairing existing instruction files, you may run the deterministic checker:
+
+```bash
+node skills/workspace-instructions/scripts/check_workspace.js "/path/to/workspace" --json
+```
+
+Use the checker for mechanical signals only: Git/worktree state, tracked or ignored instruction files, local-file `.gitignore` coverage, private-path signals, instruction line counts, high line-count files, duplicated vault navigation, adapter duplication, copied global-discovery blocks, and malformed, duplicate, legacy, or foreign marker blocks.
+
+Do not let checker output replace judgment. This skill decides whether to ask a question, preserve workspace-specific rules, split shared/local content, or perform conservative cleanup.
+
 ## Questions
 
 Ask adaptively when missing information changes the files to write.
@@ -51,6 +63,8 @@ When multiple vaults, scopes, or workspace roots are plausible, show the top mat
 ## Workspace File Pattern
 
 Use `references/workspace-instruction-files.md` when creating or restructuring files.
+
+Use `references/workspace-instruction-scenarios.md` when edge-case behavior matters, such as Git shared/local mode, stale `.gitignore` coverage, private-path leakage, bulky instruction files, adapter normalization, duplicate or malformed markers, legacy marker migration, copied global-discovery blocks, nested subprojects, worktrees, or ambiguous vault/scope links.
 
 Default shape:
 
@@ -92,6 +106,12 @@ Act without asking when the cleanup is clearly low-risk: compact copied vault na
 
 Ask before removing or moving ambiguous workspace-specific rules, changing a confirmed scope link, merging duplicate marker blocks, replacing a substantial runtime-specific adapter, or converting between shared/local modes when the user has not made sharing intent clear.
 
+Use this ask-vs-act rule:
+
+- Act when a signal is mechanical and the destination is clear: add missing `.gitignore` coverage for local-only files, remove private paths from tracked files by moving them to an existing ignored local file, compact copied vault navigation into a small vault-link block, or normalize adapters that exactly duplicate `AGENTS.md`.
+- Ask when ownership or target is ambiguous: content could be workspace policy or private context, local-only mode would remove collaborator guidance, multiple vaults or scopes are plausible, a scope-specific link lacks current-turn confirmation, a nested `AGENTS.md` may contain meaningful local deltas, or marker blocks are duplicate or malformed.
+- Stop rather than guess when a marker-managed region is malformed, when more than one Ariadne vault-link block exists, or when changing `AGENTS.override.md` would replace shared Codex guidance.
+
 ## Ariadne Vault Links
 
 Use a marker-managed block for the workspace-to-vault bridge:
@@ -104,7 +124,7 @@ Use a marker-managed block for the workspace-to-vault bridge:
 
 Update only inside this block when refreshing the Ariadne link. Preserve all user content outside the block.
 
-If an existing file has an older Ariadne vault-link marker block from a previous skill name or marker convention, migrate that block in place to `ariadne:workspace-vault-link` instead of appending a second block. If multiple Ariadne vault-link marker blocks exist, stop and ask whether to merge or remove duplicates.
+If an existing file has an older Ariadne vault-link marker block from a previous marker convention, migrate that block in place to `ariadne:workspace-vault-link` instead of appending a second block. If multiple Ariadne vault-link marker blocks exist, stop and ask whether to merge or remove duplicates.
 
 The block may say how to consult registered vaults and which vault or scope is relevant, but it must not make the workspace file the source of truth for vault navigation.
 
@@ -121,14 +141,15 @@ Rules:
 1. Identify the workspace root. Prefer the current directory when it is already the root; otherwise use the nearest `.git` root or ask.
 2. Read existing workspace instruction files and `.gitignore`.
 3. Inspect high-signal workspace files to infer workspace name, commands, tests, and public-safe context.
-4. Decide sharing mode: shared, local-only, shared plus local, or non-Git portable.
-5. Decide the runtime file set.
-6. Decide whether the Ariadne connection belongs in tracked files, local ignored files, or both.
-7. Run the proactive maintenance pass before writing.
-8. If vault or scope target is ambiguous, ask before writing.
-9. Create or update files using the patterns reference.
-10. Add local-only filenames to `.gitignore` when local files exist or are created in a Git workspace.
-11. Report which files changed, which mode was used, and which context is intentionally left for the vault or local-only files.
+4. Run the checker when existing file shape, Git state, or marker state is unclear.
+5. Decide sharing mode: shared, local-only, shared plus local, or non-Git portable.
+6. Decide the runtime file set.
+7. Decide whether the Ariadne connection belongs in tracked files, local ignored files, or both.
+8. Run the proactive maintenance pass before writing.
+9. If vault or scope target is ambiguous, ask before writing.
+10. Create or update files using the patterns reference.
+11. Add local-only filenames to `.gitignore` when local files exist or are created in a Git workspace.
+12. Report which files changed, which mode was used, and which context is intentionally left for the vault or local-only files.
 
 ## Update Workflow
 
@@ -136,11 +157,12 @@ When files already exist:
 
 1. Preserve useful workspace-specific instructions.
 2. Run the sharing-mode check and proactive maintenance pass.
-3. Replace the Ariadne marker block in place when exactly one block exists.
-4. Add a marker block only when the user asked for an Ariadne/vault connection or existing files clearly intend one.
-5. Refuse to guess if duplicate or malformed Ariadne marker blocks exist. Name the markers, say which file contains them, and ask whether to merge, remove duplicates, or leave the file unchanged before editing.
-6. Compact duplicated vault navigation, private/local details, and adapter duplication when the ownership is clear.
-7. Avoid converting to a new adapter layout unless the user asked for normalization, the current files duplicate large instruction blocks, or the existing layout conflicts with the selected sharing mode.
+3. Run the checker when marker state, local-file ignore coverage, adapter duplication, or private-path leakage is unclear.
+4. Replace the Ariadne marker block in place when exactly one block exists.
+5. Add a marker block only when the user asked for an Ariadne/vault connection or existing files clearly intend one.
+6. Refuse to guess if duplicate or malformed Ariadne marker blocks exist. Name the markers, say which file contains them, and ask whether to merge, remove duplicates, or leave the file unchanged before editing.
+7. Compact duplicated vault navigation, private/local details, and adapter duplication when the ownership is clear.
+8. Avoid converting to a new adapter layout unless the user asked for normalization, the current files duplicate large instruction blocks, or the existing layout conflicts with the selected sharing mode.
 
 ## Global Discovery
 

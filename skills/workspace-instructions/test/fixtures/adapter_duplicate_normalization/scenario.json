@@ -1,0 +1,35 @@
+{
+  "name": "adapter_duplicate_normalization",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n\n## Style\n\n- Keep changes small.\n"
+    },
+    {
+      "path": "CLAUDE.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n\n## Style\n\n- Keep changes small.\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md", "CLAUDE.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "adapterDuplicateFiles": ["CLAUDE.md"],
+      "adapterLocalImports": []
+    },
+    "forbidden": {
+      "malformedMarkerFiles": "empty",
+      "duplicateCurrentMarkerFiles": "empty"
+    }
+  }
+}

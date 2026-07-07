@@ -19,6 +19,8 @@ jobs:
           node-version: "20"
       - name: Run repository guardrails
         run: node scripts/validate_repo.js
+      - name: Run workspace instructions behavior suite
+        run: node skills/workspace-instructions/test/test_workspace_instructions.js
       - name: Run validator test suite
         run: node skills/validator/test/test_recursive_scopes.js
       - name: Run vault registration test suite

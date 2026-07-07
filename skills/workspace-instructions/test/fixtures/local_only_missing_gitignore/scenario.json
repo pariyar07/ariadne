@@ -1,0 +1,38 @@
+{
+  "name": "local_only_missing_gitignore",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "*.log\n"
+    },
+    {
+      "path": "README.md",
+      "content": "# Local Only Fixture\n"
+    },
+    {
+      "path": "CLAUDE.local.md",
+      "content": "Personal project-specific notes.\n"
+    },
+    {
+      "path": "AGENTS.override.md",
+      "content": "# Local Codex Replacement\n\nRepeat shared guidance before local notes.\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "README.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "localInstructionFiles": ["AGENTS.override.md", "CLAUDE.local.md"],
+      "localFilesMissingGitignore": ["AGENTS.override.md", "CLAUDE.local.md"]
+    },
+    "forbidden": {
+      "trackedLocalOnlyFiles": "empty"
+    }
+  }
+}

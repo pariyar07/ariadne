@@ -1,0 +1,18 @@
+{
+  "name": "non_git_portable_private_path",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "content": "# Local Notes\n\nPrivate vault path: /home/example/private-vault\n"
+    }
+  ],
+  "expected": {
+    "git": {
+      "insideWorkTree": false,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "privatePathLeakFiles": ["AGENTS.md"]
+    }
+  }
+}

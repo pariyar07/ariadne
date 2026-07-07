@@ -49,6 +49,8 @@ Each skill is a folder with:
 | Edit global discovery registration | `skills/vault/scripts/register_vault.js` |
 | Edit vault discovery skill | `skills/global-discovery/SKILL.md` |
 | Edit workspace instruction skill | `skills/workspace-instructions/SKILL.md` |
+| Edit workspace instruction checker | `skills/workspace-instructions/scripts/check_workspace.js` |
+| Edit workspace instruction scenarios | `skills/workspace-instructions/references/workspace-instruction-scenarios.md` |
 | Edit reference documentation | `skills/vault/references/` |
 | Edit cold-start research intake | `skills/research-intake/SKILL.md` |
 | Edit domain research pipeline setup | `skills/research-pipeline/SKILL.md` |
@@ -56,6 +58,7 @@ Each skill is a folder with:
 | Run the validator | `node skills/validator/scripts/validate_vault.js "/path/to/vault"` |
 | Run the test suite | `node skills/validator/test/test_recursive_scopes.js` |
 | Run registration tests | `node skills/vault/test/test_register_vault.js` |
+| Run workspace instruction tests | `node skills/workspace-instructions/test/test_workspace_instructions.js` |
 | Run repo guardrails | `node scripts/validate_repo.js` |
 | Run skill guardrails | `node scripts/validate_repo.js --skills-only` |
 | Read validator counter docs | `docs/guides/validator.md` |

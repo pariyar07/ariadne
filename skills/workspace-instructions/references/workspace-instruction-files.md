@@ -78,9 +78,9 @@ Do not create `AGENTS.local.md` as a generic convention. Codex does not use it b
 
 Claude note: `CLAUDE.local.md` is appropriate for local project-specific notes and should be gitignored.
 
-Gemini note: `GEMINI.md` is the default context filename. `GEMINI.local.md` is not a guaranteed default; create or import it only when the user's Gemini configuration loads that filename or the user explicitly asks for it.
+Gemini note: `GEMINI.md` is the default context filename. Gemini CLI can configure context filenames in `settings.json`, but `GEMINI.local.md` is not a guaranteed default; create or import it only when the user's Gemini configuration loads that filename or the user explicitly asks for it.
 
-Copilot note: repository custom instructions are shared repo guidance, usually in `.github/copilot-instructions.md`. Do not invent a local Copilot instruction filename unless the user's tool configuration documents it.
+Copilot note: repository custom instructions are shared repo guidance, usually in `.github/copilot-instructions.md`. Scoped Copilot instructions may live under `.github/instructions/*.instructions.md`, and newer Copilot coding-agent flows may also read `AGENTS.md`. Do not invent a local Copilot instruction filename unless the user's tool configuration documents it.
 
 Local files may include:
 
@@ -115,16 +115,22 @@ Ask first when content ownership is ambiguous, when a local-only mode would leav
 
 ## Scenario Coverage
 
-Future tests or guardrails should cover:
+Deterministic signal coverage lives in `skills/workspace-instructions/test/test_workspace_instructions.js` and `references/workspace-instruction-scenarios.md`. The checker reports mechanical signals; `SKILL.md` owns judgment about what to ask or change.
 
 - Git shared mode creates or updates compact public-safe tracked instructions
 - Git local-only mode avoids tracked instruction changes and ensures local files are ignored
 - shared plus local mode splits portable rules from private paths
 - non-Git mode keeps files portable unless local-only intent is explicit
-- bulky tracked files are compacted without losing useful workspace rules
+- linked worktrees resolve the active workspace root
+- instruction line counts support compaction decisions without treating length alone as a cleanup command
 - private path leakage is detected before tracked files are written
+- copied global discovery blocks are not reused as workspace vault-link blocks
+- older Ariadne vault-link marker blocks are migrated in place when exactly one well-formed legacy block exists
+- foreign marker blocks are preserved
+- nested `AGENTS.md` files are kept only when local rules differ from the root
 - verbose adapters are normalized when they only duplicate canonical guidance
 - duplicate or malformed Ariadne markers stop the update and ask for confirmation
+- multiple plausible vault or scope links require a clarifying question before writing a scope-specific block
 
 ## Ariadne Vault-Link Block
 
