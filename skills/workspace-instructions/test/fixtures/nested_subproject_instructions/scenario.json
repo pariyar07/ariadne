@@ -1,0 +1,31 @@
+{
+  "name": "nested_subproject_instructions",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Root Instructions\n\n## Commands\n\n- Run `npm test`.\n"
+    },
+    {
+      "path": "packages/api/AGENTS.md",
+      "content": "# Root Instructions\n\n## Commands\n\n- Run `npm test`.\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md", "packages/api/AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "nestedInstructionFiles": ["packages/api/AGENTS.md"],
+      "nestedInstructionDuplicateFiles": ["packages/api/AGENTS.md"]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "foreign_markers_preserved",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n<!-- other-tool:start -->\nLeave this alone.\n<!-- other-tool:end -->\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "foreignMarkerFiles": ["AGENTS.md"],
+      "legacyMarkerFiles": [],
+      "malformedMarkerFiles": [],
+      "duplicateCurrentMarkerFiles": []
+    }
+  }
+}

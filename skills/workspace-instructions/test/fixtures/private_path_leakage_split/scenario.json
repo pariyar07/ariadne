@@ -1,0 +1,31 @@
+{
+  "name": "private_path_leakage_split",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Shared Instructions\n\nPrivate vault path: /home/example/private-vault\nSandbox path: ~/scratch/ariadne-lab\n"
+    },
+    {
+      "path": "CLAUDE.local.md",
+      "content": "Private vault path: /home/example/private-vault\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "privatePathLeakFiles": ["AGENTS.md"],
+      "localFilesMissingGitignore": []
+    }
+  }
+}

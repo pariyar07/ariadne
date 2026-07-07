@@ -166,6 +166,12 @@ function validateWorkflows(errors) {
   if (fs.existsSync(path.join(ROOT, repoWorkflow)) && !read(repoWorkflow).includes("node scripts/validate_repo.js")) {
     fail(errors, `${repoWorkflow} must run scripts/validate_repo.js`);
   }
+  if (
+    fs.existsSync(path.join(ROOT, repoWorkflow)) &&
+    !read(repoWorkflow).includes("node skills/workspace-instructions/test/test_workspace_instructions.js")
+  ) {
+    fail(errors, `${repoWorkflow} must run workspace-instructions behavior tests`);
+  }
   if (fs.existsSync(path.join(ROOT, skillWorkflow)) && !read(skillWorkflow).includes("node scripts/validate_repo.js --skills-only")) {
     fail(errors, `${skillWorkflow} must run scripts/validate_repo.js --skills-only`);
   }
@@ -224,6 +230,37 @@ function validateRuntimeAdapters(errors) {
   }
 }
 
+function validateWorkspaceInstructions(errors) {
+  const requiredFiles = [
+    "skills/workspace-instructions/scripts/check_workspace.js",
+    "skills/workspace-instructions/test/test_workspace_instructions.js",
+    "skills/workspace-instructions/references/workspace-instruction-scenarios.md",
+  ];
+
+  for (const file of requiredFiles) {
+    if (!fs.existsSync(path.join(ROOT, file))) {
+      fail(errors, `workspace-instructions coverage file missing: ${file}`);
+    }
+  }
+
+  const scenarioReference = "skills/workspace-instructions/references/workspace-instruction-scenarios.md";
+  if (fs.existsSync(path.join(ROOT, scenarioReference))) {
+    const text = read(scenarioReference);
+    for (const required of [
+      "Expected actions",
+      "Expected questions",
+      "Forbidden actions",
+      "Checker-owned",
+      "Skill-owned",
+      "node skills/workspace-instructions/test/test_workspace_instructions.js",
+    ]) {
+      if (!text.includes(required)) {
+        fail(errors, `${scenarioReference} must document workspace scenario coverage: ${required}`);
+      }
+    }
+  }
+}
+
 function main() {
   const skillsOnly = process.argv.includes("--skills-only");
   const errors = [];
@@ -236,6 +273,7 @@ function main() {
     validateRepoFiles(errors);
     validateWorkflows(errors);
     validateRuntimeAdapters(errors);
+    validateWorkspaceInstructions(errors);
   }
 
   if (errors.length > 0) {

@@ -1,0 +1,40 @@
+{
+  "name": "git_shared_clean",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n\n<!-- ariadne:workspace-vault-link:start -->\n## Ariadne Context\n\nUse registered vault discovery. Do not copy vault content into this file.\n<!-- ariadne:workspace-vault-link:end -->\n"
+    },
+    {
+      "path": "CLAUDE.md",
+      "content": "Use AGENTS.md as the shared project guidance for this repository.\n\n@AGENTS.md\n"
+    },
+    {
+      "path": "GEMINI.md",
+      "content": "Use AGENTS.md as the shared project guidance for this repository.\n\n@AGENTS.md\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md", "CLAUDE.md", "GEMINI.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "trackedInstructionFiles": ["AGENTS.md", "CLAUDE.md", "GEMINI.md"],
+      "localFilesMissingGitignore": [],
+      "privatePathLeakFiles": [],
+      "adapterDuplicateFiles": [],
+      "adapterLocalImports": [],
+      "malformedMarkerFiles": [],
+      "duplicateCurrentMarkerFiles": []
+    }
+  }
+}

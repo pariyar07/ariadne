@@ -1,0 +1,29 @@
+{
+  "name": "multiple_plausible_vaults_ask",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\nRelated Ariadne scope: Example Vault / Product Scope\nRelated Ariadne scope: Team Vault / Product Scope\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "multipleScopeLinkFiles": ["AGENTS.md"]
+    },
+    "forbidden": {
+      "malformedMarkerFiles": "empty"
+    }
+  }
+}

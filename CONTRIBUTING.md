@@ -17,6 +17,7 @@ skills/
   research-pipeline/ ← domain research pipeline setup (`ariadne:research-pipeline`)
   workstream-tracking/  ← Kanban boards and Dataview dashboards (`ariadne:workstream-tracking`)
   global-discovery/ ← existing vault discovery registration (`ariadne:global-discovery`)
+  workspace-instructions/ ← workspace instruction files (`ariadne:workspace-instructions`)
   maintenance/ ← health checks and repair (`ariadne:maintenance`)
   validator/   ← deterministic structural validation (`ariadne:validator`)
     scripts/validate_vault.js ← the validator (Node.js, no deps)
@@ -65,9 +66,20 @@ Do not add placeholder skill folders. Planned skills should stay in docs until t
 3. Update `skills/global-discovery/SKILL.md`
 4. Update `docs/guides/global-discovery.md`
 
+### Changing workspace instructions
+
+1. Update `skills/workspace-instructions/SKILL.md` for judgment rules.
+2. Update `skills/workspace-instructions/references/workspace-instruction-files.md` for file patterns.
+3. Update `skills/workspace-instructions/references/workspace-instruction-scenarios.md` for scenario expectations.
+4. Update `skills/workspace-instructions/scripts/check_workspace.js` only for deterministic mechanical signals.
+5. Add or update JSON fixtures under `skills/workspace-instructions/test/fixtures/`.
+6. Run `node skills/workspace-instructions/test/test_workspace_instructions.js`.
+
 ### Test fixtures
 
 The validator has fixtures under `skills/validator/test/fixtures/`. Each fixture is a minimal vault that exercises one check. Add a fixture for any new check.
+
+Workspace-instructions fixtures live under `skills/workspace-instructions/test/fixtures/`. They must use JSON-embedded file content and materialize local-only filenames only in temporary directories during tests.
 
 ## Validator rules
 
@@ -83,6 +95,7 @@ Run these before opening a pull request:
 ```bash
 node scripts/validate_repo.js
 node scripts/validate_repo.js --skills-only
+node skills/workspace-instructions/test/test_workspace_instructions.js
 node skills/validator/test/test_recursive_scopes.js
 node skills/vault/test/test_register_vault.js
 ```

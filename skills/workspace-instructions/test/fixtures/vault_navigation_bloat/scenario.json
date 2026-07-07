@@ -1,0 +1,32 @@
+{
+  "name": "vault_navigation_bloat",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n\n## Copied Vault Navigation\n\nCold-start entry order:\n1. Read `00 Global Index.md`.\n2. Read `Agent/00 Agent Navigation.md`.\n3. Read `Agent/Task Routing Matrix.md`.\n4. Read `Domains/00 Domains Index.md`.\n5. Read `Agent/Vault Navigation Standard.md`.\n6. Read `Agent/Knowledge Processing Architecture.md`.\n7. Search the whole vault.\n8. Open raw sources.\n9. Inspect all scope catalogs.\n10. Copy long destination maps here.\n11. Keep roadmap details here.\n12. Keep decision history here.\n13. Keep customer context here.\n14. Keep transcript routes here.\n15. Keep scope catalogs here.\n16. Keep raw context here.\n17. Keep local workflow here.\n18. Keep release notes here.\n19. Keep all links here.\n20. Keep more links here.\n21. Keep even more links here.\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "largeInstructionFiles": [],
+      "vaultNavigationCopyFiles": ["AGENTS.md"]
+    },
+    "objects": {
+      "instructionLineCounts": {
+        "AGENTS.md": 31
+      }
+    }
+  }
+}
