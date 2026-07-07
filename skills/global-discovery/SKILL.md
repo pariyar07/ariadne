@@ -1,9 +1,9 @@
 ---
-name: ariadne:discovery
+name: ariadne:global-discovery
 description: Register existing Obsidian vaults for machine-level discovery so cold agents can find long-term knowledge from any workspace. Use when checking, adding, updating, repairing, or removing global vault discovery.
 ---
 
-# Ariadne Discovery
+# Ariadne Global Discovery
 
 Use this skill when a user already has an Obsidian vault created or maintained with Ariadne and wants future cold agents to find it from outside the vault. Also use it to inspect, update, or repair existing global registry files and marker-managed adapter blocks when Ariadne ships newer discovery rules.
 
@@ -20,7 +20,7 @@ Typical requests:
 
 This skill manages machine-level discovery. It does not create the vault. Use `ariadne:vault` to bootstrap a new vault.
 
-It also does not own project-level `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files. Use `ariadne:project-agents` when a code repository or ordinary project folder needs local agent instructions or a small Ariadne vault-link block.
+It also does not own workspace-level `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files. Use `ariadne:workspace-instructions` when a code repository or ordinary folder needs local instruction files or a small Ariadne vault-link block.
 
 ## Core Model
 
@@ -44,7 +44,7 @@ After a vault is selected:
 
 Global discovery remains a signpost.
 
-Project-level agent files are also signposts when they connect to Ariadne. They may point agents toward registered vault discovery or a confirmed vault/scope, but they should not duplicate global discovery blocks or copy vault instructions into a repository.
+Workspace instruction files are also signposts when they connect to Ariadne. They may point agents toward registered vault discovery or a confirmed vault/scope, but they should not duplicate global discovery blocks or copy vault instructions into a repository.
 
 ## Start Workflow
 
@@ -104,7 +104,7 @@ When doctor reports issues during a broader task, do not only say that discovery
 
 1. which registry, entrypoint, or adapter check failed,
 2. why cold agents may be affected,
-3. the repair command or `ariadne:discovery` action to use,
+3. the repair command or `ariadne:global-discovery` action to use,
 4. whether the repair touches global agent files and therefore needs approval.
 
 ## Multiple-Match Policy
@@ -164,6 +164,6 @@ If adapter blocks exist but the registry path is missing, offer to recreate the 
 ## Related Skills
 
 - Use `ariadne:vault` to create a new vault.
-- Use `ariadne:project-agents` to create or update project-level agent files that connect a workspace to registered Ariadne context.
-- Use `ariadne:maintainer` to check vault health after registration.
+- Use `ariadne:workspace-instructions` to create or update workspace instruction files that connect a workspace to registered Ariadne context.
+- Use `ariadne:maintenance` to check vault health after registration.
 - Use `ariadne:scope` when the user wants to make a new domain inside an existing vault discoverable through vault navigation.

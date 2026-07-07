@@ -1,0 +1,3 @@
+display_name: Ariadne Knowledge Capture
+short_description: Capture raw inputs and compile them into linked Obsidian notes.
+default_prompt: Capture this material into the vault and compile the durable knowledge.

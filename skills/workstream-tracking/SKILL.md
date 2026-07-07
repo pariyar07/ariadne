@@ -1,9 +1,9 @@
 ---
-name: ariadne:workstream-board
+name: ariadne:workstream-tracking
 description: Create, audit, or improve Obsidian Kanban work boards and Dataview dashboards for durable project, roadmap, evaluation, implementation, QA, or recurring workstream tracking inside an agent-maintained vault.
 ---
 
-# Ariadne Workstream Board
+# Ariadne Workstream Tracking
 
 Use this skill when a user wants a visible work board, implementation board, evaluation board, roadmap board, QA board, or dashboard for an Obsidian vault scope.
 
@@ -32,7 +32,7 @@ Use `ariadne:navigation` when the board requires broader scope routing or struct
 
 ## Board Creation
 
-Create `Kanban/<Board Name>.md` for recurring workstream state. Use `assets/templates/Workstream Board.md` as the starting pattern.
+Create `Kanban/<Board Name>.md` for recurring workstream state. Use `assets/templates/Workstream Tracking Board.md` as the starting pattern.
 
 Default columns:
 
@@ -122,5 +122,5 @@ Before finishing:
 
 - `references/kanban-board-patterns.md` - board structure, card metadata, and audit rules
 - `references/dataview-dashboard-patterns.md` - Dataview query patterns for task and note rollups
-- `assets/templates/Workstream Board.md` - generic board template
+- `assets/templates/Workstream Tracking Board.md` - generic board template
 - `assets/templates/Workstream Dashboard.md` - generic dashboard template

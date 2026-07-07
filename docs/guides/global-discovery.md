@@ -4,7 +4,7 @@ Vaults created or maintained with Ariadne are easy for agents to navigate once t
 
 Global discovery is optional. It is useful when a user wants agents launched from any folder to treat an Obsidian vault as a long-term knowledge source. It is also the repair/update path for existing global marker blocks when Ariadne ships newer discovery rules.
 
-Global discovery is not the same as project-level agent files. Use `ariadne:project-agents` when a repository or ordinary project folder needs `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or a small Ariadne vault-link block. Project files may point toward registered vault context, but global discovery continues to register vaults rather than individual project scopes.
+Global discovery is not the same as workspace-level instruction files. Use `ariadne:workspace-instructions` when a repository or ordinary folder needs `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or a small Ariadne vault-link block. Workspace files may point toward registered vault context, but global discovery continues to register vaults rather than individual project scopes.
 
 ## What Registration Creates
 
@@ -89,7 +89,7 @@ If no vaults remain in the registry, the selected adapter blocks are removed fro
 
 - Existing user instructions outside the marker block are preserved.
 - The global block should stay small. It should point to the registry, not duplicate vault navigation rules.
-- Project-level agent files should use their own `ariadne:project-vault-link` marker block instead of copying the global discovery block.
+- Workspace instruction files should use their own `ariadne:workspace-vault-link` marker block instead of copying the global discovery block.
 - Unregistering a vault removes only the matching registry entry and Ariadne marker blocks when no registered vaults remain.
 
 ## Cold-Start Behavior
@@ -124,4 +124,4 @@ The doctor checks that the registry files exist, registry Markdown matches regis
 
 If doctor reports stale entrypoints or missing marker blocks, re-run registration for the vault to repair the registry and selected adapters.
 
-Agents should treat a doctor failure as actionable navigation drift. Report the failing registry, entrypoint, or adapter check, explain how it affects cold-start behavior, and offer to repair it with `ariadne:discovery`. Repairs that modify global agent files should be explicit, because those files may contain user-maintained instructions outside Ariadne marker blocks.
+Agents should treat a doctor failure as actionable navigation drift. Report the failing registry, entrypoint, or adapter check, explain how it affects cold-start behavior, and offer to repair it with `ariadne:global-discovery`. Repairs that modify global agent files should be explicit, because those files may contain user-maintained instructions outside Ariadne marker blocks.

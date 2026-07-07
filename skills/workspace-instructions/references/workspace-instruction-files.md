@@ -1,19 +1,19 @@
-# Project Agent File Patterns
+# Workspace Instruction File Patterns
 
-Use these patterns when `ariadne:project-agents` creates or updates project-level agent instruction files.
+Use these patterns when `ariadne:workspace-instructions` creates or updates workspace-level instruction files.
 
 ## Public-Safe Canonical File
 
-Use `AGENTS.md` as the canonical project file when the project should share instructions across agent runtimes.
+Use `AGENTS.md` as the canonical workspace file when the workspace should share instructions across agent runtimes.
 
 Good public-safe content:
 
-- project purpose and boundaries
+- workspace purpose and boundaries
 - repo or folder layout
 - common commands for setup, test, lint, build, and validation
 - coding conventions
 - review and safety expectations
-- links to public docs inside the project
+- links to public docs inside the workspace
 - a small Ariadne vault-link block that points agents to registered vault discovery without copying private content
 
 Avoid in tracked files:
@@ -76,13 +76,13 @@ Do not copy local-file content into tracked files.
 
 ## Ariadne Vault-Link Block
 
-Use this marker block in tracked or local project files:
+Use this marker block in tracked or local workspace files:
 
 ```md
-<!-- ariadne:project-vault-link:start -->
+<!-- ariadne:workspace-vault-link:start -->
 ## Ariadne Context
 
-This project may have related long-term context in a registered Ariadne vault.
+This workspace may have related long-term context in a registered Ariadne vault.
 
 When project history, decisions, roadmap, research, customers, or workstream state may matter:
 
@@ -92,22 +92,22 @@ When project history, decisions, roadmap, research, customers, or workstream sta
 4. Prefer compiled notes, indexes, hubs, decisions, and synthesis notes over raw sources.
 5. If multiple vaults or scopes are plausible, show the top matches with short reasons and ask before writing.
 
-Do not copy vault content into this project file. The vault remains the source of truth.
-<!-- ariadne:project-vault-link:end -->
+Do not copy vault content into this workspace file. The vault remains the source of truth.
+<!-- ariadne:workspace-vault-link:end -->
 ```
 
 If the user confirms a specific vault or scope, the block may name it:
 
 ```md
-<!-- ariadne:project-vault-link:start -->
+<!-- ariadne:workspace-vault-link:start -->
 ## Ariadne Context
 
 Related Ariadne scope: `<vault name>` / `<scope name or path>`
 
 Use registered vault discovery to enter the vault, then follow the scope's hub and routing files. Before writing into a multi-scope vault, require a current-turn explicit target or ask for confirmation.
 
-Do not copy vault content into this project file. The vault remains the source of truth.
-<!-- ariadne:project-vault-link:end -->
+Do not copy vault content into this workspace file. The vault remains the source of truth.
+<!-- ariadne:workspace-vault-link:end -->
 ```
 
 Use placeholders in public examples. Use private absolute paths only in ignored local files.
@@ -115,7 +115,7 @@ Use placeholders in public examples. Use private absolute paths only in ignored 
 ## Update Rules
 
 - Preserve all content outside Ariadne markers.
-- Replace exactly one existing `ariadne:project-vault-link` block in place.
+- Replace exactly one existing `ariadne:workspace-vault-link` block in place.
 - If no block exists, append it near the project overview or agent workflow section.
 - If multiple blocks exist, stop and ask whether to merge or remove duplicates.
 - If an existing `CLAUDE.md` or `GEMINI.md` already contains substantial custom guidance, do not collapse it to `@AGENTS.md` unless the user asks for normalization.

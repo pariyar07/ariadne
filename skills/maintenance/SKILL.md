@@ -1,9 +1,9 @@
 ---
-name: ariadne:maintainer
+name: ariadne:maintenance
 description: "Run maintenance and health checks for agent-maintained Obsidian vaults: broken links, orphan notes, stale hubs, invalid frontmatter, uncompiled raw sources, stale queues, unresolved questions, Base coverage, and optional health reports."
 ---
 
-# Ariadne Maintainer
+# Ariadne Maintenance
 
 Use this skill when auditing, repairing, or maintaining an Obsidian vault over time.
 
@@ -57,10 +57,10 @@ When you discover a problem during unrelated vault work, surface it instead of l
 
 Use this routing:
 
-- Global discovery, stale registry entrypoints, or missing adapter marker blocks: use `ariadne:discovery` and run the Ariadne discovery doctor.
+- Global discovery, stale registry entrypoints, or missing adapter marker blocks: use `ariadne:global-discovery` and run the Ariadne discovery doctor.
 - Broken wikilinks, orphan notes, invalid frontmatter, invalid `.base` YAML, unlinked Bases, or validator warnings: use `ariadne:validator` first, then repair with this skill.
 - Navigation bloat, missing hubs, missing parent-child hub links, task routing drift, or unclear scope boundaries: use `ariadne:navigation`.
-- Raw sources, inbox items, processing items, or outputs accumulating without compilation: use `ariadne:ingest` or `ariadne:research-ingest`.
+- Raw sources, inbox items, processing items, or outputs accumulating without compilation: use `ariadne:knowledge-capture` or `ariadne:research-intake`.
 - Missing repeatable research infrastructure inside a scope: use `ariadne:research-pipeline`.
 - Stale synthesis, stale assumptions, or unresolved questions that need consolidation: use `ariadne:synthesis`.
 
@@ -104,8 +104,8 @@ It should report `yaml-ok`, `broken-wikilinks: 0`, `true-orphans-md: 0`, `unlink
 
 ## Related Skills
 
-- Use `ariadne:research-ingest` to process research sources found during maintenance when scope routing is unclear.
-- Use `ariadne:ingest` to process raw material found during maintenance.
+- Use `ariadne:research-intake` to process research sources found during maintenance when scope routing is unclear.
+- Use `ariadne:knowledge-capture` to process raw material found during maintenance.
 - Use `ariadne:research-pipeline` when a scope needs missing research infrastructure.
 - Use `ariadne:validator` for deterministic structural checks.
 - Use `ariadne:navigation` when maintenance requires durable structural changes.

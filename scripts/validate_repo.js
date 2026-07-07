@@ -186,17 +186,17 @@ function validateRuntimeAdapters(errors) {
     }
   }
 
-  const projectAgentReference = "skills/project-agents/references/project-agent-files.md";
-  if (fs.existsSync(path.join(ROOT, projectAgentReference))) {
-    const text = read(projectAgentReference);
+  const workspaceInstructionReference = "skills/workspace-instructions/references/workspace-instruction-files.md";
+  if (fs.existsSync(path.join(ROOT, workspaceInstructionReference))) {
+    const text = read(workspaceInstructionReference);
     if (!text.includes("Do not import local ignored files from tracked adapter files by default.")) {
-      fail(errors, `${projectAgentReference} must document the tracked-adapter local import guard`);
+      fail(errors, `${workspaceInstructionReference} must document the tracked-adapter local import guard`);
     }
     if (!text.includes("AGENTS.override.md` replaces `AGENTS.md` for Codex at the same directory level")) {
-      fail(errors, `${projectAgentReference} must document Codex AGENTS.override.md replacement semantics`);
+      fail(errors, `${workspaceInstructionReference} must document Codex AGENTS.override.md replacement semantics`);
     }
     if (/```md\n@AGENTS\.md\n@(?:CLAUDE|GEMINI)\.local\.md\n```/u.test(text)) {
-      fail(errors, `${projectAgentReference} must not show default tracked adapters importing ignored local files`);
+      fail(errors, `${workspaceInstructionReference} must not show default tracked adapters importing ignored local files`);
     }
   }
 }

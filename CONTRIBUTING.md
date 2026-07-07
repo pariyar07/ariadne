@@ -11,13 +11,13 @@ skills/
   vault/     ← vault bootstrap skill + templates (`ariadne:vault`)
   scope/     ← scope creation and wiring (`ariadne:scope`)
   navigation/ ← hub and routing design (`ariadne:navigation`)
-  ingest/    ← raw input → durable notes (`ariadne:ingest`)
-  research-ingest/   ← cold-start research source routing (`ariadne:research-ingest`)
+  knowledge-capture/ ← raw input → durable notes (`ariadne:knowledge-capture`)
+  research-intake/   ← cold-start research source routing (`ariadne:research-intake`)
   synthesis/ ← multi-source synthesis (`ariadne:synthesis`)
   research-pipeline/ ← domain research pipeline setup (`ariadne:research-pipeline`)
-  workstream-board/  ← Kanban boards and Dataview dashboards (`ariadne:workstream-board`)
-  discovery/   ← existing vault discovery registration (`ariadne:discovery`)
-  maintainer/  ← health checks and repair (`ariadne:maintainer`)
+  workstream-tracking/  ← Kanban boards and Dataview dashboards (`ariadne:workstream-tracking`)
+  global-discovery/ ← existing vault discovery registration (`ariadne:global-discovery`)
+  maintenance/ ← health checks and repair (`ariadne:maintenance`)
   validator/   ← deterministic structural validation (`ariadne:validator`)
     scripts/validate_vault.js ← the validator (Node.js, no deps)
 docs/
@@ -62,7 +62,7 @@ Do not add placeholder skill folders. Planned skills should stay in docs until t
 
 1. Update `skills/vault/scripts/register_vault.js`
 2. Update `skills/vault/test/test_register_vault.js`
-3. Update `skills/discovery/SKILL.md`
+3. Update `skills/global-discovery/SKILL.md`
 4. Update `docs/guides/global-discovery.md`
 
 ### Test fixtures

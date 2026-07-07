@@ -5,7 +5,7 @@ labels: enhancement
 ---
 
 **Which skill?**
-<!-- e.g. ariadne:ingest -->
+<!-- e.g. ariadne:knowledge-capture -->
 
 **What scenario does this cover?**
 <!-- Describe the vault state and what you asked the agent to do -->

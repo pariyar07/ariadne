@@ -1,9 +1,9 @@
 ---
-name: ariadne:ingest
+name: ariadne:knowledge-capture
 description: Capture and compile links, documents, PDFs, tweets, transcripts, screenshots, meeting notes, brain dumps, and rough user input into an agent-maintained Obsidian Markdown vault. Human curates; agent compiles raw material into a durable linked wiki.
 ---
 
-# Ariadne Ingest
+# Ariadne Knowledge Capture
 
 Use this skill when new material enters an Obsidian vault and should become durable knowledge instead of staying in chat.
 
@@ -22,7 +22,7 @@ Do not only answer in chat when the user shares material that should compound. C
 
 ## Intake Infrastructure Check
 
-Before ingesting, verify the target scope has intake infrastructure. If any of the following are missing, create them before proceeding:
+Before capturing material, verify the target scope has intake infrastructure. If any of the following are missing, create them before proceeding:
 
 - `Raw/Sources/` folder and `Raw/Sources/00 Source Index.md`
 - `Inbox/` folder and `Inbox/00 Inbox Index.md`
@@ -31,7 +31,7 @@ Before ingesting, verify the target scope has intake infrastructure. If any of t
 
 Add a row to the local `Agent/Task Routing Matrix.md` for "Shared link or source material" pointing to the new workflow file if no row exists.
 
-For root-level intake, these folders already exist. For domain scopes, they may need to be set up. Set them up silently as part of the first ingest — do not ask the user to do it manually.
+For root-level intake, these folders already exist. For domain scopes, they may need to be set up. Set them up silently as part of the first capture — do not ask the user to do it manually.
 
 ## Scope Routing
 
@@ -79,8 +79,8 @@ Before finishing:
 
 ## Related Skills
 
-- Use `ariadne:research-ingest` when the user provides a research source but the target domain/scope is missing or unclear.
-- Use `ariadne:research-pipeline` when the target scope needs research infrastructure before ingest.
+- Use `ariadne:research-intake` when the user provides a research source but the target domain/scope is missing or unclear.
+- Use `ariadne:research-pipeline` when the target scope needs research infrastructure before capture.
 - Use `ariadne:synthesis` for multi-source research threads.
-- Use `ariadne:navigation` when the ingest creates a new durable workstream.
-- Use `ariadne:maintainer` for health checks after large ingest sessions.
+- Use `ariadne:navigation` when knowledge capture creates a new durable workstream.
+- Use `ariadne:maintenance` for health checks after large capture sessions.

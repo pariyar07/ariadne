@@ -20,13 +20,13 @@ Do not auto-commit, auto-push, move large folders, delete notes, or restructure 
 ariadne:validator
   -> deterministic structural baseline
 
-ariadne:maintainer
+ariadne:maintenance
   -> stale queues, content drift, routing drift, and repair triage
 
 ariadne:navigation
   -> only if hubs, indexes, routing, or scope boundaries need repair
 
-ariadne:ingest / ariadne:research-ingest
+ariadne:knowledge-capture / ariadne:research-intake
   -> only if raw, inbox, or source material needs compilation
 
 ariadne:synthesis
@@ -35,7 +35,7 @@ ariadne:synthesis
 obsidian-bases
   -> only if Base views, indexes, filters, or Base links need repair
 
-ariadne:discovery
+ariadne:global-discovery
   -> only if machine-level vault registry or cold-start entrypoints are stale
 ```
 
@@ -60,14 +60,14 @@ Run the weekly Ariadne vault maintenance pass.
 
 Use the vault's AGENTS.md instructions and the smallest relevant Ariadne/Obsidian skill route. Load and apply these skills when relevant:
 - ariadne:validator for structural validation and deterministic health checks.
-- ariadne:maintainer for stewardship, stale queues, routing drift, and maintenance triage.
+- ariadne:maintenance for stewardship, stale queues, routing drift, and maintenance triage.
 - obsidian-markdown for Obsidian frontmatter, wikilinks, callouts, and note formatting.
 - ariadne:navigation when navigation files, hubs, routing, indexes, or scope entrypoints have drifted.
-- ariadne:ingest or ariadne:research-ingest when inbox, raw, or source material needs compilation.
+- ariadne:knowledge-capture or ariadne:research-intake when inbox, raw, or source material needs compilation.
 - ariadne:synthesis when research notes, open questions, or source captures need consolidation.
 - ariadne:research-pipeline when a scope lacks a repeatable source-to-synthesis path.
 - obsidian-bases when Base views, Base indexes, filters, or base-file links need repair.
-- ariadne:discovery when registry, vault entrypoints, or discovery metadata look stale.
+- ariadne:global-discovery when registry, vault entrypoints, or discovery metadata look stale.
 
 Sequence:
 1. Read the vault entry files: AGENTS.md, 00 Index.md or 00 Global Index.md, Agent/00 Agent Navigation.md, Agent/Vault Health Check Procedure.md, Agent/Vault Navigation Standard.md, and any narrower local AGENTS.md/index files for scopes you touch.
