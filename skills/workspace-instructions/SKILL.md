@@ -104,6 +104,8 @@ Use a marker-managed block for the workspace-to-vault bridge:
 
 Update only inside this block when refreshing the Ariadne link. Preserve all user content outside the block.
 
+If an existing file has the legacy `ariadne:project-vault-link` marker pair, migrate that block in place to `ariadne:workspace-vault-link` instead of appending a second block. If both legacy and current marker blocks exist, stop and ask whether to merge or remove duplicates.
+
 The block may say how to consult registered vaults and which vault or scope is relevant, but it must not make the workspace file the source of truth for vault navigation.
 
 Rules:
