@@ -115,7 +115,7 @@ Ask first when content ownership is ambiguous, when a local-only mode would leav
 
 ## Scenario Coverage
 
-Deterministic signal coverage lives in `skills/workspace-instructions/test/test_workspace_instructions.js` and `references/workspace-instruction-scenarios.md`. The checker reports mechanical signals; `SKILL.md` owns judgment about what to ask or change.
+Deterministic signal coverage lives in `test/test_workspace_instructions.js` and `references/workspace-instruction-scenarios.md` relative to the installed skill bundle. In the Ariadne repo checkout, the harness is at `skills/workspace-instructions/test/test_workspace_instructions.js`. The checker reports mechanical signals; `SKILL.md` owns judgment about what to ask or change.
 
 - Git shared mode creates or updates compact public-safe tracked instructions
 - Git local-only mode avoids tracked instruction changes and ensures local files are ignored

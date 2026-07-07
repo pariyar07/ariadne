@@ -7,8 +7,8 @@ const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
 
-const ROOT = path.resolve(__dirname, "../../..");
-const CHECKER = path.join(ROOT, "skills/workspace-instructions/scripts/check_workspace.js");
+const SKILL_ROOT = path.resolve(__dirname, "..");
+const CHECKER = path.join(SKILL_ROOT, "scripts/check_workspace.js");
 const FIXTURES = path.join(__dirname, "fixtures");
 
 function run(cmd, args, cwd) {
@@ -72,7 +72,7 @@ function readScenario(file) {
 
 function runChecker(workspace) {
   return JSON.parse(execFileSync(process.execPath, [CHECKER, workspace, "--json"], {
-    cwd: ROOT,
+    cwd: SKILL_ROOT,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }));

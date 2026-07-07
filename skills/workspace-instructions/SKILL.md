@@ -38,8 +38,10 @@ Do not scan the whole computer. Do not scan an entire vault or repository to inf
 When the workspace shape is uncertain, or when repairing existing instruction files, you may run the deterministic checker:
 
 ```bash
-node skills/workspace-instructions/scripts/check_workspace.js "/path/to/workspace" --json
+node scripts/check_workspace.js "/path/to/workspace" --json
 ```
+
+Resolve `scripts/check_workspace.js` relative to this `SKILL.md`. In an Ariadne repository checkout, the same script lives at `skills/workspace-instructions/scripts/check_workspace.js`.
 
 Use the checker for mechanical signals only: Git/worktree state, tracked or ignored instruction files, local-file `.gitignore` coverage, private-path signals, instruction line counts, high line-count files, duplicated vault navigation, adapter duplication, copied global-discovery blocks, and malformed, duplicate, legacy, or foreign marker blocks.
 

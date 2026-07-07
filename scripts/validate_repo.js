@@ -2,6 +2,7 @@
 "use strict";
 
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
 
@@ -243,6 +244,19 @@ function validateWorkspaceInstructions(errors) {
     }
   }
 
+  const skillFile = "skills/workspace-instructions/SKILL.md";
+  if (fs.existsSync(path.join(ROOT, skillFile))) {
+    const text = read(skillFile);
+    for (const required of [
+      "node scripts/check_workspace.js",
+      "Resolve `scripts/check_workspace.js` relative to this `SKILL.md`",
+    ]) {
+      if (!text.includes(required)) {
+        fail(errors, `${skillFile} must document install-aware checker usage: ${required}`);
+      }
+    }
+  }
+
   const scenarioReference = "skills/workspace-instructions/references/workspace-instruction-scenarios.md";
   if (fs.existsSync(path.join(ROOT, scenarioReference))) {
     const text = read(scenarioReference);
@@ -253,10 +267,30 @@ function validateWorkspaceInstructions(errors) {
       "Checker-owned",
       "Skill-owned",
       "node skills/workspace-instructions/test/test_workspace_instructions.js",
+      "node test/test_workspace_instructions.js",
     ]) {
       if (!text.includes(required)) {
         fail(errors, `${scenarioReference} must document workspace scenario coverage: ${required}`);
       }
+    }
+  }
+
+  const sourceSkillDir = path.join(ROOT, "skills/workspace-instructions");
+  if (requiredFiles.every((file) => fs.existsSync(path.join(ROOT, file)))) {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-workspace-skill-copy-"));
+    const copiedSkillDir = path.join(tmpRoot, "ariadne-workspace-instructions");
+    try {
+      fs.cpSync(sourceSkillDir, copiedSkillDir, { recursive: true });
+      execFileSync(process.execPath, ["test/test_workspace_instructions.js"], {
+        cwd: copiedSkillDir,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+    } catch (error) {
+      const detail = String(error.stderr || error.message).split("\n").find(Boolean) || "unknown failure";
+      fail(errors, `copied workspace-instructions harness must run from installed skill layout: ${detail}`);
+    } finally {
+      fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
   }
 }
