@@ -36,18 +36,15 @@ const PRIVATE_TEXT_PATTERNS = [
   new RegExp("Satyam" + "'s Vault", "u"),
   new RegExp("satyams" + "-vault", "u"),
 ];
-const RETIRED_SKILL_MAPPINGS = [
-  ["ariadne:" + "project-agents", "ariadne:workspace-instructions"],
-  ["ariadne:" + "discovery", "ariadne:global-discovery"],
-  ["ariadne:" + "ingest", "ariadne:knowledge-capture"],
-  ["ariadne:" + "research-ingest", "ariadne:research-intake"],
-  ["ariadne:" + "workstream-board", "ariadne:workstream-tracking"],
-  ["ariadne:" + "maintainer", "ariadne:maintenance"],
-];
 const REMOVED_SKILL_PATTERNS = [
   new RegExp("obsidian-" + "feature-" + "workstream", "u"),
   new RegExp("feature-" + "workstream", "u"),
-  ...RETIRED_SKILL_MAPPINGS.map(([oldName]) => new RegExp(escapeRegExp(oldName), "u")),
+  new RegExp("ariadne:" + "project-agents", "u"),
+  new RegExp("ariadne:" + "discovery", "u"),
+  new RegExp("ariadne:" + "ingest", "u"),
+  new RegExp("ariadne:" + "research-ingest", "u"),
+  new RegExp("ariadne:" + "workstream-board", "u"),
+  new RegExp("ariadne:" + "maintainer", "u"),
 ];
 
 function toPosix(file) {
@@ -94,17 +91,8 @@ function isTextFile(file) {
   return TEXT_EXTENSIONS.has(path.extname(file));
 }
 
-function escapeRegExp(text) {
-  return text.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-}
-
 function fail(errors, message) {
   errors.push(message);
-}
-
-function withoutRetiredSkillMap(file, text) {
-  if (file !== "README.md") return text;
-  return text.replace(/\n## Retired Skill Name Map\n[\s\S]*?(?=\n## |\n# |\n?$)/u, "\n");
 }
 
 function validateRepoFiles(errors) {
@@ -150,12 +138,11 @@ function validateSkillFolders(errors) {
 function validateTextSafety(errors, files) {
   for (const file of files.filter(isTextFile)) {
     const text = read(file);
-    const retiredNameText = withoutRetiredSkillMap(file, text);
     for (const pattern of PRIVATE_TEXT_PATTERNS) {
       if (pattern.test(text)) fail(errors, `private or maintainer-local text found in ${file}: ${pattern}`);
     }
     for (const pattern of REMOVED_SKILL_PATTERNS) {
-      if (pattern.test(retiredNameText)) fail(errors, `removed skill reference found in ${file}: ${pattern}`);
+      if (pattern.test(text)) fail(errors, `removed skill reference found in ${file}: ${pattern}`);
     }
     if (file.startsWith("skills/") && file.endsWith("/SKILL.md")) {
       for (const pattern of PLACEHOLDER_PATTERNS) {
@@ -223,7 +210,7 @@ function validateRuntimeAdapters(errors) {
       ".github/copilot-instructions.md",
       "## Proactive Cleanup Signals",
       "## Scenario Coverage",
-      "Migrate one legacy `ariadne:project-vault-link` block in place",
+      "Migrate older Ariadne vault-link marker blocks in place",
       "Git local-only mode avoids tracked instruction changes and ensures local files are ignored",
       "duplicate or malformed Ariadne markers stop the update and ask for confirmation",
     ]) {
@@ -233,21 +220,6 @@ function validateRuntimeAdapters(errors) {
     }
     if (/```md\n@AGENTS\.md\n@(?:CLAUDE|GEMINI)\.local\.md\n```/u.test(text)) {
       fail(errors, `${workspaceInstructionReference} must not show default tracked adapters importing ignored local files`);
-    }
-  }
-}
-
-function validateRetiredSkillMap(errors) {
-  const readme = "README.md";
-  const text = read(readme);
-  if (!/^## Retired Skill Name Map$/mu.test(text)) {
-    fail(errors, `${readme} must include a retired skill name map`);
-    return;
-  }
-  for (const [oldName, newName] of RETIRED_SKILL_MAPPINGS) {
-    const row = `| \`${oldName}\` | \`${newName}\` |`;
-    if (!text.includes(row)) {
-      fail(errors, `${readme} retired skill name map missing: ${oldName} -> ${newName}`);
     }
   }
 }
@@ -264,7 +236,6 @@ function main() {
     validateRepoFiles(errors);
     validateWorkflows(errors);
     validateRuntimeAdapters(errors);
-    validateRetiredSkillMap(errors);
   }
 
   if (errors.length > 0) {

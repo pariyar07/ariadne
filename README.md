@@ -163,19 +163,6 @@ Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate o
 | `ariadne:maintenance` | Run health checks and repair navigability drift |
 | `ariadne:validator` | Deterministic structural validation — 11 checks, zero-warnings target |
 
-## Retired Skill Name Map
-
-If an older vault, prompt, or automation mentions a retired skill name, use the new name:
-
-| Retired name | New name |
-| --- | --- |
-| `ariadne:project-agents` | `ariadne:workspace-instructions` |
-| `ariadne:discovery` | `ariadne:global-discovery` |
-| `ariadne:ingest` | `ariadne:knowledge-capture` |
-| `ariadne:research-ingest` | `ariadne:research-intake` |
-| `ariadne:workstream-board` | `ariadne:workstream-tracking` |
-| `ariadne:maintainer` | `ariadne:maintenance` |
-
 ## Weekly Maintenance Automation
 
 Recurring maintenance is best handled as an automation prompt that invokes the existing skills, not as a separate skill. Start with `ariadne:validator`, follow with `ariadne:maintenance`, and only call navigation, knowledge capture, synthesis, Bases, or global discovery skills when the weekly run finds drift in those areas.

@@ -167,10 +167,10 @@ Use placeholders in public examples. Use private absolute paths only in ignored 
 ## Update Rules
 
 - Preserve useful workspace-specific content outside Ariadne markers, but proactively compact or move content that clearly belongs to the vault or ignored local files.
-- Migrate one legacy `ariadne:project-vault-link` block in place to `ariadne:workspace-vault-link`; do not append a second block.
+- Migrate older Ariadne vault-link marker blocks in place to `ariadne:workspace-vault-link`; do not append a second block.
 - Replace exactly one existing `ariadne:workspace-vault-link` block in place.
 - If no block exists, append it near the workspace overview or agent workflow section.
-- If multiple current blocks exist, or legacy and current blocks both exist, stop and ask whether to merge or remove duplicates.
+- If multiple Ariadne vault-link marker blocks exist, stop and ask whether to merge or remove duplicates.
 - If an existing `CLAUDE.md` or `GEMINI.md` already contains substantial runtime-specific custom guidance, do not collapse it to `@AGENTS.md` unless the user asks for normalization or the duplicated content clearly belongs in canonical `AGENTS.md`.
 - Do not add `@CLAUDE.local.md`, `@GEMINI.local.md`, absolute private paths, or home-directory imports to tracked adapter files unless the user explicitly asks and understands the portability tradeoff.
 - If a workspace has nested subprojects, add nested `AGENTS.md` files only when local rules differ from the root.
