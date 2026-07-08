@@ -92,7 +92,13 @@ function assertForbiddenSignals(report, forbidden, scenarioName) {
 
 function assertObjectContains(actual, expected, label) {
   for (const [key, value] of Object.entries(expected)) {
-    assert.strictEqual(actual[key], value, `${label}: ${key}`);
+    assert.deepStrictEqual(actual[key], value, `${label}: ${key}`);
+  }
+}
+
+function assertValues(actual, expected, label) {
+  for (const [key, value] of Object.entries(expected || {})) {
+    assert.deepStrictEqual(actual[key], value, `${label}: ${key}`);
   }
 }
 
@@ -108,6 +114,7 @@ function assertScenario(scenario, report) {
     assertObjectContains(report[key], expected, `${scenario.name}: ${key}`);
   }
 
+  assertValues(report, scenario.expected.values, scenario.name);
   assertForbiddenSignals(report, scenario.expected.forbidden, scenario.name);
 }
 

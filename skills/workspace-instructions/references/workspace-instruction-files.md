@@ -36,6 +36,34 @@ Avoid in tracked files:
 - long copied vault instructions
 - generated transcripts or raw private context
 
+## Workspace Contract File
+
+`WORKSPACE.md` is a supported Ariadne pattern, not a universal convention. No runtime is assumed to auto-read it; a pointer from `AGENTS.md` is load-bearing.
+
+Use `WORKSPACE.md` when the workspace needs a parent-level contract that is bigger than agent behavior:
+
+- non-Git parent workspaces with child Git repos
+- existing workspaces that already use `WORKSPACE.md`
+- user-requested parent workspace inventories
+- large workspace maps that would make `AGENTS.md` noisy
+
+Put in `WORKSPACE.md`:
+
+- workspace purpose and boundaries
+- child repo or child folder inventory
+- parent non-Git policy and root-only safety rules
+- shared setup, validation, or coordination commands
+- ownership notes for child projects
+
+Keep in `AGENTS.md`:
+
+- a short instruction to read `WORKSPACE.md` before choosing a child repo or folder
+- agent behavior and safety rules
+- Ariadne vault-link block when relevant
+- runtime-specific skill triggers or adapter guidance
+
+Do not create `WORKSPACE.md` for plain single repos by default. If `AGENTS.md` references `WORKSPACE.md` but the file is missing, ask whether to create it, fix the stale reference, or point to another file instead of inventing an inventory.
+
 ## Thin Runtime Adapters
 
 Use adapter files to avoid duplicating instructions.
@@ -103,15 +131,19 @@ When updating an existing workspace, treat these as cleanup signals:
 - local-only files exist but `.gitignore` does not cover them
 - a workspace has both tracked and local files but no clear shared/local split
 - Ariadne marker blocks are duplicated, malformed, or mixed with copied global discovery blocks
+- `AGENTS.md` references missing `WORKSPACE.md`
+- `AGENTS.md` and `WORKSPACE.md` both mention the same child repo or folder map
+- listed child folders no longer exist, or obvious child Git repos are not mentioned by the selected inventory owner
 
 Safe cleanup:
 
 - compact copied vault context into the small Ariadne vault-link block
-- preserve commands, repo maps, tests, coding conventions, safety rules, and other real workspace guidance
+- preserve commands, tests, coding conventions, safety rules, and other real workspace guidance
+- move child repo/folder inventory from `AGENTS.md` to `WORKSPACE.md` only when `WORKSPACE.md` exists or is being created for a clear parent-workspace shape
 - move private/local details to ignored local files when local mode is clear
 - normalize adapters to thin imports when they only duplicate `AGENTS.md`
 
-Ask first when content ownership is ambiguous, when a local-only mode would leave collaborators without needed repo guidance, or when changing `AGENTS.override.md` would replace shared Codex guidance.
+Ask first when content ownership is ambiguous, when `AGENTS.md` and `WORKSPACE.md` have conflicting child maps, when a local-only mode would leave collaborators without needed repo guidance, or when changing `AGENTS.override.md` would replace shared Codex guidance.
 
 ## Scenario Coverage
 
@@ -121,6 +153,9 @@ Deterministic signal coverage lives in `test/test_workspace_instructions.js` and
 - Git local-only mode avoids tracked instruction changes and ensures local files are ignored
 - shared plus local mode splits portable rules from private paths
 - non-Git mode keeps files portable unless local-only intent is explicit
+- `WORKSPACE.md` is treated as a supported parent-workspace contract pattern, not a runtime adapter
+- missing `WORKSPACE.md` references stop for confirmation instead of creating invented inventory
+- child repo/folder inventory signals are mechanical: fixed-depth directories, child Git repos, and exact child-name mentions by file
 - linked worktrees resolve the active workspace root
 - instruction line counts support compaction decisions without treating length alone as a cleanup command
 - private path leakage is detected before tracked files are written
@@ -150,6 +185,11 @@ When workspace history, decisions, roadmap, research, customers, or workstream s
 4. Prefer compiled notes, indexes, hubs, decisions, and synthesis notes over raw sources.
 5. If multiple vaults or scopes are plausible, show the top matches with short reasons and ask before writing.
 
+Vault updates:
+
+- Use `ariadne:closeout` after meaningful completed work, checkpoints, handoffs, releases, evaluations, incidents, durable decisions, or safe-to-close questions.
+- Do not run closeout for every tiny edit or command output.
+
 Do not copy vault content into this workspace file. The vault remains the source of truth.
 <!-- ariadne:workspace-vault-link:end -->
 ```
@@ -164,6 +204,11 @@ Related Ariadne scope: `<vault name>` / `<scope name or path>`
 
 Use registered vault discovery to enter the vault, then follow the scope's hub and routing files. Before writing into a multi-scope vault, require a current-turn explicit target or ask for confirmation.
 
+Vault updates:
+
+- Use `ariadne:closeout` after meaningful completed work, checkpoints, handoffs, releases, evaluations, incidents, durable decisions, or safe-to-close questions.
+- Do not run closeout for every tiny edit or command output.
+
 Do not copy vault content into this workspace file. The vault remains the source of truth.
 <!-- ariadne:workspace-vault-link:end -->
 ```
@@ -176,6 +221,7 @@ Use placeholders in public examples. Use private absolute paths only in ignored 
 - Migrate older Ariadne vault-link marker blocks in place to `ariadne:workspace-vault-link`; do not append a second block.
 - Replace exactly one existing `ariadne:workspace-vault-link` block in place.
 - If no block exists, append it near the workspace overview or agent workflow section.
+- Add a vault-link block only when the user asks for Ariadne/vault context, existing files contain Ariadne markers, `~/.ariadne` registry references, `ariadne:*` skill triggers, registered-vault instructions, Vault Updates sections, or a local file with a vault link. A bare `Obsidian` mention is not enough to write a link.
 - If multiple Ariadne vault-link marker blocks exist, stop and ask whether to merge or remove duplicates.
 - If an existing `CLAUDE.md` or `GEMINI.md` already contains substantial runtime-specific custom guidance, do not collapse it to `@AGENTS.md` unless the user asks for normalization or the duplicated content clearly belongs in canonical `AGENTS.md`.
 - Do not add `@CLAUDE.local.md`, `@GEMINI.local.md`, absolute private paths, or home-directory imports to tracked adapter files unless the user explicitly asks and understands the portability tradeoff.
@@ -189,6 +235,7 @@ Prefer these files:
 AGENTS.md
 CLAUDE.md
 GEMINI.md
+WORKSPACE.md
 .gitignore
 README.md
 package.json

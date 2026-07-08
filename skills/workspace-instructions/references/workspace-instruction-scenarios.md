@@ -16,6 +16,11 @@ Checker-owned:
 - Current, legacy, duplicate, malformed, copied global-discovery, and foreign marker signals.
 - Adapter duplication and local-file import signals.
 - Nested `AGENTS.md` duplication signals.
+- `WORKSPACE.md` existence and missing-reference signals.
+- Fixed-depth child directories, child Git repos, and exact child-name mentions by file.
+- Root `.git` plus child Git repo topology signals.
+- Missing child-name detection is intentionally narrow: it only scans backticked tokens on inventory-looking Markdown list or table lines, and it skips tokens containing dots. An empty missing-name signal is not proof that every listed child exists.
+- Exact child-name mentions may come from ordinary prose for common names such as `docs`, `src`, `test`, or `web`; the skill should discount prose-only matches when deciding whether a real duplicated map exists.
 
 Skill-owned:
 
@@ -24,6 +29,8 @@ Skill-owned:
 - Whether to ask a clarifying question or make conservative cleanup.
 - Whether to migrate, merge, remove, or leave ambiguous marker blocks.
 - Whether a confirmed vault or scope target is specific enough to name in a workspace file.
+- Which file owns child repo/folder inventory.
+- Whether child-name overlap means duplication, conflict, or an intentional quick pointer.
 
 ## Acceptance Format
 
@@ -41,6 +48,11 @@ Each fixture covers three kinds of expectations:
 | Git local-only mode | Prefer ignored local files and add missing `.gitignore` coverage before creating them. | Ask if local-only mode would leave collaborators without needed repo guidance. | Do not modify tracked instruction files unless the user asks. |
 | Shared plus local mode | Split stable workspace rules into tracked files and private paths or personal workflow into ignored local files. | Ask when content could be either team policy or private context. | Do not copy local-file content back into tracked files. |
 | Non-Git folder | Keep files portable by default and avoid private absolute paths. | Ask only when sharing intent changes the file shape. | Do not assume the folder will never be shared. |
+| Non-Git parent with child repos | Use `WORKSPACE.md` as the supported parent workspace contract and keep `AGENTS.md` as the agent entry pointer. | Ask before changing child repo semantics or root Git topology. | Do not leave the full child map duplicated in `AGENTS.md` after `WORKSPACE.md` becomes the owner. |
+| ScoutFlo-style parent migration | When a refresh introduces `WORKSPACE.md`, move an existing child repo map from `AGENTS.md` to `WORKSPACE.md` and shrink `AGENTS.md` to a pointer when ownership is clear. | Ask if commands, safety rules, or conventions would need to move with the map. | Do not treat preserving the map in `AGENTS.md` as sufficient after delegating to `WORKSPACE.md`. |
+| Missing `WORKSPACE.md` reference | Report the missing referenced file. | Ask whether to create `WORKSPACE.md`, fix the stale reference, or point to another file. | Do not invent a workspace inventory just because `AGENTS.md` references a missing `WORKSPACE.md`. |
+| Conflicting child maps | Surface exact child-name mentions by file. | Ask which map is current. | Do not silently merge conflicting child repo/folder lists. |
+| Child repo freshness | Surface fixed-depth child Git repos, exact mentions by file, and missing child-like names from inventory lines. | Ask whether stale entries should be removed or unmapped child repos should be added. | Do not treat mechanical mismatches as automatic edit permission. |
 | Stale `.gitignore` coverage | Add local-only filenames to `.gitignore` when local files exist or are created. | Ask only if the user forbids `.gitignore` changes. | Do not create unignored local-only instruction files in a Git workspace. |
 | Bulky instruction file | Use line counts and copied-navigation signals to decide whether to compact copied vault navigation into a small vault-link block while preserving commands, repo map, tests, and coding conventions. | Ask before deleting ambiguous project-specific rules. | Do not erase useful workspace instructions just because the file is long. |
 | Private/local path leakage | Move private paths, exact private scope paths, sandbox paths, and personal workflow to ignored local files when local mode is clear. | Ask when the destination or sharing mode is unclear. | Do not leave private paths in tracked shared instructions. |
@@ -53,7 +65,11 @@ Each fixture covers three kinds of expectations:
 | Copied global-discovery block | Replace copied global discovery with a workspace-vault-link block when ownership is clear. | Ask if the file also contains malformed or duplicate Ariadne markers. | Do not copy machine-level global discovery blocks into workspace files. |
 | Nested subprojects | Add or keep nested `AGENTS.md` only when local rules differ from the root. | Ask before deleting a nested file whose differences are ambiguous. | Do not duplicate the root file into every subproject. |
 | Git linked worktree | Resolve the workspace root from the active worktree and inspect that worktree's files. | Ask only when multiple workspace roots are plausible. | Do not write to the source worktree by accident. |
+| Submodules or child Git repos | Stop traversal at child `.git` roots for parent-level signals. | Ask before editing inside a child repo or submodule. | Do not let nested child-repo `AGENTS.md` files pollute parent workspace signals. |
+| Obsidian vault root | Defer to `ariadne:vault` conventions unless only adding a compact compatible vault link. | Ask before replacing vault navigation or agent files with generic workspace templates. | Do not treat a vault root as a generic repo. |
 | Multiple plausible vaults or scopes | Show top matches with short reasons. | Ask which vault or scope to link before writing a scope-specific block. | Do not write a block naming a scope from search hits alone. |
+| Bare Obsidian mention | Treat the word `Obsidian` as weak context only. | Ask or abstain unless Ariadne-specific signals also exist. | Do not write an Ariadne vault-link block because a repo mentions Obsidian. |
+| Closeout in workspace links | Include `ariadne:closeout` only inside marker-managed vault-link content and only when a vault link is being written. | Ask if the workspace has no Ariadne/vault connection but the user wants closeout guidance. | Do not add unmanaged closeout prose to unrelated workspace files. |
 
 ## Test Command
 

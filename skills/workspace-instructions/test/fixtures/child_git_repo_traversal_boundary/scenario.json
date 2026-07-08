@@ -1,0 +1,51 @@
+{
+  "name": "child_git_repo_traversal_boundary",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "content": "# Parent Instructions\n\nRead `WORKSPACE.md` for the child repo map.\n"
+    },
+    {
+      "path": "WORKSPACE.md",
+      "content": "# Workspace\n\n## Child Repositories\n\n- `api` - Gateway API.\n"
+    },
+    {
+      "path": "api/.git",
+      "content": "gitdir: ../.git/modules/api\n"
+    },
+    {
+      "path": "api/AGENTS.md",
+      "content": "# Child Instructions\n\n<!-- ariadne:workspace-vault-link:start -->\nChild-only marker.\n"
+    },
+    {
+      "path": "api/src/AGENTS.md",
+      "content": "# Nested Child Instructions\n"
+    },
+    {
+      "path": "docs/AGENTS.md",
+      "content": "# Docs Instructions\n"
+    }
+  ],
+  "expected": {
+    "git": {
+      "insideWorkTree": false,
+      "isLinkedWorktree": false
+    },
+    "values": {
+      "workspaceFileExists": true,
+      "agentsReferencesWorkspace": true
+    },
+    "arrays": {
+      "childDirectories": ["api", "docs"],
+      "childGitRepos": ["api"],
+      "nestedInstructionFiles": ["docs/AGENTS.md"],
+      "malformedMarkerFiles": []
+    },
+    "objects": {
+      "childNamesMentionedByFile": {
+        "AGENTS.md": [],
+        "WORKSPACE.md": ["api"]
+      }
+    }
+  }
+}

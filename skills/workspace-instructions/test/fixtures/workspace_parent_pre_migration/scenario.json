@@ -1,0 +1,57 @@
+{
+  "name": "workspace_parent_pre_migration",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n## Child Repositories\n\n- `api` - Gateway API.\n- `web` - Main web client.\n- `ops` - Deployment scripts.\n\n## Rules\n\n- Read this map before choosing a child repo.\n"
+    },
+    {
+      "path": "api/.git",
+      "content": "gitdir: ../.git/modules/api\n"
+    },
+    {
+      "path": "web/.git",
+      "content": "gitdir: ../.git/modules/web\n"
+    },
+    {
+      "path": "ops/.git",
+      "content": "gitdir: ../.git/modules/ops\n"
+    },
+    {
+      "path": "api/package.json",
+      "content": "{\"name\":\"api\"}\n"
+    },
+    {
+      "path": "web/package.json",
+      "content": "{\"name\":\"web\"}\n"
+    },
+    {
+      "path": "ops/README.md",
+      "content": "# Ops\n"
+    }
+  ],
+  "expected": {
+    "git": {
+      "insideWorkTree": false,
+      "isLinkedWorktree": false
+    },
+    "values": {
+      "workspaceFileExists": false,
+      "agentsReferencesWorkspace": false,
+      "rootGitPresentWithChildGitRepos": false
+    },
+    "arrays": {
+      "childDirectories": ["api", "ops", "web"],
+      "childGitRepos": ["api", "ops", "web"],
+      "workspaceReferenceMissingFiles": []
+    },
+    "objects": {
+      "childNamesMentionedByFile": {
+        "AGENTS.md": ["api", "ops", "web"]
+      },
+      "missingChildNamesMentionedByFile": {
+        "AGENTS.md": []
+      }
+    }
+  }
+}
