@@ -1,0 +1,32 @@
+{
+  "name": "workspace_reference_missing",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\nRead `WORKSPACE.md` for the child repo map before choosing a project.\n"
+    },
+    {
+      "path": "api/.git",
+      "content": "gitdir: ../.git/modules/api\n"
+    },
+    {
+      "path": "api/README.md",
+      "content": "# API\n"
+    }
+  ],
+  "expected": {
+    "git": {
+      "insideWorkTree": false,
+      "isLinkedWorktree": false
+    },
+    "values": {
+      "workspaceFileExists": false,
+      "agentsReferencesWorkspace": true
+    },
+    "arrays": {
+      "childDirectories": ["api"],
+      "childGitRepos": ["api"],
+      "workspaceReferenceMissingFiles": ["WORKSPACE.md"]
+    }
+  }
+}

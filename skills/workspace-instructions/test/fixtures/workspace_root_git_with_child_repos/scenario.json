@@ -1,0 +1,58 @@
+{
+  "name": "workspace_root_git_with_child_repos",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\nRead `WORKSPACE.md` before choosing a child repo.\n"
+    },
+    {
+      "path": "WORKSPACE.md",
+      "content": "# Workspace\n\n## Child Repositories\n\n- `api`\n- `web`\n"
+    },
+    {
+      "path": "api/.git",
+      "content": "gitdir: ../.git/modules/api\n"
+    },
+    {
+      "path": "web/.git",
+      "content": "gitdir: ../.git/modules/web\n"
+    },
+    {
+      "path": "api/README.md",
+      "content": "# API\n"
+    },
+    {
+      "path": "web/README.md",
+      "content": "# Web\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md", "WORKSPACE.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "values": {
+      "workspaceFileExists": true,
+      "agentsReferencesWorkspace": true,
+      "rootGitPresentWithChildGitRepos": true
+    },
+    "arrays": {
+      "childDirectories": ["api", "web"],
+      "childGitRepos": ["api", "web"]
+    },
+    "objects": {
+      "childNamesMentionedByFile": {
+        "AGENTS.md": [],
+        "WORKSPACE.md": ["api", "web"]
+      }
+    }
+  }
+}

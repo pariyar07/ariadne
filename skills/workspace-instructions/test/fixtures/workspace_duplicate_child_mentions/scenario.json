@@ -1,0 +1,54 @@
+{
+  "name": "workspace_duplicate_child_mentions",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\nRead `WORKSPACE.md` for the workspace map.\n\nQuick map: `api`, `web`.\n"
+    },
+    {
+      "path": "WORKSPACE.md",
+      "content": "# Workspace\n\n## Child Repositories\n\n| Folder | Purpose |\n| --- | --- |\n| `api` | Gateway API |\n| `web` | Main web client |\n| `legacy` | Removed old service |\n"
+    },
+    {
+      "path": "api/.git",
+      "content": "gitdir: ../.git/modules/api\n"
+    },
+    {
+      "path": "web/.git",
+      "content": "gitdir: ../.git/modules/web\n"
+    },
+    {
+      "path": "api/README.md",
+      "content": "# API\n"
+    },
+    {
+      "path": "web/README.md",
+      "content": "# Web\n"
+    }
+  ],
+  "expected": {
+    "git": {
+      "insideWorkTree": false,
+      "isLinkedWorktree": false
+    },
+    "values": {
+      "workspaceFileExists": true,
+      "agentsReferencesWorkspace": true
+    },
+    "arrays": {
+      "childDirectories": ["api", "web"],
+      "childGitRepos": ["api", "web"],
+      "workspaceReferenceMissingFiles": []
+    },
+    "objects": {
+      "childNamesMentionedByFile": {
+        "AGENTS.md": ["api", "web"],
+        "WORKSPACE.md": ["api", "web"]
+      },
+      "missingChildNamesMentionedByFile": {
+        "AGENTS.md": [],
+        "WORKSPACE.md": ["legacy"]
+      }
+    }
+  }
+}

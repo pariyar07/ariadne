@@ -8,11 +8,13 @@ const { execFileSync } = require("child_process");
 const ROOT_INSTRUCTION_FILES = new Set(["AGENTS.md", "CLAUDE.md", "GEMINI.md"]);
 const LOCAL_ONLY_FILES = new Set(["AGENTS.override.md", "CLAUDE.local.md", "GEMINI.local.md"]);
 const TEXT_EXTENSIONS = new Set([".md", ".txt", ".json", ".yaml", ".yml"]);
+const WORKSPACE_FILE = "WORKSPACE.md";
 const CURRENT_MARKER_START = "<!-- ariadne:workspace-vault-link:start -->";
 const CURRENT_MARKER_END = "<!-- ariadne:workspace-vault-link:end -->";
 const GLOBAL_DISCOVERY_START = "<!-- ariadne:vault-discovery:start -->";
 const GLOBAL_DISCOVERY_END = "<!-- ariadne:vault-discovery:end -->";
 const LARGE_INSTRUCTION_LINE_THRESHOLD = 180;
+const CHILD_DIRECTORY_SCAN_DEPTH = 2;
 
 function toPosix(file) {
   return file.split(path.sep).join("/");
@@ -38,6 +40,8 @@ function listFiles(root) {
   const results = [];
 
   function walk(dir) {
+    if (dir !== root && fs.existsSync(path.join(dir, ".git"))) return;
+
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.name === ".git" || entry.name === "node_modules") continue;
       const fullPath = path.join(dir, entry.name);
@@ -118,6 +122,10 @@ function allInstructionFiles(files) {
   });
 }
 
+function workspaceContractFiles(files) {
+  return files.includes(WORKSPACE_FILE) ? [WORKSPACE_FILE] : [];
+}
+
 function sharedInstructionFiles(files) {
   return allInstructionFiles(files).filter((file) => !LOCAL_ONLY_FILES.has(path.posix.basename(file)));
 }
@@ -128,6 +136,31 @@ function rootSharedInstructionFiles(files) {
 
 function localInstructionFiles(files) {
   return files.filter((file) => LOCAL_ONLY_FILES.has(path.posix.basename(file))).sort();
+}
+
+function childDirectories(root, maxDepth = CHILD_DIRECTORY_SCAN_DEPTH) {
+  const directories = [];
+
+  function walk(dir, depth) {
+    if (depth > maxDepth) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === ".git" || entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+      const fullPath = path.join(dir, entry.name);
+      if (!entry.isDirectory()) continue;
+      const rel = relative(root, fullPath);
+      directories.push(rel);
+      if (!fs.existsSync(path.join(fullPath, ".git"))) {
+        walk(fullPath, depth + 1);
+      }
+    }
+  }
+
+  walk(root, 1);
+  return directories.sort();
+}
+
+function childGitRepos(root, directories) {
+  return directories.filter((dir) => fs.existsSync(path.join(root, dir, ".git"))).sort();
 }
 
 function detectPrivatePath(text) {
@@ -142,6 +175,54 @@ function detectPrivatePath(text) {
     "u"
   );
   return pattern.test(text);
+}
+
+function mentionsName(text, name) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const pattern = new RegExp(`(^|[^A-Za-z0-9._/-])${escaped}([^A-Za-z0-9._/-]|$)`, "u");
+  return pattern.test(text);
+}
+
+function isInventoryLine(line) {
+  return /^\s*(?:[-*]|\|)/u.test(line) && /\b(?:repo|repository|folder|project|service|package|client|app|workspace|api)\b/iu.test(line);
+}
+
+function detectWorkspaceContract(root, files, directories) {
+  const workspaceFileExists = files.includes(WORKSPACE_FILE);
+  const agentsText = files.includes("AGENTS.md") ? read(root, "AGENTS.md") : "";
+  const agentsReferencesWorkspace = /\bWORKSPACE\.md\b/u.test(agentsText);
+  const workspaceReferenceMissingFiles = agentsReferencesWorkspace && !workspaceFileExists ? [WORKSPACE_FILE] : [];
+  const childNamesMentionedByFile = {};
+  const missingChildNamesMentionedByFile = {};
+  const existingNames = new Set(directories.flatMap((dir) => [dir, path.posix.basename(dir)]));
+  const filesToInspect = rootSharedInstructionFiles(files).concat(workspaceContractFiles(files));
+
+  for (const file of filesToInspect.filter(isTextFile)) {
+    const text = read(root, file);
+    const mentioned = directories
+      .filter((dir) => mentionsName(text, dir) || mentionsName(text, path.posix.basename(dir)))
+      .sort();
+    childNamesMentionedByFile[file] = mentioned;
+
+    const missing = [];
+    for (const line of text.split(/\r?\n/u).filter(isInventoryLine)) {
+      const tokenPattern = /`([A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*)`/gu;
+      for (const match of line.matchAll(tokenPattern)) {
+        const token = match[1];
+        if (token === WORKSPACE_FILE || token.includes(".")) continue;
+        if (!existingNames.has(token)) missing.push(token);
+      }
+    }
+    missingChildNamesMentionedByFile[file] = [...new Set(missing)].sort();
+  }
+
+  return {
+    workspaceFileExists,
+    agentsReferencesWorkspace,
+    workspaceReferenceMissingFiles,
+    childNamesMentionedByFile,
+    missingChildNamesMentionedByFile,
+  };
 }
 
 function detectMarkers(root, files) {
@@ -252,6 +333,8 @@ function checkWorkspace(root) {
   const workspaceRoot = path.resolve(root);
   const files = listFiles(workspaceRoot);
   const git = inspectGit(workspaceRoot, files);
+  const childDirs = childDirectories(workspaceRoot);
+  const childRepos = childGitRepos(workspaceRoot, childDirs);
   const localFiles = localInstructionFiles(files);
   const trackedInstructionFiles = rootInstructionFiles(files)
     .filter((file) => git.insideWorkTree && git.tracked.has(file))
@@ -275,6 +358,10 @@ function checkWorkspace(root) {
     localInstructionFiles: localFiles,
     trackedLocalOnlyFiles,
     localFilesMissingGitignore,
+    childDirectories: childDirs,
+    childGitRepos: childRepos,
+    rootGitPresentWithChildGitRepos: fs.existsSync(path.join(workspaceRoot, ".git")) && childRepos.length > 0,
+    ...detectWorkspaceContract(workspaceRoot, files, childDirs),
     ...detectContentSignals(workspaceRoot, files, git),
     ...detectMarkers(workspaceRoot, files),
     ...detectAdapters(workspaceRoot, files),
