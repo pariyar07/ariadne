@@ -52,6 +52,7 @@ Each skill is a folder with:
 | Edit workspace instruction skill | `skills/workspace-instructions/SKILL.md` |
 | Edit workspace instruction checker | `skills/workspace-instructions/scripts/check_workspace.js` |
 | Edit workspace instruction scenarios | `skills/workspace-instructions/references/workspace-instruction-scenarios.md` |
+| Edit workspace instruction audit rubric | `skills/workspace-instructions/references/instruction-file-rules.md` |
 | Edit reference documentation | `skills/vault/references/` |
 | Edit cold-start research intake | `skills/research-intake/SKILL.md` |
 | Edit domain research pipeline setup | `skills/research-pipeline/SKILL.md` |
@@ -89,4 +90,4 @@ To connect this repo to a local Obsidian vault, create these files (all gitignor
 
 - `CLAUDE.local.md` — optional Claude local memory/context; do not import it from tracked `CLAUDE.md` by default
 - `GEMINI.local.md` — optional Ariadne local context convention for Gemini workflows; only use it when your local Gemini setup loads it or you explicitly add a local import
-- `AGENTS.override.md` — replaces `AGENTS.md` for Codex CLI; copy `AGENTS.md` and add your local vault section at the bottom
+- `AGENTS.override.md` — replaces `AGENTS.md` for Codex CLI. Codex reads only one file per directory and prefers the override, so it does **not** merge with `AGENTS.md` — it fully replaces it. Copy `AGENTS.md` verbatim, then add your local vault section at the bottom inside the `ariadne:workspace-vault-link` marker block. Re-sync the copied body whenever `AGENTS.md` changes, or Codex will read stale repo guidance.

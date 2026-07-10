@@ -43,7 +43,7 @@ node scripts/check_workspace.js "/path/to/workspace" --json
 
 Resolve `scripts/check_workspace.js` relative to this `SKILL.md`. In an Ariadne repository checkout, the same script lives at `skills/workspace-instructions/scripts/check_workspace.js`.
 
-Use the checker for mechanical signals only: Git/worktree state, tracked or ignored instruction files, local-file `.gitignore` coverage, private-path signals, instruction line counts, high line-count files, duplicated vault navigation, adapter duplication, copied global-discovery blocks, malformed, duplicate, legacy, or foreign marker blocks, `WORKSPACE.md` references, fixed-depth child directories, child Git repos, exact child-name mentions by file, and root Git plus child Git repo topology.
+Use the checker for mechanical signals only: Git/worktree state, tracked or ignored instruction files, local-file `.gitignore` coverage, private-path signals, instruction line counts, high line-count files, duplicated vault navigation, adapter duplication, copied global-discovery blocks, malformed, duplicate, legacy, or foreign marker blocks, `WORKSPACE.md` references, fixed-depth child directories, child Git repos, exact child-name mentions by file, root Git plus child Git repo topology, Codex `AGENTS.override.md` bodies that have drifted out of sync with `AGENTS.md` (`codexOverrideOutOfSyncFiles`), shared instruction files that exceed the ~150-line open-standard length (`oversizedForStandardFiles`), and a canonical `AGENTS.md` that carries no command guidance (`agentsMissingCommandGuidance`).
 
 Do not let checker output replace judgment. This skill decides whether to ask a question, preserve workspace-specific rules, split shared/local content, or perform conservative cleanup.
 
@@ -69,13 +69,15 @@ Use `references/workspace-instruction-files.md` when creating or restructuring f
 
 Use `references/workspace-instruction-scenarios.md` when edge-case behavior matters, such as Git shared/local mode, stale `.gitignore` coverage, private-path leakage, bulky instruction files, adapter normalization, duplicate or malformed markers, legacy marker migration, copied global-discovery blocks, nested subprojects, worktrees, `WORKSPACE.md` ownership, child repo/folder inventory, or ambiguous vault/scope links.
 
+Use `references/instruction-file-rules.md` as the audit rubric when auditing or attesting instruction files against the open standard and cross-runtime portability rules.
+
 Default shape:
 
 - `AGENTS.md` - canonical workspace instructions, usually public-safe.
 - `WORKSPACE.md` - optional workspace contract for parent folders, child repo/folder inventory, boundaries, and shared operating model. This is a supported Ariadne pattern, not a runtime convention; agents only read it reliably when `AGENTS.md` points to it.
 - `CLAUDE.md` - thin Claude adapter, usually a short sentence plus `@AGENTS.md` and any Claude-only public deltas.
 - `GEMINI.md` - thin Gemini adapter when Gemini CLI support is requested, usually a short sentence plus `@AGENTS.md` and any Gemini-only public deltas.
-- `AGENTS.override.md` - optional Codex local replacement override, gitignored. Codex prefers this over `AGENTS.md` at the same directory level, so do not treat it as a small supplement.
+- `AGENTS.override.md` - optional Codex local replacement override, gitignored. Codex reads only one instruction file per directory and prefers the override, so it fully replaces `AGENTS.md` for that directory — it is not merged or supplemented. When you create or refresh it, write a verbatim copy of the current `AGENTS.md` body, then add the local vault section at the bottom inside the `ariadne:workspace-vault-link` marker block. Because it is a full copy, it drifts stale whenever `AGENTS.md` changes; re-sync the copied body on every refresh and treat a `codexOverrideOutOfSyncFiles` signal as a stale override to repair.
 - `CLAUDE.local.md` - optional Claude local memory, gitignored.
 - `GEMINI.local.md` - optional Ariadne local context convention for Gemini workflows, gitignored. Do not assume Gemini loads it automatically unless the local runtime configuration or user confirms that behavior.
 
@@ -89,6 +91,8 @@ Before writing or restructuring files, decide the sharing mode.
 
 Check whether the workspace is inside Git. If it is, inspect whether instruction files are tracked and whether local-only filenames are covered by `.gitignore`. If the answer changes what you would write and the prompt does not make the intent clear, ask one short question: should these instructions be shared in the repo, local-only for this machine, or split into shared plus local/private files?
 
+When a single run could produce **both** shared/public tracked files and local/private ignored files — for example, public workspace rules in `AGENTS.md` plus a private vault link and machine paths in `CLAUDE.local.md` or `AGENTS.override.md` — do not silently pick one or split content by guess. Ask which the user wants (shared only, local only, or both) and, when the answer is both, confirm which content belongs in the tracked files versus the ignored local files. The only exception is when the current prompt already states the split or the existing file layout makes it unambiguous.
+
 Use this mapping:
 
 - Shared repo: tracked `AGENTS.md` contains public-safe workspace rules and a compact Ariadne link. Tracked `CLAUDE.md` and `GEMINI.md` stay thin adapters unless they have real runtime-specific public deltas.
@@ -97,6 +101,8 @@ Use this mapping:
 - Non-Git folder: ask only when sharing intent is unclear and materially affects the file shape. If the user does not care, keep files portable and avoid private absolute paths in files likely to be copied elsewhere.
 
 Do not invent a generic `AGENTS.local.md` convention. Use `AGENTS.override.md` only when a Codex replacement file is intended. Use `CLAUDE.local.md` for Claude local project memory. Use `GEMINI.local.md` only as an explicit local convention when the user's Gemini setup loads it or the user asks for it.
+
+`AGENTS.override.md` is a full replacement, not a supplement: Codex reads it instead of `AGENTS.md`, so it must restate the whole current `AGENTS.md` body and then carry local differences inside the `ariadne:workspace-vault-link` marker block. Generate it by copying the current `AGENTS.md` verbatim and appending the local block; keep the copied body in sync on every refresh so Codex never reads stale repo guidance. `CLAUDE.local.md` and `GEMINI.local.md` are supplements — Claude and Gemini also read their tracked files — so they hold only the local delta and do not restate `AGENTS.md`.
 
 Never run destructive Git cleanup from this skill. If the user explicitly asks to make a parent workspace non-Git, explain a root-only, child-preserving plan and ask before any command that removes or rewrites root `.git`; child `.git` directories or gitfiles must be preserved.
 
@@ -117,11 +123,24 @@ Ask before removing or moving ambiguous workspace-specific rules, moving command
 
 Use this ask-vs-act rule:
 
-- Act when a signal is mechanical and the destination is clear: add missing `.gitignore` coverage for local-only files, remove private paths from tracked files by moving them to an existing ignored local file, compact copied vault navigation into a small vault-link block, normalize adapters that exactly duplicate `AGENTS.md`, or move clear child repo/folder inventory into an owned `WORKSPACE.md`.
+- Act when a signal is mechanical and the destination is clear: add missing `.gitignore` coverage for local-only files, remove private paths from tracked files by moving them to an existing ignored local file, compact copied vault navigation into a small vault-link block, normalize adapters that exactly duplicate `AGENTS.md`, move clear child repo/folder inventory into an owned `WORKSPACE.md`, or re-sync a stale `AGENTS.override.md` (`codexOverrideOutOfSyncFiles`) by replacing its copied body with the current `AGENTS.md` while preserving the local `ariadne:workspace-vault-link` block untouched.
 - Ask when ownership or target is ambiguous: content could be workspace policy or private context, local-only mode would remove collaborator guidance, multiple vaults or scopes are plausible, a scope-specific link lacks current-turn confirmation, `WORKSPACE.md` is referenced but missing, child maps conflict, a nested `AGENTS.md` may contain meaningful local deltas, or marker blocks are duplicate or malformed.
 - Stop rather than guess when a marker-managed region is malformed, when more than one Ariadne vault-link block exists, or when changing `AGENTS.override.md` would replace shared Codex guidance.
 
 When `AGENTS.md` references `WORKSPACE.md`, cross-file consistency is required: a missing referenced `WORKSPACE.md` is a stop-and-ask finding, child repo/folder maps should live in `WORKSPACE.md` when it exists or is explicitly requested, and `AGENTS.md` should keep only a short pointer plus agent behavior. If both files mention child names, use checker facts as evidence; ask before resolving conflicting maps.
+
+## Instruction-File Audit and Attestation
+
+Whenever you create or update workspace instruction files, audit them against the shared rubric in `references/instruction-file-rules.md` and attest the result. The rubric has two rule groups: open-standard conformance (from the `AGENTS.md` standard) and agentic cross-runtime portability (adapters, override sync, marker discipline, no leakage). Each rule is either mechanical (a deterministic checker signal) or judgment (you assess and report).
+
+Run the audit like this:
+
+1. Run the checker and read the mechanical signals: `oversizedForStandardFiles`, `agentsMissingCommandGuidance`, `codexOverrideOutOfSyncFiles`, `adapterDuplicateFiles`, `privatePathLeakFiles`, `localFilesMissingGitignore`, marker signals, and `WORKSPACE.md` reference signals.
+2. Assess the judgment rules by reading the canonical `AGENTS.md`: command-first ordering with exact invocations, version-pinned specifics over generic phrasing, explicit always/ask-first/never boundaries, a stated done/closure check, and hand-written project-specific content rather than generic boilerplate.
+3. Fix the low-risk mechanical violations that this skill already acts on: re-sync a stale override, add missing `.gitignore` coverage, thin duplicated adapters, move private paths to ignored local files, and compact copied vault navigation. Report oversize and missing-command findings; only rewrite substantive `AGENTS.md` content after asking.
+4. Attest in the completion report only. Do not write attestation markers, badges, or audit blocks into the user's files. State which rules pass, which are flagged, and which flagged rules you fixed versus left for the user.
+
+Apply the audit to both new and existing files. New files: audit before reporting done and attest compliance. Existing/older files: run the same audit on every update, auto-fix the low-risk mechanical gaps, and report the judgment gaps that predate the rubric so the user can decide. Do not silently rewrite older files to satisfy a judgment rule; surface it and ask.
 
 ## Ariadne Vault Links
 
@@ -163,7 +182,8 @@ Rules:
 10. Create or update files using the patterns reference.
 11. Add local-only filenames to `.gitignore` when local files exist or are created in a Git workspace.
 12. Rerun the checker and inspect touched files.
-13. Report which files changed, which mode was used, which checker signals remain, and which context is intentionally left for the vault or local-only files.
+13. Run the instruction-file audit against the rubric and attest the result.
+14. Report which files changed, which mode was used, which checker signals remain, the audit attestation, and which context is intentionally left for the vault or local-only files.
 
 ## Update Workflow
 
@@ -178,7 +198,9 @@ When files already exist:
 7. Compact duplicated vault navigation, private/local details, and adapter duplication when the ownership is clear.
 8. If `AGENTS.md` references `WORKSPACE.md`, ensure `WORKSPACE.md` owns child repo/folder inventory and `AGENTS.md` is only a pointer plus agent rules. Ask on missing referenced files or conflicting maps.
 9. Avoid converting to a new adapter layout unless the user asked for normalization, the current files duplicate large instruction blocks, or the existing layout conflicts with the selected sharing mode.
-10. Rerun the checker and inspect touched files before reporting completion.
+10. If `AGENTS.override.md` exists, keep it in sync with `AGENTS.md`. When the checker reports `codexOverrideOutOfSyncFiles`, replace the copied body with the current `AGENTS.md` and preserve the local `ariadne:workspace-vault-link` block. Whenever you edit tracked `AGENTS.md`, refresh the override body in the same run.
+11. Rerun the checker and inspect touched files.
+12. Run the instruction-file audit against the rubric, auto-fix low-risk mechanical gaps, and attest the result in the report before reporting completion.
 
 ## Global Discovery
 
