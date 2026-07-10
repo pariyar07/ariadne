@@ -47,6 +47,21 @@ const REMOVED_SKILL_PATTERNS = [
   new RegExp("ariadne:" + "workstream-board", "u"),
   new RegExp("ariadne:" + "maintainer", "u"),
 ];
+const PREPUBLIC_TERM_PATTERNS = [
+  new RegExp("Memory " + "Map", "iu"),
+  new RegExp("memory " + "lens(?:es)?", "iu"),
+  new RegExp("memory " + "mode(?:s)?", "iu"),
+  new RegExp("recall " + "packs?", "iu"),
+  new RegExp("Agent/" + "Memory\\.md", "iu"),
+  new RegExp("semantic " + "memory", "iu"),
+  new RegExp("episodic " + "memory", "iu"),
+  new RegExp("prospective " + "memory", "iu"),
+  new RegExp("reflective " + "memory", "iu"),
+  new RegExp("identity " + "and preference " + "memory", "iu"),
+  new RegExp("(?:identity|preference) " + "memory", "iu"),
+  new RegExp("memory " + "lifecycle", "iu"),
+  new RegExp("Kusto" + "mize", "iu"),
+];
 
 function toPosix(file) {
   return file.split(path.sep).join("/");
@@ -144,6 +159,9 @@ function validateTextSafety(errors, files) {
     }
     for (const pattern of REMOVED_SKILL_PATTERNS) {
       if (pattern.test(text)) fail(errors, `removed skill reference found in ${file}: ${pattern}`);
+    }
+    for (const pattern of PREPUBLIC_TERM_PATTERNS) {
+      if (pattern.test(text)) fail(errors, `pre-public memory architecture term found in ${file}: ${pattern}`);
     }
     if (file.startsWith("skills/") && file.endsWith("/SKILL.md")) {
       for (const pattern of PLACEHOLDER_PATTERNS) {

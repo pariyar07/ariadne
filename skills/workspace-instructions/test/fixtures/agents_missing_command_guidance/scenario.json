@@ -1,0 +1,34 @@
+{
+  "name": "agents_missing_command_guidance",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "*.log\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Project\n\nThis project does useful things.\n\n## Overview\n\nA short prose description with no runnable commands and no code fences.\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [
+      ".gitignore",
+      "AGENTS.md"
+    ]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "agentsMissingCommandGuidance": [
+        "AGENTS.md"
+      ]
+    },
+    "forbidden": {
+      "oversizedForStandardFiles": "empty"
+    }
+  }
+}

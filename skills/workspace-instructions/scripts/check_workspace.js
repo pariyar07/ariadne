@@ -14,6 +14,8 @@ const CURRENT_MARKER_END = "<!-- ariadne:workspace-vault-link:end -->";
 const GLOBAL_DISCOVERY_START = "<!-- ariadne:vault-discovery:start -->";
 const GLOBAL_DISCOVERY_END = "<!-- ariadne:vault-discovery:end -->";
 const LARGE_INSTRUCTION_LINE_THRESHOLD = 180;
+const STANDARD_LINE_THRESHOLD = 150;
+const COMMAND_SECTION_PATTERN = /^#{1,6}\s+.*\b(commands?|build|test(?:ing)?|setup|install|run|lint|scripts?|usage|develop(?:ment)?|deploy(?:ment)?)\b/imu;
 const CHILD_DIRECTORY_SCAN_DEPTH = 2;
 
 function toPosix(file) {
@@ -282,8 +284,10 @@ function detectAdapters(root, files) {
 function detectContentSignals(root, files, git) {
   const privatePathLeakFiles = [];
   const largeInstructionFiles = [];
+  const oversizedForStandardFiles = [];
   const vaultNavigationCopyFiles = [];
   const multipleScopeLinkFiles = [];
+  const agentsMissingCommandGuidance = [];
   const instructionLineCounts = {};
 
   for (const file of rootSharedInstructionFiles(files).filter(isTextFile)) {
@@ -293,11 +297,17 @@ function detectContentSignals(root, files, git) {
     instructionLineCounts[file] = lineCount;
     if (isTracked && detectPrivatePath(text)) privatePathLeakFiles.push(file);
     if (lineCount > LARGE_INSTRUCTION_LINE_THRESHOLD) largeInstructionFiles.push(file);
+    if (lineCount > STANDARD_LINE_THRESHOLD) oversizedForStandardFiles.push(file);
     if (/Cold-start entry order:|Agent\/Task Routing Matrix|scope catalogs|destination maps/iu.test(text)) {
       vaultNavigationCopyFiles.push(file);
     }
     if ((text.match(/Related Ariadne scope:/gu) || []).length > 1) {
       multipleScopeLinkFiles.push(file);
+    }
+    // Command-first is an open-standard rule for the canonical AGENTS.md only.
+    // Thin adapters (CLAUDE.md, GEMINI.md) legitimately point at AGENTS.md and carry no commands.
+    if (file === "AGENTS.md" && !(COMMAND_SECTION_PATTERN.test(text) || text.includes("```"))) {
+      agentsMissingCommandGuidance.push(file);
     }
   }
 
@@ -305,8 +315,10 @@ function detectContentSignals(root, files, git) {
     privatePathLeakFiles: privatePathLeakFiles.sort(),
     instructionLineCounts,
     largeInstructionFiles: largeInstructionFiles.sort(),
+    oversizedForStandardFiles: oversizedForStandardFiles.sort(),
     vaultNavigationCopyFiles: vaultNavigationCopyFiles.sort(),
     multipleScopeLinkFiles: multipleScopeLinkFiles.sort(),
+    agentsMissingCommandGuidance: agentsMissingCommandGuidance.sort(),
   };
 }
 
@@ -327,6 +339,25 @@ function detectNestedInstructions(root, files) {
     nestedInstructionFiles,
     nestedInstructionDuplicateFiles: nestedInstructionDuplicateFiles.sort(),
   };
+}
+
+function detectCodexOverride(root, files) {
+  const codexOverrideOutOfSyncFiles = [];
+
+  if (files.includes("AGENTS.md") && files.includes("AGENTS.override.md")) {
+    const agentsBody = read(root, "AGENTS.md").trim();
+    let overrideText = read(root, "AGENTS.override.md");
+    const startIdx = overrideText.indexOf(CURRENT_MARKER_START);
+    const endIdx = overrideText.indexOf(CURRENT_MARKER_END);
+    if (startIdx !== -1 && endIdx !== -1 && endIdx >= startIdx) {
+      overrideText = overrideText.slice(0, startIdx) + overrideText.slice(endIdx + CURRENT_MARKER_END.length);
+    }
+    if (agentsBody && !overrideText.trim().includes(agentsBody)) {
+      codexOverrideOutOfSyncFiles.push("AGENTS.override.md");
+    }
+  }
+
+  return { codexOverrideOutOfSyncFiles };
 }
 
 function checkWorkspace(root) {
@@ -366,6 +397,7 @@ function checkWorkspace(root) {
     ...detectMarkers(workspaceRoot, files),
     ...detectAdapters(workspaceRoot, files),
     ...detectNestedInstructions(workspaceRoot, files),
+    ...detectCodexOverride(workspaceRoot, files),
   };
 }
 

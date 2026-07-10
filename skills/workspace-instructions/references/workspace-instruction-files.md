@@ -1,6 +1,6 @@
 # Workspace Instruction File Patterns
 
-Use these patterns when `ariadne:workspace-instructions` creates or updates workspace-level instruction files.
+Use these patterns when `ariadne:workspace-instructions` creates or updates workspace-level instruction files. After writing, audit the result against the rubric in `references/instruction-file-rules.md` and attest it in the completion report.
 
 ## Sharing Modes
 
@@ -11,7 +11,7 @@ Choose a mode before writing files:
 - Shared plus local: tracked files carry portable rules; ignored local files carry private paths and personal workflow.
 - Non-Git folder: files can be local, but keep them portable unless the user confirms they will never be shared.
 
-When the mode is ambiguous and it changes the file shape, ask whether the user wants shared, local-only, or shared plus local instructions.
+When the mode is ambiguous and it changes the file shape, ask whether the user wants shared, local-only, or shared plus local instructions. In particular, when a run could create both public tracked files and private ignored files, treat "shared, local, or both" as a required question unless the prompt already states the split — and when the answer is both, confirm which content belongs in tracked files versus ignored local files before writing.
 
 ## Public-Safe Canonical File
 
@@ -100,7 +100,25 @@ Common local files:
 
 When creating any of these, ensure `.gitignore` includes them.
 
-Codex note: `AGENTS.override.md` replaces `AGENTS.md` for Codex at the same directory level. Use it only when the local file intentionally restates the needed project guidance plus local differences, or when a temporary full replacement is desired.
+Codex note: `AGENTS.override.md` replaces `AGENTS.md` for Codex at the same directory level. Codex reads only one instruction file per directory and prefers the override, so it does not merge with `AGENTS.md` — it fully replaces it. Use it only when the local file intentionally restates the needed project guidance plus local differences.
+
+Because it is a full replacement, produce and maintain it like this:
+
+- Copy the current `AGENTS.md` body verbatim as the top of the file.
+- Add the local delta (private vault paths, machine commands, personal workflow) at the bottom inside an `ariadne:workspace-vault-link` marker block.
+- Re-sync the copied body every time `AGENTS.md` changes. A drifted copy silently feeds Codex stale repo guidance. The checker reports this as `codexOverrideOutOfSyncFiles`.
+
+```md
+# ...verbatim copy of the current AGENTS.md body...
+
+<!-- ariadne:workspace-vault-link:start -->
+## Local Context
+
+Machine-local vault paths, private routing, and personal workflow live here — gitignored.
+<!-- ariadne:workspace-vault-link:end -->
+```
+
+Contrast with `CLAUDE.local.md` and `GEMINI.local.md`: those are supplements read alongside the tracked files, so they hold only the local delta and must not restate `AGENTS.md`. Only `AGENTS.override.md` needs the full synced copy.
 
 Do not create `AGENTS.local.md` as a generic convention. Codex does not use it by default. For Codex local-only behavior, use `AGENTS.override.md` only when replacement semantics are acceptable, or keep the private details in another ignored file that the user explicitly asks agents to read.
 
@@ -134,6 +152,9 @@ When updating an existing workspace, treat these as cleanup signals:
 - `AGENTS.md` references missing `WORKSPACE.md`
 - `AGENTS.md` and `WORKSPACE.md` both mention the same child repo or folder map
 - listed child folders no longer exist, or obvious child Git repos are not mentioned by the selected inventory owner
+- `AGENTS.override.md` exists but its copied body has drifted from the current `AGENTS.md` (`codexOverrideOutOfSyncFiles`), so Codex would read stale repo guidance
+- a shared instruction file exceeds the ~150-line open-standard length (`oversizedForStandardFiles`); consider compaction without dropping real commands, conventions, or safety rules
+- the canonical `AGENTS.md` carries no command guidance (`agentsMissingCommandGuidance`); the open standard is command-first, so report this and ask before adding commands you cannot verify
 
 Safe cleanup:
 
@@ -142,8 +163,9 @@ Safe cleanup:
 - move child repo/folder inventory from `AGENTS.md` to `WORKSPACE.md` only when `WORKSPACE.md` exists or is being created for a clear parent-workspace shape
 - move private/local details to ignored local files when local mode is clear
 - normalize adapters to thin imports when they only duplicate `AGENTS.md`
+- re-sync a stale `AGENTS.override.md` body from the current `AGENTS.md`, preserving the local `ariadne:workspace-vault-link` block
 
-Ask first when content ownership is ambiguous, when `AGENTS.md` and `WORKSPACE.md` have conflicting child maps, when a local-only mode would leave collaborators without needed repo guidance, or when changing `AGENTS.override.md` would replace shared Codex guidance.
+Ask first when content ownership is ambiguous, when `AGENTS.md` and `WORKSPACE.md` have conflicting child maps, when a local-only mode would leave collaborators without needed repo guidance, when changing `AGENTS.override.md` would replace shared Codex guidance, or when a run could produce both shared/public tracked files and local/private ignored files and the prompt has not stated which the user wants or how to split the content.
 
 ## Scenario Coverage
 
@@ -166,6 +188,8 @@ Deterministic signal coverage lives in `test/test_workspace_instructions.js` and
 - verbose adapters are normalized when they only duplicate canonical guidance
 - duplicate or malformed Ariadne markers stop the update and ask for confirmation
 - multiple plausible vault or scope links require a clarifying question before writing a scope-specific block
+- a stale `AGENTS.override.md` body is re-synced from the current `AGENTS.md` while the local marker block is preserved
+- a run that could produce both shared and local files asks which mode and split the user wants before writing
 
 ## Ariadne Vault-Link Block
 

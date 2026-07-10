@@ -1,0 +1,30 @@
+{
+  "name": "codex_override_in_sync",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n- Run `npm run lint`.\n\n## Style\n\n- Keep changes small.\n"
+    },
+    {
+      "path": "AGENTS.override.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n- Run `npm run lint`.\n\n## Style\n\n- Keep changes small.\n\n<!-- ariadne:workspace-vault-link:start -->\n## Local Context\n\nVault at `{{MACOS_PRIVATE_PATH}}`.\n<!-- ariadne:workspace-vault-link:end -->\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "forbidden": {
+      "codexOverrideOutOfSyncFiles": "empty"
+    }
+  }
+}
