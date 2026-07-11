@@ -54,7 +54,8 @@ Workspace instruction files are also signposts when they connect to Ariadne. The
 4. Ask which adapters to update, or use the default `codex,claude,gemini` when the user does not care.
 5. Offer `--dry-run` when the user wants to preview changes.
 6. Run the registration script.
-7. Report the registry and adapter files touched.
+7. Run the doctor to audit the result against `references/discovery-rules.md`.
+8. Report the registry and adapter files touched, plus the audit attestation.
 
 When updating an already registered vault, treat the workflow as an idempotent refresh/repair. The goal is to bring registry entries and marker-managed global blocks up to the current Ariadne discovery wording while preserving all user-maintained instructions outside Ariadne markers.
 
@@ -96,7 +97,8 @@ The doctor checks:
 - detected root entrypoints are registered.
 - selected global adapter files have Ariadne marker blocks.
 - adapter blocks point to `~/.ariadne/vaults.md` and include current discovery rules for listed cold-start entry order, action prompts, multiple vault matches, and target-scope confirmation.
-- adapter blocks remain small signposts.
+- adapter blocks remain small signposts (block size is bounded; oversized blocks are flagged).
+- each adapter file has exactly one discovery block; duplicate blocks are flagged.
 
 If doctor reports issues, re-run registration for the affected vault to repair registry and adapter blocks.
 
@@ -106,6 +108,19 @@ When doctor reports issues during a broader task, do not only say that discovery
 2. why cold agents may be affected,
 3. the repair command or `ariadne:global-discovery` action to use,
 4. whether the repair touches global agent files and therefore needs approval.
+
+## Audit and Attestation
+
+When registering a new vault or repairing existing discovery, audit the result against `references/discovery-rules.md` and attest the outcome in the completion report. The rubric groups the rules the doctor enforces (registry integrity, block freshness, signpost size, no duplicate blocks) with the judgment rules the doctor cannot decide (the block has not become a navigation dump; each vault has a meaningful name and specific purpose).
+
+Run the audit like this:
+
+1. Run the doctor (`--check` / `--doctor`) and read the mechanical findings.
+2. Assess the judgment rules by reading `~/.ariadne/vaults.md` and the adapter blocks: purpose statements are specific enough to disambiguate multiple vaults, and no block has grown into a copied cold-start entry order or scope catalog.
+3. Fix mechanical findings by re-running registration for the affected vault — it is idempotent and marker-scoped, and regenerates the registry Markdown and adapter block in place. Report judgment findings for the user to decide; do not rewrite a user-edited block beyond the marker region.
+4. Attest in the report only. Do not write attestation markers or audit metadata into the registry or adapter blocks — those blocks load into every agent session, so any extra content is paid per invocation and read as instructions.
+
+Apply this to new registrations (audit before reporting done) and to older registrations (audit on every repair, then report what was fixed versus left for the user).
 
 ## Multiple-Match Policy
 

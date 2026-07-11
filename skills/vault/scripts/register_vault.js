@@ -7,6 +7,10 @@ const path = require("path");
 
 const MARKER_START = "<!-- ariadne:vault-discovery:start -->";
 const MARKER_END = "<!-- ariadne:vault-discovery:end -->";
+// The discovery block is loaded into every agent session from the global adapter
+// file, so it must stay a small signpost. The canonical block is ~1.9 KB; 4 KB
+// leaves headroom while still catching copied vault navigation or manual bloat.
+const SIGNPOST_MAX_BYTES = 4096;
 const DEFAULT_ENTRYPOINTS = [
   "00 Index.md",
   "AGENTS.md",
@@ -326,6 +330,15 @@ function checkDiscovery(options) {
     if (!text.includes(MARKER_START) || !text.includes(MARKER_END)) {
       issues.push(`Adapter file missing marker block: ${file}`);
       continue;
+    }
+
+    if (text.split(MARKER_START).length - 1 > 1 || text.split(MARKER_END).length - 1 > 1) {
+      issues.push(`Adapter file has duplicate discovery block: ${file}`);
+    }
+
+    const block = text.slice(text.indexOf(MARKER_START), text.indexOf(MARKER_END) + MARKER_END.length);
+    if (Buffer.byteLength(block, "utf8") > SIGNPOST_MAX_BYTES) {
+      issues.push(`Adapter discovery block is oversized, not a small signpost: ${file}`);
     }
 
     const requiredPhrases = [

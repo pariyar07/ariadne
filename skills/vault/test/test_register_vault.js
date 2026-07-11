@@ -261,6 +261,50 @@ const tests = [
     assert.match(result.stdout, /Adapter file missing marker block/);
   },
 
+  function checkReportsOversizedSignpostBlock() {
+    const home = tempHome();
+    const vault = path.join(home, "Vault");
+    fs.mkdirSync(path.join(vault, "Agent"), { recursive: true });
+    fs.writeFileSync(path.join(vault, "00 Global Index.md"), "# Global\n");
+    fs.writeFileSync(path.join(vault, "AGENTS.md"), "# Agents\n");
+    fs.writeFileSync(path.join(vault, "Agent", "00 Agent Navigation.md"), "# Navigation\n");
+
+    assertSuccess(runRegister(registerArgs(home, vault, { agents: "codex" })));
+
+    const adapterFile = path.join(home, ".codex", "AGENTS.md");
+    const endMarker = "<!-- ariadne:vault-discovery:end -->";
+    const bloatedBlock = discoveryBlock("~/.ariadne/vaults.md").replace(
+      endMarker,
+      `${"Extra copied vault navigation line. ".repeat(300)}\n${endMarker}`,
+    );
+    fs.writeFileSync(adapterFile, bloatedBlock);
+
+    const result = runRegister(["--home", home, "--agents", "codex", "--doctor"]);
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stdout, /Adapter discovery block is oversized/);
+  },
+
+  function checkReportsDuplicateDiscoveryBlock() {
+    const home = tempHome();
+    const vault = path.join(home, "Vault");
+    fs.mkdirSync(path.join(vault, "Agent"), { recursive: true });
+    fs.writeFileSync(path.join(vault, "00 Global Index.md"), "# Global\n");
+    fs.writeFileSync(path.join(vault, "AGENTS.md"), "# Agents\n");
+    fs.writeFileSync(path.join(vault, "Agent", "00 Agent Navigation.md"), "# Navigation\n");
+
+    assertSuccess(runRegister(registerArgs(home, vault, { agents: "codex" })));
+
+    const adapterFile = path.join(home, ".codex", "AGENTS.md");
+    const oneBlock = discoveryBlock("~/.ariadne/vaults.md");
+    fs.writeFileSync(adapterFile, `${oneBlock}\n${oneBlock}`);
+
+    const result = runRegister(["--home", home, "--agents", "codex", "--doctor"]);
+
+    assert.strictEqual(result.status, 1);
+    assert.match(result.stdout, /Adapter file has duplicate discovery block/);
+  },
+
   function updatesExistingMarkerBlockWithoutDuplicating() {
     const home = tempHome();
     const vault = path.join(home, "Vault");
