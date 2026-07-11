@@ -49,6 +49,7 @@ Each skill is a folder with:
 | Edit vault templates | `skills/vault/assets/templates/` |
 | Edit global discovery registration | `skills/vault/scripts/register_vault.js` |
 | Edit vault discovery skill | `skills/global-discovery/SKILL.md` |
+| Edit global discovery audit rubric | `skills/global-discovery/references/discovery-rules.md` |
 | Edit workspace instruction skill | `skills/workspace-instructions/SKILL.md` |
 | Edit workspace instruction checker | `skills/workspace-instructions/scripts/check_workspace.js` |
 | Edit workspace instruction scenarios | `skills/workspace-instructions/references/workspace-instruction-scenarios.md` |

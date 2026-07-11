@@ -120,7 +120,7 @@ node skills/vault/scripts/register_vault.js \
   --doctor
 ```
 
-The doctor checks that the registry files exist, registry Markdown matches registry JSON, registered vault paths and entrypoints exist, and selected adapter files still contain valid Ariadne marker blocks.
+The doctor checks that the registry files exist, registry Markdown matches registry JSON, registered vault paths and entrypoints exist, and selected adapter files still contain a valid, current, single, and appropriately small Ariadne marker block. Because the block is loaded into every agent session, the doctor flags an oversized block or a duplicate block. See `skills/global-discovery/references/discovery-rules.md` for the full audit rubric.
 
 If doctor reports stale entrypoints or missing marker blocks, re-run registration for the vault to repair the registry and selected adapters.
 
