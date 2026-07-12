@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
 
-const ROOT_INSTRUCTION_FILES = new Set(["AGENTS.md", "CLAUDE.md", "GEMINI.md"]);
+const ROOT_INSTRUCTION_FILES = new Set(["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".hermes.md", "HERMES.md"]);
 const LOCAL_ONLY_FILES = new Set(["AGENTS.override.md", "CLAUDE.local.md", "GEMINI.local.md"]);
 const TEXT_EXTENSIONS = new Set([".md", ".txt", ".json", ".yaml", ".yml"]);
 const WORKSPACE_FILE = "WORKSPACE.md";
@@ -281,6 +281,25 @@ function detectAdapters(root, files) {
   };
 }
 
+function detectHermes(root, files) {
+  const hermesContextFiles = [".hermes.md", "HERMES.md"].filter((file) => files.includes(file));
+  const hermesShadowsAgentsFiles = files.includes("AGENTS.md") ? hermesContextFiles.slice() : [];
+  const hermesUnsupportedImportFiles = [];
+
+  for (const file of hermesContextFiles) {
+    const text = read(root, file);
+    if (/^[ \t]*@AGENTS\.md[ \t]*(?:\r?\n|$)/mu.test(text)) {
+      hermesUnsupportedImportFiles.push(file);
+    }
+  }
+
+  return {
+    hermesContextFiles: hermesContextFiles.sort(),
+    hermesShadowsAgentsFiles: hermesShadowsAgentsFiles.sort(),
+    hermesUnsupportedImportFiles: hermesUnsupportedImportFiles.sort(),
+  };
+}
+
 function detectContentSignals(root, files, git) {
   const privatePathLeakFiles = [];
   const largeInstructionFiles = [];
@@ -396,6 +415,7 @@ function checkWorkspace(root) {
     ...detectContentSignals(workspaceRoot, files, git),
     ...detectMarkers(workspaceRoot, files),
     ...detectAdapters(workspaceRoot, files),
+    ...detectHermes(workspaceRoot, files),
     ...detectNestedInstructions(workspaceRoot, files),
     ...detectCodexOverride(workspaceRoot, files),
   };

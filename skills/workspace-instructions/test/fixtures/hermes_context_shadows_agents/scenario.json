@@ -1,0 +1,34 @@
+{
+  "name": "hermes_context_shadows_agents",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n\n## Style\n\n- Keep changes small.\n"
+    },
+    {
+      "path": ".hermes.md",
+      "content": "# Hermes Project Context\n\nHermes-specific override for this repository.\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md", ".hermes.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "trackedInstructionFiles": [".hermes.md", "AGENTS.md"],
+      "hermesContextFiles": [".hermes.md"],
+      "hermesShadowsAgentsFiles": [".hermes.md"],
+      "hermesUnsupportedImportFiles": [],
+      "privatePathLeakFiles": []
+    }
+  }
+}

@@ -5,7 +5,7 @@
 Two rule groups:
 
 - **A. Open-standard conformance** — the `AGENTS.md` open standard and community lessons from large-scale study of real repositories.
-- **B. Agentic cross-runtime portability** — how Codex, Claude Code, Gemini CLI, and Ariadne read and share these files.
+- **B. Agentic cross-runtime portability** — how Codex, Claude Code, Gemini CLI, Hermes, and Ariadne read and share these files.
 
 Each rule is tagged:
 
@@ -36,6 +36,7 @@ The rubric is advisory guidance for the skill, not a hard gate. Mechanical signa
 | B4 | No private-path leakage in tracked files; private paths belong in gitignored local files. | [M] | `privatePathLeakFiles` |
 | B5 | `.gitignore` coverage for every local-only file in a Git workspace. | [M] | `localFilesMissingGitignore`, `trackedLocalOnlyFiles` |
 | B6 | `WORKSPACE.md` pointer discipline: when referenced it exists and owns child inventory; `AGENTS.md` stays a pointer plus agent rules. | [M] | `workspaceReferenceMissingFiles`, child-name mention signals |
+| B7 | Hermes compatibility: `.hermes.md` / `HERMES.md` are explicit Hermes overrides, not default thin adapters, and must not rely on unsupported `@AGENTS.md` imports. | [M] | `hermesContextFiles`, `hermesShadowsAgentsFiles`, `hermesUnsupportedImportFiles` |
 
 ## Attestation
 
@@ -50,12 +51,12 @@ A report attestation states:
 ## New vs. existing files
 
 - New files: audit before reporting done; attest compliance.
-- Existing/older files that predate the rubric: run the same audit on every update. Auto-fix the low-risk mechanical gaps this skill already acts on (override re-sync, `.gitignore` coverage, adapter thinning, private-path relocation, copied-navigation compaction). Report the judgment gaps (A3–A6) and oversize/missing-command findings for the user to decide; do not silently rewrite substantive `AGENTS.md` content to satisfy a judgment rule.
+- Existing/older files that predate the rubric: run the same audit on every update. Auto-fix the low-risk mechanical gaps this skill already acts on (override re-sync, `.gitignore` coverage, adapter thinning, private-path relocation, copied-navigation compaction). Report the judgment gaps (A3–A6), Hermes override ambiguity, and oversize/missing-command findings for the user to decide; do not silently rewrite substantive `AGENTS.md` content to satisfy a judgment rule.
 
 ## Ask vs. act
 
 - Act: mechanical violation with a clear, low-risk fix (B1–B6 acts already defined in `SKILL.md`).
-- Ask: judgment gaps that need substantive `AGENTS.md` rewriting (A3–A6), oversize files where compaction could drop real content, or any change whose ownership or intent is unclear.
+- Ask: judgment gaps that need substantive `AGENTS.md` rewriting (A3–A6), Hermes overrides that shadow `AGENTS.md` without clear intent, oversize files where compaction could drop real content, or any change whose ownership or intent is unclear.
 - Stop: malformed or duplicate markers, more than one vault-link block, or an override edit that would replace shared Codex guidance.
 
 ## Sources
