@@ -283,7 +283,7 @@ This creates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`, then adds a sm
 
 Use this when you want future cold agent sessions, launched from any folder, to find the vault quickly for vague questions about prior projects, meetings, research, decisions, or "what was I working on?"
 
-Use `ariadne:workspace-instructions` when a specific code repository or folder needs local `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that point back to registered Ariadne context. Workspace files should stay small; the vault remains the source of truth.
+Use `ariadne:workspace-instructions` when a specific code repository or folder needs local `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that point back to registered Ariadne context. Hermes can use the canonical `AGENTS.md` directly; `.hermes.md` and `HERMES.md` are treated as explicit Hermes-specific overrides rather than default thin adapters. Workspace files should stay small; the vault remains the source of truth.
 
 ## References
 

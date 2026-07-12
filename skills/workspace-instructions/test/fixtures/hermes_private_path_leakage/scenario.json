@@ -1,0 +1,33 @@
+{
+  "name": "hermes_private_path_leakage",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n"
+    },
+    {
+      "path": "HERMES.md",
+      "content": "# Hermes Project Context\n\nPrivate vault path: {{MACOS_PRIVATE_PATH}}\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md", "HERMES.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "trackedInstructionFiles": ["AGENTS.md", "HERMES.md"],
+      "hermesContextFiles": ["HERMES.md"],
+      "hermesShadowsAgentsFiles": ["HERMES.md"],
+      "privatePathLeakFiles": ["HERMES.md"]
+    }
+  }
+}

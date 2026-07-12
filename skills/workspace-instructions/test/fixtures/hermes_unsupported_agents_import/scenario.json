@@ -1,0 +1,34 @@
+{
+  "name": "hermes_unsupported_agents_import",
+  "files": [
+    {
+      "path": ".gitignore",
+      "content": "CLAUDE.local.md\nGEMINI.local.md\nAGENTS.override.md\n"
+    },
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\n## Commands\n\n- Run `npm test`.\n"
+    },
+    {
+      "path": "HERMES.md",
+      "content": "Use AGENTS.md as the shared project guidance for this repository.\n\n@AGENTS.md\n"
+    }
+  ],
+  "git": {
+    "init": true,
+    "track": [".gitignore", "AGENTS.md", "HERMES.md"]
+  },
+  "expected": {
+    "git": {
+      "insideWorkTree": true,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "trackedInstructionFiles": ["AGENTS.md", "HERMES.md"],
+      "hermesContextFiles": ["HERMES.md"],
+      "hermesShadowsAgentsFiles": ["HERMES.md"],
+      "hermesUnsupportedImportFiles": ["HERMES.md"],
+      "privatePathLeakFiles": []
+    }
+  }
+}

@@ -84,9 +84,11 @@ Use AGENTS.md as the shared project guidance for this repository.
 @AGENTS.md
 ```
 
+Hermes note: Hermes can read `AGENTS.md` directly. Do not create `.hermes.md` or `HERMES.md` as thin adapters by default because Hermes gives those files priority over `AGENTS.md`. If a workspace already has `.hermes.md` or `HERMES.md`, treat it as a Hermes-specific override and verify that it intentionally shadows `AGENTS.md`.
+
 Only add runtime-specific deltas when the runtime genuinely needs them.
 
-Do not import local ignored files from tracked adapter files by default. `CLAUDE.local.md` is Claude-specific local context and should be left for Claude's own local-memory behavior when present. `GEMINI.local.md` is an Ariadne convention for local Gemini notes, not a guaranteed Gemini CLI default; use it only when the user's Gemini setup explicitly loads it or the user asks for a local import.
+Do not import local ignored files from tracked adapter files by default. `CLAUDE.local.md` is Claude-specific local context and should be left for Claude's own local-memory behavior when present. `GEMINI.local.md` is an Ariadne convention for local Gemini notes, not a guaranteed Gemini CLI default; use it only when the user's Gemini setup explicitly loads it or the user asks for a local import. Do not rely on Claude-style `@AGENTS.md` imports in `.hermes.md` or `HERMES.md` unless the user's Hermes version explicitly documents that behavior.
 
 ## Local Files
 
@@ -128,6 +130,8 @@ Gemini note: `GEMINI.md` is the default context filename. Gemini CLI can configu
 
 Copilot note: repository custom instructions are shared repo guidance, usually in `.github/copilot-instructions.md`. Scoped Copilot instructions may live under `.github/instructions/*.instructions.md`, and newer Copilot coding-agent flows may also read `AGENTS.md`. Do not invent a local Copilot instruction filename unless the user's tool configuration documents it.
 
+Hermes note: `SOUL.md` in `HERMES_HOME` is identity/personality context, not a workspace or vault-link target. Ariadne should not write workspace instructions or registered-vault discovery guidance there. `.hermes.md` and `HERMES.md` are project context files and may be tracked, so apply the same public-safety and private-path rules as other shared instruction files.
+
 Local files may include:
 
 - private Ariadne vault paths
@@ -146,6 +150,8 @@ When updating an existing workspace, treat these as cleanup signals:
 - tracked files include private absolute paths, private vault paths, client details, personal workflow defaults, or sandbox paths
 - `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` copy long vault navigation, destination maps, scope catalogs, or raw context
 - runtime adapter files repeat the canonical `AGENTS.md` without real runtime-specific deltas
+- `.hermes.md` or `HERMES.md` exists beside `AGENTS.md` and may shadow canonical workspace guidance
+- `.hermes.md` or `HERMES.md` contains `@AGENTS.md` even though Ariadne cannot assume Hermes expands Claude-style imports
 - local-only files exist but `.gitignore` does not cover them
 - a workspace has both tracked and local files but no clear shared/local split
 - Ariadne marker blocks are duplicated, malformed, or mixed with copied global discovery blocks
@@ -186,6 +192,7 @@ Deterministic signal coverage lives in `test/test_workspace_instructions.js` and
 - foreign marker blocks are preserved
 - nested `AGENTS.md` files are kept only when local rules differ from the root
 - verbose adapters are normalized when they only duplicate canonical guidance
+- Hermes project context files are treated as explicit overrides, not thin adapters
 - duplicate or malformed Ariadne markers stop the update and ask for confirmation
 - multiple plausible vault or scope links require a clarifying question before writing a scope-specific block
 - a stale `AGENTS.override.md` body is re-synced from the current `AGENTS.md` while the local marker block is preserved

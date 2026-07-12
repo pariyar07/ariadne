@@ -15,6 +15,7 @@ Checker-owned:
 - Instruction line counts, high line-count files, and copied vault-navigation signals.
 - Current, legacy, duplicate, malformed, copied global-discovery, and foreign marker signals.
 - Adapter duplication and local-file import signals.
+- Hermes `.hermes.md` / `HERMES.md` project context signals: root files present, files that shadow `AGENTS.md`, and files using unsupported `@AGENTS.md` imports.
 - Nested `AGENTS.md` duplication signals.
 - `WORKSPACE.md` existence and missing-reference signals.
 - Fixed-depth child directories, child Git repos, and exact child-name mentions by file.
@@ -64,6 +65,7 @@ Each fixture covers three kinds of expectations:
 | Private/local path leakage | Move private paths, exact private scope paths, sandbox paths, and personal workflow to ignored local files when local mode is clear. | Ask when the destination or sharing mode is unclear. | Do not leave private paths in tracked shared instructions. |
 | Duplicated vault navigation | Replace copied vault entry orders, scope catalogs, destination maps, and raw context with a compact workspace-vault-link block. | Ask if the copied section may be real workspace routing rather than vault navigation. | Do not make the workspace file the source of truth for vault navigation. |
 | Adapter normalization | Collapse adapters that duplicate `AGENTS.md` into thin imports. | Ask before replacing substantial runtime-specific adapter guidance. | Do not import ignored local files from tracked adapters by default. |
+| Hermes compatibility | Let Hermes use canonical `AGENTS.md` directly when no `.hermes.md` or `HERMES.md` exists. Treat `.hermes.md` and `HERMES.md` as explicit Hermes-specific overrides when present. | Ask before creating, deleting, or replacing a Hermes override that shadows `AGENTS.md`, unless the user explicitly requested Hermes-specific instructions. | Do not create thin Hermes adapters by default, do not write workspace guidance to `SOUL.md`, and do not assume `@AGENTS.md` imports are expanded by Hermes. |
 | Malformed marker block | Stop and name the malformed marker file. | Ask whether to repair, remove, or leave the malformed block. | Do not guess where the marker block ends. |
 | Duplicate marker blocks | Stop and name the duplicate marker file. | Ask whether to merge, remove duplicates, or leave unchanged. | Do not silently merge duplicate Ariadne marker blocks. |
 | Legacy marker block | Migrate the older Ariadne vault-link marker in place when exactly one well-formed legacy block exists. | Ask if migration would collide with another current or legacy block. | Do not append a second Ariadne vault-link block. |
