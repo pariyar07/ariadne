@@ -1,5 +1,5 @@
 {
-  "name": "hermes_private_path_leakage",
+  "name": "hermes_discusses_agents_import",
   "files": [
     {
       "path": ".gitignore",
@@ -11,7 +11,7 @@
     },
     {
       "path": "HERMES.md",
-      "content": "# Hermes Project Context\n\nPrivate vault path: {{MACOS_PRIVATE_PATH}}\n"
+      "content": "# Hermes Project Context\n\nAvoid @AGENTS.md imports unless Hermes documents support for them.\n"
     }
   ],
   "git": {
@@ -28,7 +28,7 @@
       "hermesContextFiles": ["HERMES.md"],
       "hermesShadowsAgentsFiles": ["HERMES.md"],
       "hermesUnsupportedImportFiles": [],
-      "privatePathLeakFiles": ["HERMES.md"]
+      "privatePathLeakFiles": []
     }
   }
 }

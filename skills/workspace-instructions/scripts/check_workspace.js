@@ -283,12 +283,12 @@ function detectAdapters(root, files) {
 
 function detectHermes(root, files) {
   const hermesContextFiles = [".hermes.md", "HERMES.md"].filter((file) => files.includes(file));
-  const hermesShadowsAgentsFiles = files.includes("AGENTS.md") ? hermesContextFiles : [];
+  const hermesShadowsAgentsFiles = files.includes("AGENTS.md") ? hermesContextFiles.slice() : [];
   const hermesUnsupportedImportFiles = [];
 
   for (const file of hermesContextFiles) {
     const text = read(root, file);
-    if (/^@AGENTS\.md$/mu.test(text) || /(?:^|\s)@AGENTS\.md(?:\s|$)/u.test(text)) {
+    if (/^[ \t]*@AGENTS\.md[ \t]*(?:\r?\n|$)/mu.test(text)) {
       hermesUnsupportedImportFiles.push(file);
     }
   }
