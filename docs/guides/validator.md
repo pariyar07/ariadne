@@ -25,7 +25,7 @@ node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --scop
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --scope "Domains/Product" --profile research
 ```
 
-Scopes are vault-relative directories. Absolute paths, traversal, missing paths, and files are rejected. The validator always inventories the complete vault for YAML parsing, canonical link resolution, and graph construction, then filters diagnostics and exit status to the selected subtree. A research profile requires a scope and reports research obligations, the nearest routing-matrix obligation, the reused local-Base scope check, and all in-scope fatal structural findings. Fatal sibling defects remain excluded.
+Scopes are vault-relative directories. Absolute paths, traversal, missing paths, and files are rejected. The validator always inventories the complete vault for YAML parsing, canonical link resolution, and graph construction, then filters diagnostics and exit status to the selected subtree. A research profile requires a scope and reports research obligations, the nearest routing-matrix obligation, the reused local-Base scope check, and all in-scope fatal structural findings. Findings are filtered by structured origin and governing-obligation paths, so a sibling artifact is not included merely because its message names an in-scope target. Fatal sibling defects remain excluded.
 
 ## Why Node
 
@@ -46,7 +46,7 @@ The shell wrapper provides a stable entry point plus a clearer missing-Node erro
 - Every promoted scope hub is linked from its nearest local or inherited `Agent/Task Routing Matrix.md`.
 - Schema-v1 research descriptors, exact or explicit-rollup hub membership, provenance, cycles, and raw-source compilation coverage are structurally consistent.
 
-Schema-v1 research frontmatter supports top-level scalar values and flat lists of scalar values. Flat lists may be `[]`, inline lists, or indented block lists. Inline list parsing preserves quoted strings and wikilinks containing commas. Descriptor scalar fields reject list values, and nested objects or lists on supported descriptors or artifacts produce non-fatal research warnings; only syntactically invalid YAML is a YAML failure. Supported artifacts require a path-qualified scalar `research_boundary`, type-specific required fields, and structurally inspectable inquiry sections. Research membership is established by the descriptor link, not folder ancestry. Provenance accepts only canonical research artifacts in the same exact boundary or explicitly declared rollup descriptors, so hubs, routing notes, Bases, and out-of-boundary artifacts cannot provide compilation coverage.
+Schema-v1 research frontmatter supports top-level scalar values and flat lists of scalar values. Flat lists may be `[]`, inline lists, or indented block lists. Inline list parsing preserves quoted strings and wikilinks containing commas. Descriptor scalar fields reject list values, and nested objects or lists on supported descriptors or artifacts produce non-fatal research warnings; only syntactically invalid YAML is a YAML failure. Every supported descriptor has a vault-unique stable `boundary_id`, and each `scope_path` has exactly one supported canonical descriptor. Supported artifacts require a path-qualified scalar `research_boundary`, type-specific required fields, and structurally inspectable inquiry sections. Research membership is established by the descriptor link, not folder ancestry. Provenance accepts only canonical research artifacts in the same exact boundary or explicitly declared rollup descriptors, so hubs, routing notes, Bases, and out-of-boundary artifacts cannot provide compilation coverage.
 
 Bare content links resolve in this order: the source folder, then exact ancestor folders one by one, then a unique global basename match. If multiple global candidates remain without an exact folder or ancestor match, the link is ambiguous and credits none. Navigation files still warn when a bare link has multiple candidates, even when the content rule could select one.
 
@@ -88,7 +88,7 @@ research-hub-warnings: 0
 | `scope-navigation-warnings` | No | A scope hub is not bidirectionally linked with its parent hub |
 | `routing-matrix-warnings` | No | A scope hub is missing from its nearest local or inherited routing matrix |
 | `base-scope-formula-warnings` | No | A root Base with a `file.inFolder` scope formula is missing a branch for a known scope path |
-| `research-boundary-warnings` | No | A supported research descriptor is incomplete or structurally invalid |
+| `research-boundary-warnings` | No | A supported descriptor is incomplete, structurally invalid, duplicates a `boundary_id`, or shares its canonical `scope_path` with another descriptor |
 | `research-provenance-warnings` | No | A schema-v1 artifact has invalid provenance or generated/derivative evidence-family structure |
 | `provenance-cycle-warnings` | No | An artifact participates in a downstream-to-upstream `derived_from` cycle |
 | `uncompiled-raw-source-warnings` | No | A raw source is pending/review-needed, or marked compiled without a downstream `derived_from` backlink |

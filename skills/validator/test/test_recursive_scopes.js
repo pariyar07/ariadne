@@ -114,6 +114,34 @@ derived_from: []
   fs.appendFileSync(index, "\n- [[Domain/Child/Boundary]]\n");
 }
 
+function addEmptyResearchBoundary(vault, scope, fileName, boundaryId) {
+  const descriptorPath = `${scope}/${fileName}`;
+  writeFile(vault, `${descriptorPath}.md`, `---
+type: research-boundary
+research_schema: 1
+boundary_id: ${boundaryId}
+scope_path: ${scope}
+raw_hub: "[[${scope}/Raw Hub]]"
+compiled_hub: "[[${scope}/Compiled Hub]]"
+inquiry_hub: "[[${scope}/Inquiry Hub]]"
+synthesis_hub: "[[${scope}/Synthesis Hub]]"
+view_mode: exact
+rollup_boundaries: []
+---
+
+- [[00 Index]]
+- [[${scope}/Raw Hub]]
+- [[${scope}/Compiled Hub]]
+- [[${scope}/Inquiry Hub]]
+- [[${scope}/Synthesis Hub]]
+`);
+  for (const name of ["Raw", "Compiled", "Inquiry", "Synthesis"]) {
+    writeFile(vault, `${scope}/${name} Hub.md`, `- [[${descriptorPath}]]\n`);
+  }
+  fs.appendFileSync(path.join(vault, "00 Index.md"), `\n- [[${descriptorPath}]]\n`);
+  return descriptorPath;
+}
+
 const tests = [
   function rootOnlyLegacyVaultStillPasses() {
     const result = runValidator("root_only_legacy_pass");
@@ -467,6 +495,71 @@ compilation_status: invented-state
       const rollup = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
       assertSuccess(rollup);
       assert.doesNotMatch(rollup.stdout, /derived_from target belongs outside the allowed boundary set/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function scopedResearchExcludesSiblingOriginEvenWhenTargetIsInScope() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const siblingBoundary = addEmptyResearchBoundary(vault, "Other", "Boundary", "other-research");
+      fs.appendFileSync(path.join(vault, "Other/Compiled Hub.md"), "- [[Other/Cross Boundary Note]]\n");
+      writeFile(vault, "Other/Cross Boundary Note.md", `---
+type: research
+research_boundary: "[[${siblingBoundary}]]"
+derived_from:
+  - "[[Domain/Shared]]"
+inquiries: []
+---
+
+- [[00 Index]]
+`);
+
+      const whole = runValidatorPath(vault);
+      assertSuccess(whole);
+      assert.match(whole.stdout, /Other\/Cross Boundary Note\.md: derived_from target belongs outside the allowed boundary set: Domain\/Shared\.md/);
+
+      const scoped = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(scoped);
+      assertCounter(scoped.stdout, "research-provenance-warnings", 0);
+      assert.doesNotMatch(scoped.stdout, /Other\/Cross Boundary Note/);
+      for (const name of COUNTERS) {
+        const wholeMatch = whole.stdout.match(new RegExp(`^${name}: (\\d+)$`, "m"));
+        const scopedMatch = scoped.stdout.match(new RegExp(`^${name}: (\\d+)$`, "m"));
+        assert.ok(Number(scopedMatch[1]) <= Number(wholeMatch[1]), `${name} scoped count must be a whole-vault subset`);
+      }
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function duplicateBoundaryIdentityAndScopeAreDeterministicAndScoped() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const duplicateScope = path.join(vault, "Domain/Second Boundary.md");
+      fs.writeFileSync(duplicateScope, fs.readFileSync(path.join(vault, "Domain/Research Boundary.md"), "utf8")
+        .replace("boundary_id: domain-research", "boundary_id: second-domain-research"));
+      fs.appendFileSync(path.join(vault, "00 Index.md"), "\n- [[Domain/Second Boundary]]\n");
+      addEmptyResearchBoundary(vault, "Other", "Boundary", "domain-research");
+
+      const whole = runValidatorPath(vault);
+      assertSuccess(whole);
+      assert.match(whole.stdout, /Domain\/Research Boundary\.md: duplicate boundary_id domain-research also declared by Other\/Boundary\.md/);
+      assert.match(whole.stdout, /Other\/Boundary\.md: duplicate boundary_id domain-research also declared by Domain\/Research Boundary\.md/);
+      assert.match(whole.stdout, /Domain\/Research Boundary\.md: duplicate canonical scope_path Domain also declared by Domain\/Second Boundary\.md/);
+      assert.match(whole.stdout, /Domain\/Second Boundary\.md: duplicate canonical scope_path Domain also declared by Domain\/Research Boundary\.md/);
+
+      const scoped = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(scoped);
+      assert.match(scoped.stdout, /Domain\/Research Boundary\.md: duplicate boundary_id domain-research also declared by Other\/Boundary\.md/);
+      assert.doesNotMatch(scoped.stdout, /^Other\/Boundary\.md: duplicate boundary_id/m);
+      assert.match(scoped.stdout, /Domain\/Research Boundary\.md: duplicate canonical scope_path Domain/);
+      assert.match(scoped.stdout, /Domain\/Second Boundary\.md: duplicate canonical scope_path Domain/);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

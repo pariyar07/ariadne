@@ -372,6 +372,14 @@ function valuesAsList(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function findingText(finding) {
+  return typeof finding === "string" ? finding : finding.message;
+}
+
+function structuredFinding(message, origin, obligations = []) {
+  return { message, origin, obligations };
+}
+
 function validate(vaultPath, options = {}) {
   process.chdir(vaultPath);
 
@@ -524,7 +532,7 @@ function validate(vaultPath, options = {}) {
       inheritedScope = path.posix.dirname(inheritedScope);
     }
     if (routingMatrix && !fileLinksToQualified(routingMatrix, childHub)) {
-      routingMatrixWarnings.push(`${routingMatrix} does not link scope hub ${childHub}`);
+      routingMatrixWarnings.push(structuredFinding(`${routingMatrix} does not link scope hub ${childHub}`, routingMatrix, [childHub]));
     }
   }
 
@@ -607,6 +615,29 @@ function validate(vaultPath, options = {}) {
     }
     if (Array.isArray(data.type) && data.type.includes("research-boundary") && data.research_schema === "1") {
       researchBoundaryWarnings.push(`${file}: type must be a top-level scalar`);
+    }
+  }
+
+  for (const [field, label] of [["boundary_id", "boundary_id"], ["scope_path", "canonical scope_path"]]) {
+    const groups = new Map();
+    for (const descriptor of descriptors) {
+      const value = (markdownFrontmatter.get(descriptor) || {})[field];
+      if (typeof value !== "string" || value === "") continue;
+      if (!groups.has(value)) groups.set(value, []);
+      groups.get(value).push(descriptor);
+    }
+    for (const [value, filesForValue] of groups.entries()) {
+      if (filesForValue.length < 2) continue;
+      const sorted = filesForValue.slice().sort();
+      for (const descriptor of sorted) {
+        const others = sorted.filter((file) => file !== descriptor);
+        const scopePath = String((markdownFrontmatter.get(descriptor) || {}).scope_path || "");
+        researchBoundaryWarnings.push(structuredFinding(
+          `${descriptor}: duplicate ${label} ${value} also declared by ${others.join(", ")}`,
+          descriptor,
+          field === "scope_path" && scopePath ? [scopePath] : [],
+        ));
+      }
     }
   }
 
@@ -749,16 +780,16 @@ function validate(vaultPath, options = {}) {
       const targetText = scalarLinkTarget(data[field]);
       const hub = resolvedScalarLink(descriptor, data[field]);
       if (!targetText || !targetText.includes("/") || !hub) {
-        researchHubWarnings.push(`${descriptor}: ${field} must be a path-qualified link to an existing hub`);
+        researchHubWarnings.push(structuredFinding(`${descriptor}: ${field} must be a path-qualified link to an existing hub`, descriptor, [String(data.scope_path || "")]));
         continue;
       }
       if (!fileLinksToQualified(hub, descriptor)) {
-        researchHubWarnings.push(`${hub} does not link its boundary descriptor ${descriptor}`);
+        researchHubWarnings.push(structuredFinding(`${hub} does not link its boundary descriptor ${descriptor}`, hub, [String(data.scope_path || ""), descriptor]));
       }
       const missing = members.filter((member) => typesForHub.has((markdownFrontmatter.get(member) || {}).type))
         .filter((member) => !fileLinksToQualified(hub, member));
       if (missing.length > 0) {
-        researchHubWarnings.push(`${hub} does not link member(s) declared by ${descriptor}: ${missing.sort().join(", ")}`);
+        researchHubWarnings.push(structuredFinding(`${hub} does not link member(s) declared by ${descriptor}: ${missing.sort().join(", ")}`, hub, [String(data.scope_path || ""), descriptor, ...missing]));
       }
       const expected = new Set(members.filter((member) => typesForHub.has((markdownFrontmatter.get(member) || {}).type)));
       const linkedResearch = [...wikilinkTargets(textWithoutCode(readText(hub))), ...markdownLinkTargets(textWithoutCode(readText(hub)))]
@@ -766,7 +797,7 @@ function validate(vaultPath, options = {}) {
         .filter((linked) => linked && researchTypes.has((markdownFrontmatter.get(linked) || {}).type));
       const extra = Array.from(new Set(linkedResearch.filter((linked) => typesForHub.has((markdownFrontmatter.get(linked) || {}).type) && !expected.has(linked))));
       if (extra.length > 0) {
-        researchHubWarnings.push(`${hub} links member(s) outside the exact or declared rollup boundary: ${extra.sort().join(", ")}`);
+        researchHubWarnings.push(structuredFinding(`${hub} links member(s) outside the exact or declared rollup boundary: ${extra.sort().join(", ")}`, hub, [String(data.scope_path || ""), ...extra]));
       }
     }
 
@@ -837,6 +868,29 @@ function validate(vaultPath, options = {}) {
     }
   }
 
+  function originForMessage(message) {
+    const match = message.match(/^(.+?\.(?:md|base|canvas))(?::| does| links| must| should| repeats| ->)/u);
+    return match ? match[1] : "";
+  }
+
+  function records(values, obligationsFor = () => []) {
+    return values.map((value) => {
+      if (typeof value !== "string") return value;
+      const origin = originForMessage(value);
+      return structuredFinding(value, origin, obligationsFor(value, origin));
+    });
+  }
+
+  const descriptorScopesByFile = new Map(descriptors.map((descriptor) => [descriptor, String((markdownFrontmatter.get(descriptor) || {}).scope_path || "")]));
+  const hubScopesByFile = new Map();
+  for (const descriptor of descriptors) {
+    const data = markdownFrontmatter.get(descriptor) || {};
+    for (const field of ["raw_hub", "compiled_hub", "inquiry_hub", "synthesis_hub", "thread_hub"]) {
+      const hub = resolvedScalarLink(descriptor, data[field]);
+      if (hub) hubScopesByFile.set(hub, String(data.scope_path || ""));
+    }
+  }
+
   return {
     errors,
     broken,
@@ -847,13 +901,16 @@ function validate(vaultPath, options = {}) {
     localAgentsInheritanceWarnings,
     ambiguousWikilinkWarnings,
     scopeNavigationWarnings,
-    routingMatrixWarnings,
+    routingMatrixWarnings: records(routingMatrixWarnings, (message) => {
+      const marker = " does not link scope hub ";
+      return message.includes(marker) ? [message.split(marker)[1]] : [];
+    }),
     baseScopeFormulaWarnings,
-    researchBoundaryWarnings,
-    researchProvenanceWarnings,
-    provenanceCycleWarnings,
-    uncompiledRawSourceWarnings,
-    researchHubWarnings,
+    researchBoundaryWarnings: records(researchBoundaryWarnings, (_message, origin) => descriptorScopesByFile.has(origin) ? [descriptorScopesByFile.get(origin)] : []),
+    researchProvenanceWarnings: records(researchProvenanceWarnings),
+    provenanceCycleWarnings: records(provenanceCycleWarnings),
+    uncompiledRawSourceWarnings: records(uncompiledRawSourceWarnings),
+    researchHubWarnings: records(researchHubWarnings, (_message, origin) => hubScopesByFile.has(origin) ? [hubScopesByFile.get(origin)] : descriptorScopesByFile.has(origin) ? [descriptorScopesByFile.get(origin)] : []),
   };
 }
 
@@ -862,7 +919,7 @@ function printResults(result) {
     console.log("yaml-ok");
   } else {
     console.log(`yaml-errors: ${result.errors.length}`);
-    result.errors.slice().sort().forEach((line) => console.log(line));
+    result.errors.slice().map(findingText).sort().forEach((line) => console.log(line));
   }
 
   const counters = [
@@ -885,7 +942,7 @@ function printResults(result) {
 
   for (const [name, values] of counters) {
     console.log(`${name}: ${values.length}`);
-    values.slice().sort().forEach((line) => console.log(line));
+    values.slice().map(findingText).sort().forEach((line) => console.log(line));
   }
 }
 
@@ -932,30 +989,21 @@ function parseArguments(argv) {
   return { vault, scope, profile };
 }
 
-function findingTouchesScope(finding, scope) {
-  const value = String(finding);
-  return value === scope || value.startsWith(`${scope}/`) || value.includes(` ${scope}/`) || value.includes(`: ${scope}/`);
+function findingOriginInScope(finding, scope) {
+  const value = typeof finding === "string" ? finding : finding.origin;
+  return value === scope || value.startsWith(`${scope}/`);
 }
 
-function findingOriginInScope(finding, scope) {
-  const value = String(finding);
-  return value === scope || value.startsWith(`${scope}/`);
+function structuredFindingAppliesToScope(finding, scope) {
+  if (typeof finding === "string") return findingOriginInScope(finding, scope);
+  return findingOriginInScope(finding, scope) || finding.obligations.some((obligation) => obligation === scope || obligation.startsWith(`${scope}/`));
 }
 
 function filterResults(result, options) {
   if (!options.scope) return result;
   const filtered = {};
-  const obligationKeys = new Set([
-    "routingMatrixWarnings",
-    "researchBoundaryWarnings",
-    "researchProvenanceWarnings",
-    "provenanceCycleWarnings",
-    "uncompiledRawSourceWarnings",
-    "researchHubWarnings",
-  ]);
   for (const [key, values] of Object.entries(result)) {
-    const predicate = obligationKeys.has(key) ? findingTouchesScope : findingOriginInScope;
-    filtered[key] = values.filter((value) => predicate(value, options.scope));
+    filtered[key] = values.filter((value) => structuredFindingAppliesToScope(value, options.scope));
   }
   if (options.profile === "research") {
     const kept = new Set([
