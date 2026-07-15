@@ -50,6 +50,10 @@ const RETIRED_RESEARCH_SKILL_PATTERNS = [
   new RegExp("ariadne:" + "research-intake", "u"),
   new RegExp("ariadne:" + "synthesis", "u"),
 ];
+const RETIRED_RESEARCH_SKILL_PATHS = [
+  "skills/" + "research-intake",
+  "skills/" + "synthesis",
+];
 const RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES = [
   "skills/research-intake/",
   "skills/synthesis/",
@@ -64,6 +68,8 @@ const RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES = [
   "skills/workspace-instructions/test/fixtures/retired_research_skill_names/",
 ];
 const RETIRED_RESEARCH_SKILL_ALLOWED_FILES = new Set([
+  "scripts/validate_repo.js",
+  "scripts/test_validate_repo.js",
   "skills/workspace-instructions/scripts/check_workspace.js",
 ]);
 const ACTIVE_RESEARCH_SKILL_REFERENCES = new Map([
@@ -72,9 +78,13 @@ const ACTIVE_RESEARCH_SKILL_REFERENCES = new Map([
   ["AGENTS.md", ["skills/research-ingest/SKILL.md", "skills/research-synthesis/SKILL.md", "skills/research-stewardship/SKILL.md"]],
   ["docs/guides/quickstart.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
   ["docs/guides/weekly-maintenance-automation.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["skills/validator/SKILL.md", ["ariadne:research-ingest"]],
   ["skills/vault/assets/templates/AGENTS.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["skills/vault/assets/templates/Vault Health Check Procedure.md", ["ariadne:research-stewardship"]],
 ]);
 const WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER = "ARIADNE_WEEKLY_MAINTENANCE_PROMPT_VERSION: 1";
+const RESEARCH_INGEST_ZERO_WRITE_GUIDANCE =
+  "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material.";
 const PREPUBLIC_TERM_PATTERNS = [
   new RegExp("Memory " + "Map", "iu"),
   new RegExp("memory " + "lens(?:es)?", "iu"),
@@ -199,6 +209,11 @@ function validateTextSafety(errors, files) {
       for (const pattern of RETIRED_RESEARCH_SKILL_PATTERNS) {
         if (pattern.test(text)) fail(errors, `retired research skill reference found outside migration allowlist in ${file}: ${pattern}`);
       }
+      for (const retiredPath of RETIRED_RESEARCH_SKILL_PATHS) {
+        if (text.includes(retiredPath)) {
+          fail(errors, `retired research skill path found outside migration allowlist in ${file}: ${retiredPath}`);
+        }
+      }
     }
     for (const pattern of PREPUBLIC_TERM_PATTERNS) {
       if (pattern.test(text)) fail(errors, `pre-public memory architecture term found in ${file}: ${pattern}`);
@@ -229,6 +244,11 @@ function validateResearchLifecycleDocs(errors) {
   if (fs.existsSync(path.join(ROOT, weeklyGuide)) && !read(weeklyGuide).includes(WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER)) {
     fail(errors, `${weeklyGuide} must expose the stable prompt marker: ${WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER}`);
   }
+
+  const quickstart = "docs/guides/quickstart.md";
+  if (fs.existsSync(path.join(ROOT, quickstart)) && !read(quickstart).includes(RESEARCH_INGEST_ZERO_WRITE_GUIDANCE)) {
+    fail(errors, `${quickstart} must preserve the no-target zero-write gate`);
+  }
 }
 
 function validatePathSafety(errors, files) {
@@ -250,6 +270,9 @@ function validateWorkflows(errors) {
     !read(repoWorkflow).includes("node skills/workspace-instructions/test/test_workspace_instructions.js")
   ) {
     fail(errors, `${repoWorkflow} must run workspace-instructions behavior tests`);
+  }
+  if (fs.existsSync(path.join(ROOT, repoWorkflow)) && !read(repoWorkflow).includes("node scripts/test_validate_repo.js")) {
+    fail(errors, `${repoWorkflow} must run repository guardrail mutation tests`);
   }
   if (fs.existsSync(path.join(ROOT, skillWorkflow)) && !read(skillWorkflow).includes("node scripts/validate_repo.js --skills-only")) {
     fail(errors, `${skillWorkflow} must run scripts/validate_repo.js --skills-only`);

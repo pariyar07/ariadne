@@ -231,7 +231,7 @@ node skills/vault/scripts/register_vault.js \
 
 **If research infrastructure doesn't exist yet:** `ariadne:research-ingest` reports `pipeline_state: missing` and invokes `ariadne:research-pipeline` only when the required topology is inside the confirmed write set. `ariadne:knowledge-capture` does not silently create research topology.
 
-**If you don't name a domain:** material lands in the root `Raw/Sources/` and `Processing Queue/` with a note to route it to a specific scope later.
+**If you don't name a domain or research boundary:** If no target is named or confirmed, make zero writes and ask which research boundary should receive the material. Write to a root research boundary only when the user explicitly names or confirms that root boundary in the current turn.
 
 ---
 

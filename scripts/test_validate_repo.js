@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+"use strict";
+
+const assert = require("assert");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const { execFileSync, spawnSync } = require("child_process");
+
+const ROOT = path.resolve(__dirname, "..");
+
+function copyTrackedWorkingTree(destination) {
+  const files = execFileSync("git", ["ls-files", "-z"], { cwd: ROOT, encoding: "utf8" })
+    .split("\0")
+    .filter(Boolean);
+
+  for (const file of files) {
+    const source = path.join(ROOT, file);
+    const target = path.join(destination, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+  }
+}
+
+function runValidator(root) {
+  return spawnSync(process.execPath, ["scripts/validate_repo.js", "--skills-only"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+}
+
+function replace(root, file, from, to) {
+  const target = path.join(root, file);
+  const original = fs.readFileSync(target, "utf8");
+  assert(original.includes(from), `test mutation source missing in ${file}: ${from}`);
+  fs.writeFileSync(target, original.split(from).join(to));
+  return () => fs.writeFileSync(target, original);
+}
+
+function assertRejected(result, message) {
+  assert.notStrictEqual(result.status, 0, "mutation unexpectedly passed repository validation");
+  assert.match(result.stderr, new RegExp(message.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+}
+
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-repo-guardrail-test-"));
+
+try {
+  copyTrackedWorkingTree(tempRoot);
+
+  assert(
+    fs.readFileSync(path.join(tempRoot, "docs/guides/quickstart.md"), "utf8").includes(
+      "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material."
+    ),
+    "quickstart must require zero writes until a research target is named or confirmed"
+  );
+
+  const baseline = runValidator(tempRoot);
+  assert.strictEqual(baseline.status, 0, baseline.stderr || baseline.stdout);
+
+  let restore = replace(
+    tempRoot,
+    "docs/guides/quickstart.md",
+    "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material.",
+    "If no target is named, use the root queue."
+  );
+  assertRejected(runValidator(tempRoot), "docs/guides/quickstart.md must preserve the no-target zero-write gate");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/validator/SKILL.md",
+    "ariadne:research-ingest",
+    "ariadne:mutated-ingest"
+  );
+  assertRejected(
+    runValidator(tempRoot),
+    "skills/validator/SKILL.md must reference the active research lifecycle surface: ariadne:research-ingest"
+  );
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/vault/assets/templates/Vault Health Check Procedure.md",
+    "ariadne:research-stewardship",
+    "ariadne:mutated-stewardship"
+  );
+  assertRejected(
+    runValidator(tempRoot),
+    "skills/vault/assets/templates/Vault Health Check Procedure.md must reference the active research lifecycle surface: ariadne:research-stewardship"
+  );
+  restore();
+
+  const activeRetiredPath = path.join(tempRoot, "docs", "active-retired-path.md");
+  fs.writeFileSync(activeRetiredPath, "Use `skills/research-intake/SKILL.md` and `skills/synthesis/SKILL.md`.\n");
+  let rejected = runValidator(tempRoot);
+  assertRejected(rejected, "retired research skill path found outside migration allowlist in docs/active-retired-path.md: skills/research-intake");
+  assertRejected(rejected, "retired research skill path found outside migration allowlist in docs/active-retired-path.md: skills/synthesis");
+  fs.rmSync(activeRetiredPath);
+
+  const migrationGuide = path.join(tempRoot, "docs/guides/research-lifecycle-migration.md");
+  fs.appendFileSync(migrationGuide, "\nCompatibility paths: `skills/research-intake/` and `skills/synthesis/`.\n");
+  const allowed = runValidator(tempRoot);
+  assert.strictEqual(allowed.status, 0, allowed.stderr || allowed.stdout);
+
+  console.log("repository guardrail mutation tests passed");
+} finally {
+  fs.rmSync(tempRoot, { recursive: true, force: true });
+}
