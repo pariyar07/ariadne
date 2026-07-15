@@ -1,6 +1,6 @@
 # Weekly Maintenance Automation
 
-Ariadne already has the skills needed for recurring vault care. A weekly automation should be a scheduled prompt that invokes those skills, not a separate skill.
+Ariadne already has the skills needed for recurring vault care. A weekly automation should be a scheduled prompt that invokes those skills, not a separate skill. The prompt marker below is stable and independent of the Ariadne release version so copied prompts can be recognized as stale.
 
 Use a new skill only when you are adding a reusable capability that agents should learn as a standalone procedure. Weekly maintenance is orchestration: it combines validation, maintenance, navigation repair, ingest cleanup, and synthesis checks in a predictable order.
 
@@ -26,11 +26,14 @@ ariadne:maintenance
 ariadne:navigation
   -> only if hubs, indexes, routing, or scope boundaries need repair
 
-ariadne:knowledge-capture / ariadne:research-intake
+ariadne:knowledge-capture / ariadne:research-ingest
   -> only if raw, inbox, or source material needs compilation
 
-ariadne:synthesis
-  -> only if stale research threads or open questions need consolidation
+ariadne:research-stewardship
+  -> audit research-semantic drift inside one named boundary; repair only allowlisted deterministic issues
+
+ariadne:research-synthesis
+  -> only if an authorized synthesis pass needs an explicit disposition
 
 obsidian-bases
   -> only if Base views, indexes, filters, or Base links need repair
@@ -56,6 +59,8 @@ The main agent should own all edits, reconcile subagent findings, rerun validati
 Use this as the task prompt for a weekly Codex workspace automation. Configure the schedule, model, and working directory in Codex rather than inside the prompt.
 
 ```text
+ARIADNE_WEEKLY_MAINTENANCE_PROMPT_VERSION: 1
+
 Run the weekly Ariadne vault maintenance pass.
 
 Use the vault's AGENTS.md instructions and the smallest relevant Ariadne/Obsidian skill route. Load and apply these skills when relevant:
@@ -63,8 +68,9 @@ Use the vault's AGENTS.md instructions and the smallest relevant Ariadne/Obsidia
 - ariadne:maintenance for stewardship, stale queues, routing drift, and maintenance triage.
 - obsidian-markdown for Obsidian frontmatter, wikilinks, callouts, and note formatting.
 - ariadne:navigation when navigation files, hubs, routing, indexes, or scope entrypoints have drifted.
-- ariadne:knowledge-capture or ariadne:research-intake when inbox, raw, or source material needs compilation.
-- ariadne:synthesis when research notes, open questions, or source captures need consolidation.
+- ariadne:knowledge-capture or ariadne:research-ingest when inbox, raw, or source material needs compilation and a target boundary is named or confirmed.
+- ariadne:research-stewardship when a named research boundary needs provenance, compilation-coverage, evidence-role, contradiction, stale-synthesis, inquiry-history, or legacy-pipeline audit.
+- ariadne:research-synthesis only when an authorized synthesis pass needs a `changed`, `confirmed`, `contradicted`, `superseded`, `no-update`, or `needs-review` disposition.
 - ariadne:research-pipeline when a scope lacks a repeatable source-to-synthesis path.
 - obsidian-bases when Base views, Base indexes, filters, or base-file links need repair.
 - ariadne:global-discovery when registry, vault entrypoints, or discovery metadata look stale.
@@ -73,7 +79,7 @@ Sequence:
 1. Read the vault entry files: AGENTS.md, 00 Index.md or 00 Global Index.md, Agent/00 Agent Navigation.md, Agent/Vault Health Check Procedure.md, Agent/Vault Navigation Standard.md, and any narrower local AGENTS.md/index files for scopes you touch.
 2. Run the validator script from ariadne:validator and capture the exact result.
 3. Inspect validator output and fix only deterministic, low-risk issues: broken wikilinks where the intended existing target is clear, stale references to deleted files, missing Base index links, obvious YAML/frontmatter/base syntax issues, or duplicate navigation drift.
-4. Run a maintainer pass over global and scoped Inbox, Processing Queue, Raw/Sources, Questions, Decisions, Bases, navigation files, high-change domain scopes, and existing Outputs only when they are already part of the vault. Search progressively; do not scan the whole vault by default.
+4. Run a maintainer pass over global and scoped Inbox, Processing Queue, Raw/Sources, Questions, Decisions, Bases, navigation files, high-change domain scopes, and existing Outputs only when they are already part of the vault. Search progressively; do not scan the whole vault by default. Route research-semantic findings to `ariadne:research-stewardship` for one explicitly named boundary; do not guess evidence roles, synthesis dispositions, or promotion targets.
 5. Use subagents only for independent read-only audits, such as one subagent for validation/navigation, one for intake/source queues, and one for Bases/existing outputs. The main agent owns edits and reconciles results.
 6. For issues that require product direction, architecture judgment, large restructures, deletions, or ambiguous scope ownership, create or update a needs-review follow-up in the relevant scope instead of making broad changes.
 7. Do not create a dated report in Outputs by default. Keep the weekly maintenance result in the automation chat/output unless a durable vault note is needed for an actual fix, unresolved follow-up, or explicit user-approved record.

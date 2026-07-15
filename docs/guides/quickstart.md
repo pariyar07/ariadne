@@ -55,9 +55,10 @@ Examples:
 | Create or update workspace instructions | `ariadne:workspace-instructions` | "Initialize workspace instructions" / "Connect this repo to Ariadne context" |
 | Add a new domain or scope | `ariadne:scope` | "Add a scope for..." / "Create a domain for..." |
 | Add research infrastructure inside a domain | `ariadne:research-pipeline` | "Add a research pipeline to..." |
-| Cold-start research source intake | `ariadne:research-intake` | "Research intake..." / "Save this research..." |
+| Cold-start research source intake | `ariadne:research-ingest` | "Research intake..." / "Save this research..." |
 | Capture a link, article, or brain dump | `ariadne:knowledge-capture` | "Capture this..." / "Add this to..." |
-| Synthesize multiple sources | `ariadne:synthesis` | "Synthesize the ... research" / "Update the ... thread" |
+| Synthesize multiple sources | `ariadne:research-synthesis` | "Synthesize the ... research" / "Update the ... thread" |
+| Audit or repair research lifecycle drift | `ariadne:research-stewardship` | "Audit the ... research boundary" / "Repair research provenance" |
 | Redesign navigation or routing | `ariadne:navigation` | "Redesign navigation for..." / "Add a workstream for..." |
 | Create or improve a work board or dashboard | `ariadne:workstream-tracking` | "Create a Kanban for..." / "Make a dashboard for..." / "Improve this board" |
 | Close or checkpoint meaningful work | `ariadne:closeout` | "Run Ariadne closeout" / "Checkpoint this work" / "Can I close this chat?" |
@@ -173,9 +174,9 @@ node skills/vault/scripts/register_vault.js \
 > "Set up research intake and synthesis for [domain]"
 
 **What happens:**
-1. `ariadne:research-pipeline` reads the scope hub, local agent navigation, routing matrix, and existing research folder.
-2. Creates or updates the local research pipeline: `Raw/Sources/`, `Inbox/`, `Processing Queue/`, `Research/`, synthesis/thread hubs, `Concepts/`, `Entities`, `Relationships/`, `Questions/`, templates, and optional local Bases.
-3. Adds local ingest and knowledge-processing workflow notes when needed.
+1. `ariadne:research-pipeline` reads the scope hub, local agent navigation, routing matrix, existing research structure, and applicable instructions.
+2. Maps and adopts existing structure before creating the minimum missing topology and one canonical `type: research-boundary` descriptor. Folder names are local choices; folder ancestry does not establish boundary membership.
+3. Adds source, compiled research, inquiry, synthesis, ingest-workflow, routing, and optional thread/Base entrypoints only when the recurring workflow needs them.
 4. Wires routing rows so future source intake and synthesis start from the smallest useful context set.
 5. Validates the resulting structure.
 
@@ -195,12 +196,12 @@ node skills/vault/scripts/register_vault.js \
 > "Save this research source"
 
 **What happens:**
-1. `ariadne:research-intake` reads the root routing layer and active domain registry.
-2. If no domain is named, it asks which domain should receive the research.
-3. It checks whether the target domain has a research pipeline.
+1. `ariadne:research-ingest` reads the root routing layer and active domain registry.
+2. It requires the target scope or research boundary to be named or confirmed in the current turn and constructs a closed write set.
+3. It checks whether the target boundary has a research pipeline.
 4. If the pipeline is missing, it invokes `ariadne:research-pipeline` first.
 5. It uses `ariadne:knowledge-capture` to capture raw source metadata and compile a source-backed research note.
-6. It updates synthesis/thread hubs only when the source changes the research map.
+6. When synthesis may be warranted, it asks `ariadne:research-synthesis` to record an explicit disposition; ingest does not make that judgment itself.
 
 **When to use:** You are entering a cold agent session with a source link or research material and do not want to remember the vault routing rules.
 
@@ -221,14 +222,14 @@ node skills/vault/scripts/register_vault.js \
 2. Reads `Agent/Task Routing Matrix.md` → finds explicit row for "Shared link or source material for [domain]"
 3. Reads domain `AGENTS.md` → gets local scope boundary and routing rules
 4. Reads domain `Agent/Task Routing Matrix.md` → finds "Shared link or article" row → reads local `Agent/Ingest Compile Workflow.md`
-5. Executes the full ingest: raw capture → extract claims → compile research note → update concepts/entities/synthesis → link from hub
+5. Executes the handoff chain: classify and capture raw evidence → compile a research note → ask `ariadne:research-synthesis` for a disposition only when current understanding may be affected → link from the authorized hub
 
 **What gets created:**
 - `Raw/Sources/YYYY-MM-DD Source Title.md` — timestamped raw capture with metadata
 - `Research/Source Title.md` — compiled synthesis note with source claims and interpretation separated
 - Updates to relevant concept notes, entity notes, synthesis hubs, and research index
 
-**If intake infrastructure doesn't exist yet** (new scope with no `Raw/Sources/`): `ariadne:knowledge-capture` sets it up silently before the first capture. You never need to create it manually.
+**If research infrastructure doesn't exist yet:** `ariadne:research-ingest` reports `pipeline_state: missing` and invokes `ariadne:research-pipeline` only when the required topology is inside the confirmed write set. `ariadne:knowledge-capture` does not silently create research topology.
 
 **If you don't name a domain:** material lands in the root `Raw/Sources/` and `Processing Queue/` with a note to route it to a specific scope later.
 
@@ -241,14 +242,14 @@ node skills/vault/scripts/register_vault.js \
 > "Update the [domain] research synthesis with recent sources"
 
 **What happens:**
-1. `ariadne:synthesis` reads the domain research hub and thread hub.
+1. `ariadne:research-synthesis` reads the boundary descriptor, research hub, inquiries, current synthesis, and thread hub.
 2. Gathers compiled research notes — does not re-read raw sources unless compiled notes are insufficient.
-3. Updates the synthesis note: what is known, what is inferred, what is contested, open questions, implications.
-4. Updates thread hub and relevant concept/entity notes.
+3. Records exactly one disposition: `changed`, `confirmed`, `contradicted`, `superseded`, `no-update`, or `needs-review`.
+4. Updates the inquiry history, synthesis, and thread hub only inside the authorized write set; downstream promotion requires a separately confirmed destination.
 
 **When to use:** After ingesting multiple sources on the same topic. After a research sprint. When you want a single synthesis note that a future cold agent can read first instead of opening every source.
 
-**Cross-scope synthesis:** If a topic spans two domains (e.g. OCG and Signal Theory both reference context graphs), the synthesis note belongs at the nearest common parent — usually the root `Research/` or a shared relationship note. It links to child-scope evidence, never duplicates it.
+**Cross-scope synthesis:** Name or confirm a parent research boundary and its exact write set before combining evidence across domains. A parent includes child research only through descriptor-declared `rollup_boundaries`; folder ancestry alone is not authorization or membership. Link to canonical child evidence instead of duplicating it.
 
 ---
 
@@ -359,7 +360,7 @@ Inside a selected multi-scope vault, write actions still need a current-turn exp
 
 ```
 ariadne:vault   → creates vault structure
-ariadne:research-intake → first research source enters the right scope
+ariadne:research-ingest → first research source enters the right scope
 ariadne:validator → confirms structure is clean
 ```
 
@@ -367,7 +368,7 @@ ariadne:validator → confirms structure is clean
 
 ```
 ariadne:scope   → creates scope, hub, routing, intake infrastructure
-ariadne:research-intake → first research source enters the new scope
+ariadne:research-ingest → first research source enters the new scope
 ariadne:validator → confirms routing-matrix-warnings: 0, base-scope-formula-warnings: 0
 ```
 
@@ -375,19 +376,19 @@ ariadne:validator → confirms routing-matrix-warnings: 0, base-scope-formula-wa
 
 ```
 ariadne:research-pipeline → creates research hubs, local intake, routing, optional Bases
-ariadne:research-intake   → first source enters the scope
+ariadne:research-ingest   → first source enters the scope
 ariadne:knowledge-capture    → compiles the source once the scope is known
-ariadne:synthesis → updates synthesis and thread hub after multiple sources
+ariadne:research-synthesis → records disposition and updates synthesis after multiple sources
 ariadne:validator   → confirms structure is wired
 ```
 
 ### Research sprint → synthesis
 
 ```
-ariadne:research-intake    (×N sources, if scope may be unclear)
+ariadne:research-ingest    (×N sources, with a named or confirmed boundary)
 ariadne:knowledge-capture     (×N sources, if scope is known)
-ariadne:synthesis → synthesis note + thread hub
-ariadne:maintenance   → confirm no orphans or stale queue items
+ariadne:research-synthesis → inquiry disposition + synthesis note + thread hub
+ariadne:research-stewardship → audit provenance, compilation coverage, and research drift
 ```
 
 ### Navigation drift repair
@@ -410,7 +411,7 @@ ariadne:validator      → confirms links remain valid
 
 ```
 ariadne:closeout → checks completion, selects durable artifacts, updates the target scope when warranted
-conditional repair skills → knowledge capture, synthesis, workstream tracking, navigation, maintenance, or validator only when needed
+conditional repair skills → knowledge capture, research synthesis, workstream tracking, navigation, maintenance, or validator only when needed
 ```
 
 ### Periodic vault maintenance
@@ -426,7 +427,7 @@ ariadne:knowledge-capture   → process any stale raw/inbox items
 ```
 ariadne:validator    → deterministic baseline and final check
 ariadne:maintenance   → stale queues, routing drift, and repair triage
-conditional repair skills   → navigation, knowledge capture, synthesis, Bases, or global discovery only when needed
+conditional repair skills   → navigation, knowledge capture, research stewardship, research synthesis, Bases, or global discovery only when needed
 ```
 
 ---

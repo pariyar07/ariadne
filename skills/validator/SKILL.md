@@ -115,5 +115,5 @@ The validator also warns when a large specialized folder may need a local `AGENT
 
 - Use `ariadne:navigation` for missing hubs, Base links, and routing issues.
 - Use `ariadne:maintenance` for broader health-check repair.
-- Use `ariadne:research-intake` when orphaned raw material is research and the target scope is unclear.
+- Use `ariadne:research-ingest` when orphaned raw material is research and the target boundary needs confirmation.
 - Use `ariadne:knowledge-capture` when orphaned raw material needs compilation.

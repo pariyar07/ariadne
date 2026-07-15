@@ -14,9 +14,10 @@ skills/
   scope/        ← scope creation and wiring (`ariadne:scope`)
   navigation/   ← hub and routing design (`ariadne:navigation`)
   knowledge-capture/ ← raw input → durable notes (`ariadne:knowledge-capture`)
-  research-intake/      ← cold-start research source routing (`ariadne:research-intake`)
+  research-ingest/      ← research input routing and handoff (`ariadne:research-ingest`)
   research-pipeline/    ← domain research pipeline setup (`ariadne:research-pipeline`)
-  synthesis/    ← multi-source synthesis (`ariadne:synthesis`)
+  research-synthesis/   ← synthesis disposition and promotion (`ariadne:research-synthesis`)
+  research-stewardship/ ← scoped research audit and repair (`ariadne:research-stewardship`)
   workstream-tracking/     ← Kanban boards and Dataview dashboards (`ariadne:workstream-tracking`)
   closeout/     ← work checkpoint, durable capture, and safe-to-close decisions (`ariadne:closeout`)
   maintenance/  ← health checks and repair (`ariadne:maintenance`)
@@ -55,7 +56,9 @@ Each skill is a folder with:
 | Edit workspace instruction scenarios | `skills/workspace-instructions/references/workspace-instruction-scenarios.md` |
 | Edit workspace instruction audit rubric | `skills/workspace-instructions/references/instruction-file-rules.md` |
 | Edit reference documentation | `skills/vault/references/` |
-| Edit cold-start research intake | `skills/research-intake/SKILL.md` |
+| Edit research ingest orchestration | `skills/research-ingest/SKILL.md` |
+| Edit research synthesis | `skills/research-synthesis/SKILL.md` |
+| Edit research stewardship | `skills/research-stewardship/SKILL.md` |
 | Edit domain research pipeline setup | `skills/research-pipeline/SKILL.md` |
 | Edit the validator | `skills/validator/scripts/validate_vault.js` |
 | Run the validator | `node skills/validator/scripts/validate_vault.js "/path/to/vault"` |

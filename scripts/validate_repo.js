@@ -64,16 +64,17 @@ const RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES = [
   "skills/workspace-instructions/test/fixtures/retired_research_skill_names/",
 ];
 const RETIRED_RESEARCH_SKILL_ALLOWED_FILES = new Set([
-  "AGENTS.md",
-  "CONTRIBUTING.md",
-  "README.md",
-  "docs/guides/quickstart.md",
-  "docs/guides/weekly-maintenance-automation.md",
-  "skills/validator/SKILL.md",
-  "skills/vault/assets/templates/AGENTS.md",
-  "skills/vault/assets/templates/Vault Health Check Procedure.md",
   "skills/workspace-instructions/scripts/check_workspace.js",
 ]);
+const ACTIVE_RESEARCH_SKILL_REFERENCES = new Map([
+  ["README.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["CONTRIBUTING.md", ["research-ingest/", "research-synthesis/", "research-stewardship/"]],
+  ["AGENTS.md", ["skills/research-ingest/SKILL.md", "skills/research-synthesis/SKILL.md", "skills/research-stewardship/SKILL.md"]],
+  ["docs/guides/quickstart.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["docs/guides/weekly-maintenance-automation.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["skills/vault/assets/templates/AGENTS.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+]);
+const WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER = "ARIADNE_WEEKLY_MAINTENANCE_PROMPT_VERSION: 1";
 const PREPUBLIC_TERM_PATTERNS = [
   new RegExp("Memory " + "Map", "iu"),
   new RegExp("memory " + "lens(?:es)?", "iu"),
@@ -207,6 +208,26 @@ function validateTextSafety(errors, files) {
         if (pattern.test(text)) fail(errors, `placeholder skill text found in ${file}: ${pattern}`);
       }
     }
+  }
+}
+
+function validateResearchLifecycleDocs(errors) {
+  for (const [file, references] of ACTIVE_RESEARCH_SKILL_REFERENCES) {
+    if (!fs.existsSync(path.join(ROOT, file))) {
+      fail(errors, `research lifecycle documentation missing: ${file}`);
+      continue;
+    }
+    const text = read(file);
+    for (const reference of references) {
+      if (!text.includes(reference)) {
+        fail(errors, `${file} must reference the active research lifecycle surface: ${reference}`);
+      }
+    }
+  }
+
+  const weeklyGuide = "docs/guides/weekly-maintenance-automation.md";
+  if (fs.existsSync(path.join(ROOT, weeklyGuide)) && !read(weeklyGuide).includes(WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER)) {
+    fail(errors, `${weeklyGuide} must expose the stable prompt marker: ${WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER}`);
   }
 }
 
@@ -363,6 +384,7 @@ function main() {
   validatePathSafety(errors, files);
   validateSkillFolders(errors);
   validateTextSafety(errors, files);
+  validateResearchLifecycleDocs(errors);
   if (!skillsOnly) {
     validateRepoFiles(errors);
     validateWorkflows(errors);
