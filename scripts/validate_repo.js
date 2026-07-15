@@ -9,6 +9,7 @@ const { execFileSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "..");
 
 const REQUIRED_REPO_FILES = [
+  "CHANGELOG.md",
   "SECURITY.md",
   "PUBLIC_BOUNDARY.md",
   ".github/CODEOWNERS",
@@ -55,8 +56,6 @@ const RETIRED_RESEARCH_SKILL_PATHS = [
   "skills/" + "synthesis",
 ];
 const RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES = [
-  "skills/research-intake/",
-  "skills/synthesis/",
   "docs/migration/",
   "docs/migrations/",
   "docs/release/",
@@ -173,6 +172,10 @@ function validateSkillFolders(errors) {
     .sort();
 
   for (const dir of skillDirs) {
+    if (["skills/research-intake", "skills/synthesis"].includes(dir)) {
+      fail(errors, `retired skill folder must not exist: ${dir}`);
+      continue;
+    }
     const skillFile = `${dir}/SKILL.md`;
     const openaiFile = `${dir}/agents/openai.yaml`;
     if (!fs.existsSync(path.join(ROOT, skillFile))) {

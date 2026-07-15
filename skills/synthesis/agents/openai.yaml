@@ -1,4 +1,0 @@
-interface:
-  display_name: "Ariadne Synthesis (Deprecated)"
-  short_description: "Compatibility adapter for research synthesis"
-  default_prompt: "Use $ariadne:synthesis to route this legacy request to $ariadne:research-synthesis."

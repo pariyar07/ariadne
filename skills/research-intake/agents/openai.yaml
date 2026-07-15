@@ -1,4 +1,0 @@
-interface:
-  display_name: "Ariadne Research Intake (Deprecated)"
-  short_description: "Compatibility adapter for research ingest"
-  default_prompt: "Use $ariadne:research-intake to route this legacy request to $ariadne:research-ingest."

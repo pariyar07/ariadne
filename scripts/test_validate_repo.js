@@ -16,6 +16,7 @@ function copyTrackedWorkingTree(destination) {
 
   for (const file of files) {
     const source = path.join(ROOT, file);
+    if (!fs.existsSync(source)) continue;
     const target = path.join(destination, file);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.copyFileSync(source, target);
@@ -46,6 +47,13 @@ const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-repo-guardrail-t
 
 try {
   copyTrackedWorkingTree(tempRoot);
+
+  assert(!fs.existsSync(path.join(tempRoot, "skills/research-intake")), "v0.2.0 must remove the research-intake adapter");
+  assert(!fs.existsSync(path.join(tempRoot, "skills/synthesis")), "v0.2.0 must remove the synthesis adapter");
+
+  const migrationText = fs.readFileSync(path.join(tempRoot, "docs/guides/research-lifecycle-migration.md"), "utf8");
+  assert(migrationText.includes("v0.2.0"), "migration guide must name the breaking v0.2.0 release");
+  assert(!migrationText.includes("one compatibility release"), "v0.2.0 must not promise a compatibility release");
 
   assert(
     fs.readFileSync(path.join(tempRoot, "docs/guides/quickstart.md"), "utf8").includes(
@@ -96,6 +104,13 @@ try {
   assertRejected(rejected, "retired research skill path found outside migration allowlist in docs/active-retired-path.md: skills/research-intake");
   assertRejected(rejected, "retired research skill path found outside migration allowlist in docs/active-retired-path.md: skills/synthesis");
   fs.rmSync(activeRetiredPath);
+
+  const retiredFolder = path.join(tempRoot, "skills", "research-intake");
+  fs.mkdirSync(path.join(retiredFolder, "agents"), { recursive: true });
+  fs.writeFileSync(path.join(retiredFolder, "SKILL.md"), "---\nname: ariadne:legacy-research\ndescription: Legacy fixture.\n---\n");
+  fs.writeFileSync(path.join(retiredFolder, "agents/openai.yaml"), "display_name: Legacy fixture\n");
+  assertRejected(runValidator(tempRoot), "retired skill folder must not exist: skills/research-intake");
+  fs.rmSync(retiredFolder, { recursive: true, force: true });
 
   const migrationGuide = path.join(tempRoot, "docs/guides/research-lifecycle-migration.md");
   fs.appendFileSync(migrationGuide, "\nCompatibility paths: `skills/research-intake/` and `skills/synthesis/`.\n");

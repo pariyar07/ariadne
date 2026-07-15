@@ -1,50 +1,42 @@
 # Research Lifecycle Migration
 
-This guide covers the atomic research-skill rename and the opt-in adoption of the versioned research lifecycle. Updating Ariadne changes the installed skill package; it does not silently rewrite copied skills, vault content, workspace instructions, saved prompts, or external automation configuration.
+Ariadne `v0.2.0` is a breaking research-lifecycle release. Updating the repository does not silently clean copied skill installations, rewrite generated vault content, or update saved prompts and external automation.
 
-## Release Status
+## Skill names
 
-| Milestone | Version |
-| --- | --- |
-| Effective migration release | **version undecided — pending release planning** |
-| Compatibility-adapter removal breaking release | **version undecided — pending release planning** |
-
-These labels are planning placeholders, not published versions. Assign both release versions before publishing the migration release.
-
-## Skill Names
-
-| Retired name | Active successor |
+| Removed in v0.2.0 | Active replacement |
 | --- | --- |
 | `ariadne:research-intake` | `ariadne:research-ingest` |
 | `ariadne:synthesis` | `ariadne:research-synthesis` |
 
-`ariadne:research-stewardship` is the active owner for provenance, compilation coverage, stale synthesis, unresolved inquiry history, and legacy-pipeline drift inside one named research boundary.
+`ariadne:research-stewardship` now owns provenance, compilation coverage, stale synthesis, unresolved inquiry history, and legacy-pipeline drift inside one named research boundary.
 
-The retired skill folders remain narrow forwarding adapters for one compatibility release. They do not duplicate the successor workflows and must be removed in the declared breaking release only after behavioral verification. New documentation, prompts, templates, and instructions should use the active names immediately.
+The retired skill folders are not shipped in `v0.2.0`. Invocations using the removed names fail until the caller is updated.
 
-## Update Installed Skills
+## Clean installed copies
 
 1. Update or reinstall Ariadne using the same installation method and agent target used originally.
 2. Run `npx skills list -g` and confirm the three active research lifecycle skills are installed.
-3. Locate copied Ariadne installations for each configured agent. An update tool may copy the active folders without deleting retired folders from an older installation.
-4. During the compatibility release, leave the adapters in a current Ariadne install. Remove stale duplicate retired folders only from installations that have been upgraded past the declared adapter-removal breaking release, and only after confirming the path is an installed copy rather than this repository or user-authored content.
-5. Re-run a representative ingest, synthesis, and stewardship request before removing any adapter.
+3. Locate copied Ariadne skill installations for every configured runtime.
+4. Confirm each stale `research-intake` or `synthesis` directory is an installer-managed copy, not this repository or user-authored content.
+5. Delete those stale copied directories explicitly; do not assume an update command removed folders absent from the new release.
+6. Run representative ingest, synthesis, and stewardship requests using only the active names.
 
-Do not treat successful package update output as proof that copied installation directories were cleaned up.
+Do not treat successful package output as proof that copied installation directories were cleaned up.
 
-## Update Saved Prompts And External Automation
+## Update saved prompts and automation
 
-Repository updates cannot edit prompts copied into chats, commands, CI configuration, launch agents, cron jobs, or external scheduler products. Replace retired identifiers manually in every saved prompt and scheduler after reviewing its target and write boundaries.
+Repository updates cannot edit prompts copied into chats, commands, CI configuration, launch agents, cron jobs, or external scheduler products. Replace removed identifiers manually after reviewing each automation's target and write boundaries.
 
-The weekly prompt in [Weekly Maintenance Automation](weekly-maintenance-automation.md) begins with this stable marker:
+The weekly prompt in [Weekly Maintenance Automation](weekly-maintenance-automation.md) begins with:
 
 ```text
 ARIADNE_WEEKLY_MAINTENANCE_PROMPT_VERSION: 1
 ```
 
-The prompt version is independent of the Ariadne release version. Compare the marker in a saved automation with the public guide; a missing or older marker means the copied prompt needs review. Updating the guide does not update the external scheduler.
+The prompt version is independent of the Ariadne release version. A missing or older marker means the copied prompt needs review.
 
-## Audit Workspace And Vault Instructions
+## Audit workspace and vault instructions
 
 Run the installed workspace checker from the directory containing its `SKILL.md`:
 
@@ -52,48 +44,43 @@ Run the installed workspace checker from the directory containing its `SKILL.md`
 node scripts/check_workspace.js "/path/to/workspace" --json
 ```
 
-From an Ariadne repository checkout, the equivalent command is:
+From a repository checkout:
 
 ```bash
 node skills/workspace-instructions/scripts/check_workspace.js "/path/to/workspace" --json
 ```
 
-Inspect `retiredResearchSkillNameFiles`, `retiredResearchSkillNamesByFile`, and `retiredResearchSkillNameReplacements`. The checker detects retired identifiers only inside well-formed Ariadne-managed vault-link or global-discovery marker blocks. A safe repair applies the reported exact replacement inside those blocks and preserves every byte outside them.
+Inspect `retiredResearchSkillNameFiles`, `retiredResearchSkillNamesByFile`, and `retiredResearchSkillNameReplacements`. Apply exact replacements only inside well-formed Ariadne-managed marker blocks and preserve every byte outside them.
 
-The checker deliberately does not rewrite ordinary user prose, malformed or duplicate marker blocks, saved prompts, external scheduler configuration, or arbitrary vault notes. Review those surfaces separately. If marker ownership is unclear, stop and ask rather than broad-replacing text.
+The checker does not rewrite ordinary user prose, malformed or duplicate markers, saved prompts, scheduler configuration, or arbitrary vault notes. Review those surfaces separately.
 
 ## Re-sync `AGENTS.override.md`
 
-Codex reads `AGENTS.override.md` instead of `AGENTS.md` at the same directory level; it does not merge them. Whenever tracked `AGENTS.md` changes:
+Codex reads `AGENTS.override.md` instead of `AGENTS.md` at the same directory level.
 
-1. Save the complete local `ariadne:workspace-vault-link` block from `AGENTS.override.md`, including its start and end markers, byte-for-byte.
-2. Replace the override's copied shared body with the complete current `AGENTS.md` body.
-3. Append the saved local block unchanged at the bottom.
-4. Run the workspace checker and confirm `codexOverrideOutOfSyncFiles` is empty.
-5. Confirm `AGENTS.override.md` remains ignored and unstaged.
+1. Save the complete local `ariadne:workspace-vault-link` block byte-for-byte.
+2. Replace the override's shared body with the complete current `AGENTS.md` body.
+3. Append the saved local block unchanged.
+4. Run the checker and confirm `codexOverrideOutOfSyncFiles` is empty.
+5. Confirm the override remains ignored and unstaged.
 
-Do not patch only the renamed lines in the override. A full-body resync prevents unrelated tracked guidance from remaining stale.
-
-## Opt In Existing Generated Vaults
+## Opt in existing generated vaults
 
 Generated vaults are not rewritten automatically. Migration is scope-local and requires a current-turn named or confirmed research boundary.
 
-1. Inventory the selected boundary and map its existing sources, compiled notes, questions, synthesis, thread hubs, routing, and instructions.
-2. Preserve stable paths and harmless local variation. Adopt existing structure before creating parallel folders.
-3. Add a `type: research-boundary` descriptor with `research_schema: 1` only when the mapping is unambiguous or explicitly confirmed.
-4. Apply only deterministic, allowlisted link and metadata repairs automatically. Propose moves, renames, template rewrites, evidence-role decisions, and synthesis changes for review.
-5. Update generated instruction marker blocks with the stale-name checker workflow above. Review unmarked generated files explicitly; do not assume checker silence means they are current.
-6. Run scoped research validation, whole-vault validation, and a second stewardship audit to confirm repair idempotency.
+1. Inventory the selected boundary and map its sources, compiled notes, questions, synthesis, thread hubs, routing, and instructions.
+2. Preserve stable paths and existing structure.
+3. Add `research_schema: 1` only when the mapping is unambiguous or confirmed.
+4. Apply only allowlisted, meaning-preserving repairs automatically.
+5. Run scoped research validation, whole-vault validation, and a second stewardship audit for idempotency.
 
-Legacy pipelines without a supported `research_schema` remain valid legacy research until their owner opts in. They do not receive unconditional new-schema warnings.
+Legacy pipelines without `research_schema` remain valid until their owner opts in.
 
-## Completion Checklist
+## Completion checklist
 
-- Active successor skills are installed and representative requests use them.
-- Retired adapters remain only for the declared one-release compatibility window.
-- Saved prompts and every external scheduler were reviewed manually.
-- Weekly prompts carry the current stable prompt-version marker.
-- Generated vault migration was explicitly authorized per boundary.
-- Workspace and vault instruction repairs were marker-bounded.
-- Any `AGENTS.override.md` body was fully re-synced while its local block remained byte-identical.
-- Scoped and whole-vault validation completed after opt-in migration.
+- `v0.2.0` successor skills are installed.
+- Stale copied retired skill folders are removed.
+- Saved prompts and external schedulers use active identifiers.
+- Generated instruction repairs were marker-bounded.
+- `AGENTS.override.md` was fully re-synced when present.
+- Representative ingest, synthesis, stewardship, scoped validation, and whole-vault validation passed.
