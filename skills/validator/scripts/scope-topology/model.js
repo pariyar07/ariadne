@@ -1,0 +1,98 @@
+"use strict";
+
+const path = require("path");
+const { parseScopeDescriptor } = require("./schema");
+
+function directoryOf(file) {
+  return path.posix.dirname(file) === "." ? "." : path.posix.dirname(file);
+}
+
+function isPhysicalAncestor(ancestor, descendant) {
+  return ancestor === "." || descendant.startsWith(`${ancestor}/`);
+}
+
+function compareDescriptors(left, right) {
+  const leftOrder = left.scopeOrder === null ? Number.MAX_SAFE_INTEGER : left.scopeOrder;
+  const rightOrder = right.scopeOrder === null ? Number.MAX_SAFE_INTEGER : right.scopeOrder;
+  if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+  const titleOrder = Buffer.from(left.title.normalize("NFC")).compare(Buffer.from(right.title.normalize("NFC")));
+  if (titleOrder !== 0) return titleOrder;
+  return Buffer.from(left.scopeId).compare(Buffer.from(right.scopeId));
+}
+
+function buildTopology(inventory) {
+  const recognized = [];
+  const candidates = [];
+  for (const file of inventory.files) {
+    if (path.posix.basename(file.relativePath) !== "00 Index.md") continue;
+    if (!file.lstat.isFile() || !file.canonicalContained || !file.frontmatter) continue;
+    let descriptor = null;
+    try {
+      descriptor = parseScopeDescriptor(file.relativePath, file.frontmatter);
+    } catch (error) {
+      recognized.push(Object.freeze({ file, error, invalid: true }));
+      continue;
+    }
+    if (descriptor) {
+      recognized.push(Object.freeze({ ...descriptor, fileRecord: file, directory: directoryOf(file.relativePath) }));
+    } else if (String(file.frontmatter.ariadne_scope_adoption || "") !== "dismissed") {
+      candidates.push(file);
+    }
+  }
+
+  const root = recognized.find((item) => !item.invalid && item.directory === "." && item.scopeId === "root");
+  const active = Boolean(root && root.supported && root.scopePath === ".");
+  const unsupportedRoot = Boolean(root && !root.supported);
+  const supported = recognized.filter((item) => !item.invalid && item.supported);
+  const pendingDescriptors = active ? [] : Object.freeze(recognized.filter((item) => !item.invalid));
+  const adopted = active ? supported : [];
+
+  const byPath = [...adopted].sort((left, right) => left.directory.split("/").length - right.directory.split("/").length);
+  const descriptorsById = new Map();
+  for (let descriptor of byPath) {
+    if (descriptorsById.has(descriptor.scopeId)) continue;
+    const actualPath = descriptor.directory;
+    if (descriptor.scopePath !== actualPath) continue;
+    if (descriptor.scopeId !== "root") {
+      const ancestors = byPath.filter((candidate) => candidate !== descriptor && isPhysicalAncestor(candidate.directory, actualPath));
+      ancestors.sort((left, right) => right.directory.length - left.directory.length);
+      const nearest = ancestors[0];
+      if (!nearest || descriptor.parentScopeId !== nearest.scopeId) continue;
+      const relative = path.posix.relative(nearest.directory === "." ? "" : nearest.directory, actualPath);
+      descriptor = Object.freeze({ ...descriptor, transparentPath: relative });
+    } else {
+      descriptor = Object.freeze({ ...descriptor, transparentPath: "." });
+    }
+    descriptorsById.set(descriptor.scopeId, descriptor);
+  }
+
+  const childrenById = new Map([...descriptorsById.keys()].map((id) => [id, []]));
+  for (const descriptor of descriptorsById.values()) {
+    if (descriptor.parentScopeId && childrenById.has(descriptor.parentScopeId)) {
+      childrenById.get(descriptor.parentScopeId).push(descriptor);
+    }
+  }
+  for (const children of childrenById.values()) children.sort(compareDescriptors);
+
+  const orderedDescriptorsById = new Map();
+  function visit(descriptor) {
+    if (!descriptor || orderedDescriptorsById.has(descriptor.scopeId)) return;
+    orderedDescriptorsById.set(descriptor.scopeId, descriptor);
+    for (const child of childrenById.get(descriptor.scopeId) || []) visit(child);
+  }
+  visit(descriptorsById.get("root"));
+  for (const descriptor of [...descriptorsById.values()].sort(compareDescriptors)) visit(descriptor);
+  const descriptors = new Set(orderedDescriptorsById.values());
+
+  return Object.freeze({
+    active,
+    descriptors,
+    descriptorsById: orderedDescriptorsById,
+    childrenById,
+    candidates: Object.freeze(candidates),
+    pendingDescriptors,
+    unsupportedRoot,
+  });
+}
+
+module.exports = { buildTopology };
