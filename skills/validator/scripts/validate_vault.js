@@ -283,16 +283,9 @@ function wikilinkCount(file) {
   return wikilinkTargets(textWithoutCode(readText(file))).length;
 }
 
-function commonPrefixDepth(first, second) {
-  const firstParts = first.split("/");
-  const secondParts = second.split("/");
-  let depth = 0;
-  while (depth < firstParts.length && depth < secondParts.length && firstParts[depth] === secondParts[depth]) depth += 1;
-  return depth;
-}
-
 function navigationFile(file) {
-  return hubFile(file) || path.posix.basename(file) === "Task Routing Matrix.md";
+  return hubFile(file) || path.posix.basename(file) === "AGENTS.md" ||
+    file.startsWith("Agent/") || file.includes("/Agent/");
 }
 
 function resolveLink(sourceFile, target, allTargets, basenameTargets) {
@@ -309,15 +302,14 @@ function resolveLink(sourceFile, target, allTargets, basenameTargets) {
 
   const candidates = (basenameTargets.get(normalized) || []).slice().sort();
   if (candidates.length <= 1) return { file: candidates[0] || null, candidates };
-  const sameFolder = candidates.filter((candidate) => path.posix.dirname(candidate) === path.posix.dirname(sourceFile));
-  if (sameFolder.length === 1) return { file: sameFolder[0], candidates };
-  const scored = candidates.map((candidate) => ({
-    candidate,
-    depth: commonPrefixDepth(path.posix.dirname(sourceFile), path.posix.dirname(candidate)),
-  }));
-  const maxDepth = Math.max(...scored.map((entry) => entry.depth));
-  const nearest = scored.filter((entry) => entry.depth === maxDepth).map((entry) => entry.candidate);
-  return { file: nearest.length === 1 ? nearest[0] : null, candidates };
+  let ancestor = path.posix.dirname(sourceFile);
+  while (true) {
+    const matches = candidates.filter((candidate) => path.posix.dirname(candidate) === ancestor);
+    if (matches.length === 1) return { file: matches[0], candidates };
+    if (matches.length > 1 || ancestor === ".") break;
+    ancestor = path.posix.dirname(ancestor);
+  }
+  return { file: null, candidates };
 }
 
 function scalarLinkTarget(value) {
@@ -456,23 +448,33 @@ function validate(vaultPath, options = {}) {
     const parentHub = nearestParentHub(dir, hubsByDir);
     if (!parentHub) continue;
 
-    if (!fileLinksTo(parentHub, childHub)) {
+    if (!fileLinksToQualified(parentHub, childHub)) {
       scopeNavigationWarnings.push(`${parentHub} does not link child hub ${childHub}`);
     }
-    if (!fileLinksTo(childHub, parentHub)) {
+    if (!fileLinksToQualified(childHub, parentHub)) {
       scopeNavigationWarnings.push(`${childHub} does not link parent hub ${parentHub}`);
     }
   }
 
   const routingMatrixWarnings = [];
-  const routingMatrix = markdownFiles.find((file) => path.posix.basename(file) === "Task Routing Matrix.md" && path.posix.dirname(file) === "Agent");
-  if (routingMatrix) {
-    for (const [dir, childHub] of hubsByDir.entries()) {
-      if (dir === ".") continue;
-      if (!scopeHub(childHub, markdownFrontmatter)) continue;
-      if (!fileLinksTo(routingMatrix, childHub)) {
-        routingMatrixWarnings.push(`Agent/Task Routing Matrix.md does not link scope hub ${childHub}`);
+  const routingMatrices = new Map();
+  for (const file of markdownFiles.filter((candidate) => path.posix.basename(candidate) === "Task Routing Matrix.md" && path.posix.basename(path.posix.dirname(candidate)) === "Agent")) {
+    routingMatrices.set(path.posix.dirname(path.posix.dirname(file)), file);
+  }
+  for (const [dir, childHub] of hubsByDir.entries()) {
+    if (dir === "." || !scopeHub(childHub, markdownFrontmatter)) continue;
+    let inheritedScope = dir;
+    let routingMatrix = null;
+    while (true) {
+      if (routingMatrices.has(inheritedScope)) {
+        routingMatrix = routingMatrices.get(inheritedScope);
+        break;
       }
+      if (inheritedScope === ".") break;
+      inheritedScope = path.posix.dirname(inheritedScope);
+    }
+    if (routingMatrix && !fileLinksToQualified(routingMatrix, childHub)) {
+      routingMatrixWarnings.push(`${routingMatrix} does not link scope hub ${childHub}`);
     }
   }
 
@@ -554,12 +556,85 @@ function validate(vaultPath, options = {}) {
     return link ? resolveLink(source, link, targets, basenameTargets).file : null;
   }
 
+  const descriptorScopes = descriptors.map((descriptor) => ({
+    descriptor,
+    scope: String((markdownFrontmatter.get(descriptor) || {}).scope_path || ""),
+  })).filter((entry) => entry.scope && !path.posix.isAbsolute(entry.scope) && entry.scope !== ".." && !entry.scope.startsWith("../"))
+    .sort((first, second) => second.scope.length - first.scope.length || first.descriptor.localeCompare(second.descriptor));
+
+  function supportedScopeDescriptor(file) {
+    const match = descriptorScopes.find((entry) => file === entry.scope || file.startsWith(`${entry.scope}/`));
+    return match ? match.descriptor : null;
+  }
+
+  function validateLinkList(file, data, field, required = true) {
+    const nested = nestedFrontmatter.get(file) || new Set();
+    if (!(field in data)) {
+      if (required && !nested.has(field)) researchProvenanceWarnings.push(`${file}: missing required ${field}`);
+      return;
+    }
+    if (!Array.isArray(data[field]) || data[field].some((value) => !scalarLinkTarget(value))) {
+      researchProvenanceWarnings.push(`${file}: ${field} must be a flat scalar link list`);
+    }
+  }
+
+  function validateRequiredScalar(file, data, field) {
+    const nested = nestedFrontmatter.get(file) || new Set();
+    if (!(field in data)) {
+      if (!nested.has(field)) researchProvenanceWarnings.push(`${file}: missing required ${field}`);
+    } else if (typeof data[field] !== "string" || data[field] === "") {
+      researchProvenanceWarnings.push(`${file}: ${field} must be a top-level scalar`);
+    }
+  }
+
+  function validateArtifactContract(file, data) {
+    const nested = nestedFrontmatter.get(file) || new Set();
+    for (const field of nested) researchProvenanceWarnings.push(`${file}: nested schema value is not supported for ${field}`);
+    if (data.type === "raw-source") {
+      for (const field of ["source_type", "evidence_role", "origin", "locator", "captured", "compilation_status"]) validateRequiredScalar(file, data, field);
+      validateLinkList(file, data, "derived_from");
+      if (data.evidence_role && !evidenceRoles.has(data.evidence_role)) researchProvenanceWarnings.push(`${file}: unsupported evidence_role: ${data.evidence_role}`);
+      if (data.compilation_status && !compilationStates.has(data.compilation_status)) researchProvenanceWarnings.push(`${file}: unsupported compilation_status: ${data.compilation_status}`);
+    } else if (data.type === "research") {
+      validateLinkList(file, data, "derived_from");
+      validateLinkList(file, data, "inquiries");
+    } else if (data.type === "research-synthesis") {
+      validateLinkList(file, data, "derived_from");
+      validateLinkList(file, data, "inquiries");
+    } else if (data.type === "research-inquiry") {
+      validateRequiredScalar(file, data, "inquiry_id");
+      validateRequiredScalar(file, data, "status");
+      if (typeof data.status === "string" && data.status && !new Set(["active", "paused", "answered", "superseded", "closed"]).has(data.status)) {
+        researchProvenanceWarnings.push(`${file}: unsupported inquiry status: ${data.status}`);
+      }
+      validateLinkList(file, data, "derived_from");
+      const text = readText(file);
+      for (const section of ["Question Or Purpose", "Inclusion Criteria", "Exclusion Criteria", "Supporting Evidence", "Contradicting Evidence", "Current Synthesis", "Open Questions", "Disposition History"]) {
+        const escaped = section.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+        if (!new RegExp(`^## ${escaped}\\s*$`, "mu").test(text)) researchProvenanceWarnings.push(`${file}: missing required section ${section}`);
+      }
+      if (!/^\| Date \| Sources \| Disposition \| Note \|\s*$/mu.test(text)) {
+        researchProvenanceWarnings.push(`${file}: missing required disposition history table`);
+      }
+    }
+  }
+
   const artifactsByDescriptor = new Map(descriptors.map((descriptor) => [descriptor, []]));
+  const descriptorByArtifact = new Map();
   for (const file of markdownFiles) {
     const data = markdownFrontmatter.get(file) || {};
     if (!researchTypes.has(data.type)) continue;
-    const descriptor = resolvedScalarLink(file, data.research_boundary);
-    if (descriptorSet.has(descriptor)) artifactsByDescriptor.get(descriptor).push(file);
+    const link = scalarLinkTarget(data.research_boundary);
+    const descriptor = link && link.includes("/") ? resolvedScalarLink(file, data.research_boundary) : null;
+    const scopeDescriptor = supportedScopeDescriptor(file);
+    if (descriptorSet.has(descriptor)) {
+      artifactsByDescriptor.get(descriptor).push(file);
+      descriptorByArtifact.set(file, descriptor);
+      validateArtifactContract(file, data);
+    } else if (scopeDescriptor) {
+      researchProvenanceWarnings.push(`${file}: research_boundary must be a path-qualified scalar link resolving to a supported descriptor`);
+      validateArtifactContract(file, data);
+    }
   }
 
   const graph = new Map();
@@ -601,7 +676,6 @@ function validate(vaultPath, options = {}) {
         }
       }
     }
-
     const members = Array.from(memberDescriptors).flatMap((member) => artifactsByDescriptor.get(member) || []);
     const hubFields = [
       ["raw_hub", new Set(["raw-source"])],
@@ -636,28 +710,20 @@ function validate(vaultPath, options = {}) {
 
     for (const file of artifactsByDescriptor.get(descriptor) || []) {
       const artifact = markdownFrontmatter.get(file) || {};
-      for (const field of nestedFrontmatter.get(file) || []) {
-        researchProvenanceWarnings.push(`${file}: nested schema value is not supported for ${field}`);
-      }
       const upstream = [];
-      if (artifact.derived_from !== undefined && !Array.isArray(artifact.derived_from)) {
-        researchProvenanceWarnings.push(`${file}: derived_from must be a flat scalar list`);
-      }
       for (const value of valuesAsList(artifact.derived_from)) {
         const target = resolvedScalarLink(file, value);
         if (!target) {
           researchProvenanceWarnings.push(`${file}: derived_from link does not resolve: ${value}`);
+        } else if (!descriptorByArtifact.has(target)) {
+          researchProvenanceWarnings.push(`${file}: derived_from target is not a canonical research artifact: ${target}`);
+        } else if (!memberDescriptors.has(descriptorByArtifact.get(target))) {
+          researchProvenanceWarnings.push(`${file}: derived_from target belongs outside the allowed boundary set: ${target}`);
         } else {
           upstream.push(target);
         }
       }
       graph.set(file, upstream);
-      if (artifact.type === "raw-source" && artifact.evidence_role && !evidenceRoles.has(artifact.evidence_role)) {
-        researchProvenanceWarnings.push(`${file}: unsupported evidence_role: ${artifact.evidence_role}`);
-      }
-      if (artifact.type === "raw-source" && artifact.compilation_status && !compilationStates.has(artifact.compilation_status)) {
-        researchProvenanceWarnings.push(`${file}: unsupported compilation_status: ${artifact.compilation_status}`);
-      }
       if (["generated-analysis", "derivative-copy"].includes(artifact.evidence_role) && upstream.length === 0) {
         researchProvenanceWarnings.push(`${file}: ${artifact.evidence_role} requires upstream derived_from links`);
       }
@@ -818,6 +884,7 @@ function filterResults(result, options) {
   if (!options.scope) return result;
   const filtered = {};
   const obligationKeys = new Set([
+    "routingMatrixWarnings",
     "researchBoundaryWarnings",
     "researchProvenanceWarnings",
     "provenanceCycleWarnings",
@@ -831,8 +898,12 @@ function filterResults(result, options) {
   if (options.profile === "research") {
     const kept = new Set([
       "errors",
+      "broken",
+      "trueOrphans",
+      "unlinkedBases",
       "localBaseScopeWarnings",
       "ambiguousWikilinkWarnings",
+      "routingMatrixWarnings",
       "researchBoundaryWarnings",
       "researchProvenanceWarnings",
       "provenanceCycleWarnings",

@@ -239,7 +239,7 @@ Run the validator from a vault root:
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
 
-Use `--scope "Domains/Product"` for a vault-relative subtree, and add `--profile research` for schema-v1 research obligations. Scoped runs inventory the whole vault before filtering results.
+Use `--scope "Domains/Product"` for a vault-relative subtree, and add `--profile research` for schema-v1 research and nearest-routing obligations. Scoped runs inventory the whole vault before filtering results; in-scope fatal defects still fail a research-profile run while sibling defects do not.
 
 A healthy vault reports all zeros:
 

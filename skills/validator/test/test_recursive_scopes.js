@@ -66,6 +66,54 @@ function copyDir(source, target) {
   fs.cpSync(source, target, { recursive: true });
 }
 
+function writeFile(root, relative, text) {
+  const file = path.join(root, relative);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, text);
+}
+
+function addChildResearchBoundary(vault) {
+  writeFile(vault, "Domain/Child/Boundary.md", `---
+type: research-boundary
+research_schema: 1
+boundary_id: child
+scope_path: Domain/Child
+raw_hub: "[[Domain/Child/Raw Hub]]"
+compiled_hub: "[[Domain/Child/Compiled Hub]]"
+inquiry_hub: "[[Domain/Child/Inquiry Hub]]"
+synthesis_hub: "[[Domain/Child/Synthesis Hub]]"
+view_mode: exact
+rollup_boundaries: []
+---
+
+- [[00 Index]]
+- [[Domain/Child/Raw Hub]]
+- [[Domain/Child/Compiled Hub]]
+- [[Domain/Child/Inquiry Hub]]
+- [[Domain/Child/Synthesis Hub]]
+`);
+  writeFile(vault, "Domain/Child/Raw Hub.md", "- [[Domain/Child/Boundary]]\n- [[Domain/Child/Raw]]\n");
+  for (const name of ["Compiled", "Inquiry", "Synthesis"]) {
+    writeFile(vault, `Domain/Child/${name} Hub.md`, `- [[Domain/Child/Boundary]]\n`);
+  }
+  writeFile(vault, "Domain/Child/Raw.md", `---
+type: raw-source
+research_boundary: "[[Domain/Child/Boundary]]"
+source_type: article
+evidence_role: external-evidence
+origin: Child source
+locator: page 1
+captured: 2026-07-15
+compilation_status: source-only
+derived_from: []
+---
+
+- [[00 Index]]
+`);
+  const index = path.join(vault, "00 Index.md");
+  fs.appendFileSync(index, "\n- [[Domain/Child/Boundary]]\n");
+}
+
 const tests = [
   function rootOnlyLegacyVaultStillPasses() {
     const result = runValidator("root_only_legacy_pass");
@@ -289,6 +337,141 @@ const tests = [
     assert.doesNotMatch(result.stdout, /Domains\/Broken/);
   },
 
+  function researchProfileKeepsAllInScopeFatalDefects() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "scoped_research_sibling_isolation"), vault);
+      fs.appendFileSync(path.join(vault, "00 Index.md"), "\n- [[Domains/Healthy/Broken]]\n- [[Domains/Healthy/Bad YAML]]\n");
+      writeFile(vault, "Domains/Healthy/Broken.md", "- [[Missing In Healthy]]\n");
+      writeFile(vault, "Domains/Healthy/Orphan.md", "# Orphan\n");
+      writeFile(vault, "Domains/Healthy/Bad YAML.md", "---\ntags: [unterminated\n---\n\n- [[00 Index]]\n");
+      writeFile(vault, "Domains/Healthy/Bases/Unlinked.base", "views: []\n");
+
+      const result = runValidatorPath(vault, ["--scope", "Domains/Healthy", "--profile", "research"]);
+      assertFailure(result);
+      assert.match(result.stdout, /^yaml-errors: 1$/m);
+      assertCounter(result.stdout, "broken-wikilinks", 1);
+      assertCounter(result.stdout, "true-orphans-md", 1);
+      assertCounter(result.stdout, "unlinked-base-files", 1);
+      assert.doesNotMatch(result.stdout, /Domains\/Broken/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function rawSourceRequiredFieldsAndEnumsAreValidated() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      writeFile(vault, "Domain/Shared.md", `---
+type: raw-source
+research_boundary: "[[Domain/Research Boundary]]"
+evidence_role: invented-role
+origin: [not, scalar]
+compilation_status: invented-state
+---
+
+- [[00 Index]]
+`);
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      for (const field of ["source_type", "locator", "captured", "derived_from"]) {
+        assert.match(result.stdout, new RegExp(`missing required ${field}`));
+      }
+      assert.match(result.stdout, /origin must be a top-level scalar/);
+      assert.match(result.stdout, /unsupported evidence_role/);
+      assert.match(result.stdout, /unsupported compilation_status/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function malformedSupportedScopeMembershipWarns() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      fs.appendFileSync(path.join(vault, "Domain/Compiled Hub.md"), "- [[Domain/Missing Membership]]\n- [[Domain/Bare Membership]]\n");
+      writeFile(vault, "Domain/Missing Membership.md", "---\ntype: research\nderived_from: []\ninquiries: []\n---\n\n- [[00 Index]]\n");
+      writeFile(vault, "Domain/Bare Membership.md", "---\ntype: research\nresearch_boundary: \"[[Research Boundary]]\"\nderived_from: []\ninquiries: []\n---\n\n- [[00 Index]]\n");
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assert.match(result.stdout, /Missing Membership\.md: research_boundary must be a path-qualified scalar link/);
+      assert.match(result.stdout, /Bare Membership\.md: research_boundary must be a path-qualified scalar link/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function compiledSynthesisAndInquiryContractsAreValidated() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      fs.appendFileSync(path.join(vault, "Domain/Compiled Hub.md"), "- [[Domain/Bad Research]]\n");
+      fs.appendFileSync(path.join(vault, "Domain/Synthesis Hub.md"), "- [[Domain/Bad Synthesis]]\n");
+      fs.appendFileSync(path.join(vault, "Domain/Inquiry Hub.md"), "- [[Domain/Bad Inquiry]]\n");
+      writeFile(vault, "Domain/Bad Research.md", "---\ntype: research\nresearch_boundary: \"[[Domain/Research Boundary]]\"\nderived_from: \"[[Domain/Shared]]\"\ninquiries: bad\n---\n\n- [[00 Index]]\n");
+      writeFile(vault, "Domain/Bad Synthesis.md", "---\ntype: research-synthesis\nresearch_boundary: \"[[Domain/Research Boundary]]\"\nderived_from: []\n---\n\n- [[00 Index]]\n");
+      writeFile(vault, "Domain/Bad Inquiry.md", "---\ntype: research-inquiry\nstatus: unknown\nresearch_boundary: \"[[Domain/Research Boundary]]\"\nderived_from: []\n---\n\n# Inquiry\n\n- [[00 Index]]\n");
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assert.match(result.stdout, /Bad Research\.md: derived_from must be a flat scalar link list/);
+      assert.match(result.stdout, /Bad Research\.md: inquiries must be a flat scalar link list/);
+      assert.match(result.stdout, /Bad Synthesis\.md: missing required inquiries/);
+      assert.match(result.stdout, /Bad Inquiry\.md: missing required inquiry_id/);
+      assert.match(result.stdout, /Bad Inquiry\.md: unsupported inquiry status: unknown/);
+      assert.match(result.stdout, /Bad Inquiry\.md: missing required section Supporting Evidence/);
+      assert.match(result.stdout, /Bad Inquiry\.md: missing required section Disposition History/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function forbiddenProvenanceDoesNotCompileRawSource() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const note = path.join(vault, "Domain/Compiled Note.md");
+      fs.writeFileSync(note, fs.readFileSync(note, "utf8").replace("[[Shared]]", "[[Domain/Raw Hub]]"));
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assert.match(result.stdout, /derived_from target is not a canonical research artifact/);
+      assertCounter(result.stdout, "uncompiled-raw-source-warnings", 1);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function exactRejectsButDeclaredRollupAcceptsChildProvenance() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      addChildResearchBoundary(vault);
+      const note = path.join(vault, "Domain/Compiled Note.md");
+      fs.writeFileSync(note, fs.readFileSync(note, "utf8").replace("[[Shared]]", "[[Domain/Child/Raw]]"));
+
+      const exact = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(exact);
+      assert.match(exact.stdout, /derived_from target belongs outside the allowed boundary set/);
+
+      const descriptor = path.join(vault, "Domain/Research Boundary.md");
+      fs.writeFileSync(descriptor, fs.readFileSync(descriptor, "utf8")
+        .replace("view_mode: exact", "view_mode: rollup")
+        .replace("rollup_boundaries: []", "rollup_boundaries:\n  - \"[[Domain/Child/Boundary]]\""));
+      fs.appendFileSync(path.join(vault, "Domain/Raw Hub.md"), "- [[Domain/Child/Raw]]\n");
+      const rollup = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(rollup);
+      assert.doesNotMatch(rollup.stdout, /derived_from target belongs outside the allowed boundary set/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
   function nearestScopeBareLinksCreditOneTarget() {
     const result = runValidator("research_schema_valid", ["--scope", "Domain", "--profile", "research"]);
 
@@ -329,6 +512,124 @@ const tests = [
       assertSuccess(result);
       assertCounter(result.stdout, "research-boundary-warnings", 1);
       assert.match(result.stdout, /not a declared descendant descriptor/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function scopedRoutingKeepsRootMatrixObligation() {
+    const result = runValidator("routing_matrix_missing_scope_warning", ["--scope", "Projects/Alpha", "--profile", "research"]);
+    assertSuccess(result);
+    assertCounter(result.stdout, "routing-matrix-warnings", 1);
+    assert.match(result.stdout, /Agent\/Task Routing Matrix\.md does not link scope hub Projects\/Alpha\/00 Alpha Index\.md/);
+  },
+
+  function nearestParentRoutingMatrixOverridesRoot() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "routing_matrix_missing_scope_warning"), vault);
+      fs.appendFileSync(path.join(vault, "Projects/00 Projects Index.md"), "\n- [[Projects/Agent/Task Routing Matrix]]\n");
+      writeFile(vault, "Projects/Agent/Task Routing Matrix.md", "# Projects Routing\n\n- [[Projects/00 Projects Index]]\n");
+      const result = runValidatorPath(vault, ["--scope", "Projects/Alpha", "--profile", "research"]);
+      assertSuccess(result);
+      assertCounter(result.stdout, "routing-matrix-warnings", 1);
+      assert.match(result.stdout, /Projects\/Agent\/Task Routing Matrix\.md does not link scope hub Projects\/Alpha\/00 Alpha Index\.md/);
+      assert.doesNotMatch(result.stdout, /^Agent\/Task Routing Matrix\.md does not link scope hub/m);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function localRoutingOverrideCoversScopeAndNestedChildUsesIt() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "routing_matrix_missing_scope_warning"), vault);
+      fs.appendFileSync(path.join(vault, "Projects/Alpha/00 Alpha Index.md"), "\n- [[Projects/Alpha/Agent/Task Routing Matrix]]\n- [[Projects/Alpha/Child/00 Child Index]]\n");
+      writeFile(vault, "Projects/Alpha/Agent/Task Routing Matrix.md", "# Local Routing\n\n- [[Projects/Alpha/00 Alpha Index]]\n");
+      writeFile(vault, "Projects/Alpha/Child/AGENTS.md", "Inherits parent rules.\n\n- [[Projects/Alpha/Child/00 Child Index]]\n");
+      writeFile(vault, "Projects/Alpha/Child/00 Child Index.md", "---\ntype: scope-index\n---\n\n- [[Projects/Alpha/00 Alpha Index]]\n");
+      const parent = runValidatorPath(vault, ["--scope", "Projects/Alpha", "--profile", "research"]);
+      assertSuccess(parent);
+      assertCounter(parent.stdout, "routing-matrix-warnings", 1);
+      assert.match(parent.stdout, /Projects\/Alpha\/Agent\/Task Routing Matrix\.md does not link scope hub Projects\/Alpha\/Child\/00 Child Index\.md/);
+      assert.doesNotMatch(parent.stdout, /does not link scope hub Projects\/Alpha\/00 Alpha Index\.md/);
+
+      const child = runValidatorPath(vault, ["--scope", "Projects/Alpha/Child", "--profile", "research"]);
+      assertSuccess(child);
+      assertCounter(child.stdout, "routing-matrix-warnings", 1);
+      assert.match(child.stdout, /Projects\/Alpha\/Agent\/Task Routing Matrix\.md/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function bareLinksUseExactAncestorWalkNotSiblingPrefix() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      fs.mkdirSync(vault, { recursive: true });
+      writeFile(vault, "00 Index.md", "- [[Domain/Deep/Note]]\n- [[Domain/Shared]]\n- [[Domain/Deep/Sub/Shared]]\n");
+      writeFile(vault, "Domain/Deep/Note.md", "- [[Shared]]\n- [[00 Index]]\n");
+      writeFile(vault, "Domain/Shared.md", "- [[00 Index]]\n");
+      writeFile(vault, "Domain/Deep/Sub/Shared.md", "- [[00 Index]]\n");
+      const result = runValidatorPath(vault);
+      assertSuccess(result);
+      assertCounter(result.stdout, "ambiguous-wikilink-warnings", 0);
+      assertCounter(result.stdout, "true-orphans-md", 0);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function sameScopeSiblingBareLinksStayAmbiguousAndUncredited() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      fs.mkdirSync(vault, { recursive: true });
+      writeFile(vault, "00 Index.md", "- [[Domain/Note]]\n");
+      writeFile(vault, "Domain/Note.md", "- [[Shared]]\n- [[00 Index]]\n");
+      writeFile(vault, "Domain/Raw/Shared.md", "# Raw Shared\n");
+      writeFile(vault, "Domain/Other/Shared.md", "# Other Shared\n");
+      const result = runValidatorPath(vault);
+      assertFailure(result);
+      assertCounter(result.stdout, "ambiguous-wikilink-warnings", 1);
+      assertCounter(result.stdout, "true-orphans-md", 2);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function navigationBareAmbiguityWarnsEvenWithAncestorCandidate() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      fs.mkdirSync(vault, { recursive: true });
+      writeFile(vault, "00 Index.md", "- [[Domain/00 Domain Index]]\n- [[Domain/Shared]]\n- [[Other/Shared]]\n");
+      writeFile(vault, "Domain/00 Domain Index.md", "- [[Shared]]\n- [[00 Index]]\n");
+      writeFile(vault, "Domain/Shared.md", "- [[00 Index]]\n");
+      writeFile(vault, "Other/Shared.md", "- [[00 Index]]\n");
+      const result = runValidatorPath(vault);
+      assertSuccess(result);
+      assertCounter(result.stdout, "ambiguous-wikilink-warnings", 1);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function agentsNavigationBareAmbiguityAlsoWarns() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      fs.mkdirSync(vault, { recursive: true });
+      writeFile(vault, "00 Index.md", "- [[Domain/AGENTS]]\n- [[Domain/Shared]]\n- [[Other/Shared]]\n");
+      writeFile(vault, "Domain/AGENTS.md", "Inherits parent rules.\n\n- [[Shared]]\n- [[00 Index]]\n");
+      writeFile(vault, "Domain/Shared.md", "- [[00 Index]]\n");
+      writeFile(vault, "Other/Shared.md", "- [[00 Index]]\n");
+      const result = runValidatorPath(vault);
+      assertSuccess(result);
+      assertCounter(result.stdout, "ambiguous-wikilink-warnings", 1);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

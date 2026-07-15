@@ -25,7 +25,7 @@ node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --scop
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --scope "Domains/Product" --profile research
 ```
 
-Scopes are vault-relative directories. Absolute paths, traversal, missing paths, and files are rejected. The validator always inventories the complete vault for YAML parsing, canonical link resolution, and graph construction, then filters diagnostics and exit status to the selected subtree. A research profile requires a scope and reports research obligations plus the reused local-Base scope check.
+Scopes are vault-relative directories. Absolute paths, traversal, missing paths, and files are rejected. The validator always inventories the complete vault for YAML parsing, canonical link resolution, and graph construction, then filters diagnostics and exit status to the selected subtree. A research profile requires a scope and reports research obligations, the nearest routing-matrix obligation, the reused local-Base scope check, and all in-scope fatal structural findings. Fatal sibling defects remain excluded.
 
 ## Why Node
 
@@ -43,10 +43,12 @@ The shell wrapper provides a stable entry point plus a clearer missing-Node erro
 - Local `AGENTS.md` files mention parent inheritance and do not repeat global policy text.
 - Basename-only wikilinks that resolve to multiple targets are flagged as ambiguous.
 - Parent and child scope hubs link to each other bidirectionally.
-- Every promoted scope hub is linked from `Agent/Task Routing Matrix.md`.
+- Every promoted scope hub is linked from its nearest local or inherited `Agent/Task Routing Matrix.md`.
 - Schema-v1 research descriptors, exact or explicit-rollup hub membership, provenance, cycles, and raw-source compilation coverage are structurally consistent.
 
-Schema-v1 research frontmatter supports top-level scalar values and flat lists of scalar values. Flat lists may be `[]`, inline lists, or indented block lists. Nested values on supported descriptors or member artifacts produce non-fatal research warnings; only syntactically invalid YAML is a YAML failure. Research membership is established by `research_boundary`, not folder ancestry. Bare content links resolve to one same-folder or nearest-ancestor-scope target; unresolved global ambiguity warns instead of crediting every basename. Navigation links remain path-qualified.
+Schema-v1 research frontmatter supports top-level scalar values and flat lists of scalar values. Flat lists may be `[]`, inline lists, or indented block lists. Nested values on supported descriptors or artifacts produce non-fatal research warnings; only syntactically invalid YAML is a YAML failure. Supported artifacts require a path-qualified scalar `research_boundary`, type-specific required fields, and structurally inspectable inquiry sections. Research membership is established by the descriptor link, not folder ancestry. Provenance accepts only canonical research artifacts in the same exact boundary or explicitly declared rollup descriptors, so hubs, routing notes, Bases, and out-of-boundary artifacts cannot provide compilation coverage.
+
+Bare content links resolve in this order: the source folder, then exact ancestor folders one by one, then a unique global basename match. If multiple global candidates remain without an exact folder or ancestor match, the link is ambiguous and credits none. Navigation files still warn when a bare link has multiple candidates, even when the content rule could select one.
 
 ## Expected Output
 
@@ -84,7 +86,7 @@ research-hub-warnings: 0
 | `local-agents-inheritance-warnings` | No | A local `AGENTS.md` repeats global policy or omits parent inheritance |
 | `ambiguous-wikilink-warnings` | No | A bare wikilink resolves to multiple files |
 | `scope-navigation-warnings` | No | A scope hub is not bidirectionally linked with its parent hub |
-| `routing-matrix-warnings` | No | A scope hub exists but is not linked from `Agent/Task Routing Matrix.md` |
+| `routing-matrix-warnings` | No | A scope hub is missing from its nearest local or inherited routing matrix |
 | `base-scope-formula-warnings` | No | A root Base with a `file.inFolder` scope formula is missing a branch for a known scope path |
 | `research-boundary-warnings` | No | A supported research descriptor is incomplete or structurally invalid |
 | `research-provenance-warnings` | No | A schema-v1 artifact has invalid provenance or generated/derivative evidence-family structure |

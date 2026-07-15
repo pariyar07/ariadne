@@ -49,7 +49,7 @@ For a subtree or its schema-v1 research pipeline, pass a vault-relative scope:
 /path/to/skills/validator/scripts/validate_vault.sh /path/to/vault --scope "Domains/Product" --profile research
 ```
 
-Scoped runs still inventory the whole vault before filtering findings. `--scope` rejects absolute paths, traversal, missing paths, and files. `--profile research` requires a scope.
+Scoped runs still inventory the whole vault before filtering findings. `--scope` rejects absolute paths, traversal, missing paths, and files. `--profile research` requires a scope; it keeps in-scope YAML, broken-link, orphan, and unlinked-Base failures while excluding sibling defects.
 
 The shell wrapper checks for Node.js and delegates to `validate_vault.js`.
 
@@ -66,7 +66,7 @@ The validator reports:
 - `local-agents-inheritance-warnings: N` for local `AGENTS.md` files that omit parent/root inheritance or repeat global policy text
 - `ambiguous-wikilink-warnings: N` for basename-only wikilinks that resolve to multiple Markdown/Base targets
 - `scope-navigation-warnings: N` for promoted child scope hubs that are not linked bidirectionally with their parent hub
-- `routing-matrix-warnings: N` for scope hubs that exist but are not linked from `Agent/Task Routing Matrix.md`
+- `routing-matrix-warnings: N` for scope hubs that are not linked from their nearest local or inherited `Agent/Task Routing Matrix.md`
 - `base-scope-formula-warnings: N` for root `Bases/*.base` files with a `file.inFolder` scope formula that is missing a branch for a known scope path
 - `research-boundary-warnings: N` for invalid supported boundary descriptors, including unsupported nested schema values
 - `research-provenance-warnings: N` for invalid downstream-to-upstream provenance and generated or derivative evidence-family structure
@@ -107,7 +107,7 @@ Bloat warnings are not fatal. They are cues that an agent should call out possib
 
 Recursive scope-related warnings are non-fatal. Treat them as prompts to tighten local Base filters, reduce duplicated local policy text, disambiguate basename wikilinks, or repair parent/child hub navigation.
 
-Research checks are non-fatal and apply only to `type: research-boundary` descriptors with `research_schema: 1`. Schema v1 accepts top-level scalar fields and flat scalar lists (`[]`, inline lists, or block lists); nested values produce research warnings rather than YAML failures. Membership follows exact `research_boundary` links, and rollup adds only explicitly declared descendant descriptors. These checks make structural claims only; freshness, credibility, and contradiction remain stewardship judgments.
+Research checks are non-fatal and apply only to `type: research-boundary` descriptors with `research_schema: 1`. Schema v1 accepts top-level scalar fields and flat scalar lists (`[]`, inline lists, or block lists); nested values produce research warnings rather than YAML failures. Supported artifacts require a path-qualified `research_boundary` link and their type-specific required scalars, lists, enum values, and inquiry sections. Membership follows exact descriptor links, and rollup adds only explicitly declared descendant descriptors. `derived_from` credits only canonical artifacts inside that allowed descriptor set. These checks make structural claims only; freshness, credibility, and contradiction remain stewardship judgments.
 
 The validator also warns when a large specialized folder may need a local `AGENTS.md`. Treat that as a prompt to inspect the folder's workflow, not as an automatic requirement.
 
