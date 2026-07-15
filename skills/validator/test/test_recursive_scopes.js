@@ -655,6 +655,131 @@ compilation_status: invented-state
     }
   },
 
+  function descriptorScalarFieldsRejectFlatLists() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const descriptor = path.join(vault, "Domain/Research Boundary.md");
+      let text = fs.readFileSync(descriptor, "utf8")
+        .replace("boundary_id: domain-research", "boundary_id: [domain-research]")
+        .replace("scope_path: Domain", "scope_path: [Domain]")
+        .replace('raw_hub: "[[Domain/Raw Hub]]"', 'raw_hub: ["[[Domain/Raw Hub]]"]')
+        .replace('compiled_hub: "[[Domain/Compiled Hub]]"', 'compiled_hub: ["[[Domain/Compiled Hub]]"]')
+        .replace('inquiry_hub: "[[Domain/Inquiry Hub]]"', 'inquiry_hub: ["[[Domain/Inquiry Hub]]"]')
+        .replace('synthesis_hub: "[[Domain/Synthesis Hub]]"', 'synthesis_hub: ["[[Domain/Synthesis Hub]]"]')
+        .replace("view_mode: exact", "view_mode: [exact]");
+      text = text.replace("rollup_boundaries: []", 'thread_hub: ["[[Domain/Thread Hub]]"]\nrollup_boundaries: []');
+      fs.writeFileSync(descriptor, text);
+      writeFile(vault, "Domain/Thread Hub.md", "- [[Domain/Research Boundary]]\n");
+
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      for (const field of ["boundary_id", "scope_path", "raw_hub", "compiled_hub", "inquiry_hub", "synthesis_hub", "thread_hub", "view_mode"]) {
+        assert.match(result.stdout, new RegExp(`${field} must be a top-level scalar`));
+      }
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function researchSchemaVersionRejectsAFlatListKind() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const descriptor = path.join(vault, "Domain/Research Boundary.md");
+      fs.writeFileSync(descriptor, fs.readFileSync(descriptor, "utf8").replace("research_schema: 1", "research_schema: [1]"));
+      writeFile(vault, "Domain/Malformed Type.md", `---
+type: [research-boundary]
+research_schema: 1
+boundary_id: malformed-type
+scope_path: Domain
+raw_hub: "[[Domain/Raw Hub]]"
+compiled_hub: "[[Domain/Compiled Hub]]"
+inquiry_hub: "[[Domain/Inquiry Hub]]"
+synthesis_hub: "[[Domain/Synthesis Hub]]"
+view_mode: exact
+rollup_boundaries: []
+---
+
+- [[00 Index]]
+`);
+      fs.appendFileSync(path.join(vault, "00 Index.md"), "\n- [[Domain/Malformed Type]]\n");
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assert.match(result.stdout, /Research Boundary\.md: research_schema must be a top-level scalar/);
+      assert.match(result.stdout, /Malformed Type\.md: type must be a top-level scalar/);
+      assertCounter(result.stdout, "research-provenance-warnings", 0);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function inlineFlatListPreservesQuotedWikilinkCommas() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      fs.renameSync(path.join(vault, "Domain/Shared.md"), path.join(vault, "Domain/Shared, One.md"));
+      const hub = path.join(vault, "Domain/Raw Hub.md");
+      fs.writeFileSync(hub, fs.readFileSync(hub, "utf8").replace("[[Domain/Shared]]", "[[Domain/Shared, One]]"));
+      const note = path.join(vault, "Domain/Compiled Note.md");
+      fs.writeFileSync(note, fs.readFileSync(note, "utf8").replace("derived_from:\n  - \"[[Shared]]\"", 'derived_from: ["[[Domain/Shared, One]]"]'));
+
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assertCounters(result.stdout);
+
+      fs.writeFileSync(note, fs.readFileSync(note, "utf8").replace('derived_from: ["[[Domain/Shared, One]]"]', "derived_from: ['[[Domain/Shared, One]]']"));
+      const singleQuoted = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(singleQuoted);
+      assertCounters(singleQuoted.stdout);
+
+      fs.writeFileSync(note, fs.readFileSync(note, "utf8").replace("derived_from: ['[[Domain/Shared, One]]']", "derived_from: [ [[Domain/Shared, One]] ]"));
+      const unquoted = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(unquoted);
+      assertCounters(unquoted.stdout);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function unmatchedInlineListQuoteRemainsYamlFatal() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const note = path.join(vault, "Domain/Compiled Note.md");
+      fs.writeFileSync(note, fs.readFileSync(note, "utf8").replace("derived_from:\n  - \"[[Shared]]\"", 'derived_from: ["[[Domain/Shared]] ]'));
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertFailure(result);
+      assert.match(result.stdout, /^yaml-errors: 1$/m);
+      assert.match(result.stdout, /YAML syntax: unterminated quote/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function inlineNestedCollectionsRemainUnsupportedResearchValues() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const descriptor = path.join(vault, "Domain/Research Boundary.md");
+      fs.writeFileSync(descriptor, fs.readFileSync(descriptor, "utf8").replace("rollup_boundaries: []", "rollup_boundaries: [{ child: Domain }]") );
+      const note = path.join(vault, "Domain/Compiled Note.md");
+      fs.writeFileSync(note, fs.readFileSync(note, "utf8").replace("derived_from:\n  - \"[[Shared]]\"", "derived_from: [ [nested] ]"));
+
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assert.match(result.stdout, /Research Boundary\.md: nested schema value is not supported for rollup_boundaries/);
+      assert.match(result.stdout, /Compiled Note\.md: nested schema value is not supported for derived_from/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
   function invalidScopesAndProfilesAreRejected() {
     const fixture = path.join(FIXTURES, "research_schema_valid");
     for (const args of [

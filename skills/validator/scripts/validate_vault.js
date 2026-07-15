@@ -192,6 +192,56 @@ function parseScalar(value) {
   return parsed;
 }
 
+function splitInlineList(text) {
+  const entries = [];
+  let current = "";
+  let quote = null;
+  let escaped = false;
+  let squareDepth = 0;
+  let braceDepth = 0;
+  for (const char of text) {
+    if (quote) {
+      current += char;
+      if (quote === "\"" && char === "\\" && !escaped) {
+        escaped = true;
+      } else {
+        if (char === quote && !escaped) quote = null;
+        escaped = false;
+      }
+      continue;
+    }
+    if (char === "\"" || char === "'") {
+      quote = char;
+      current += char;
+    } else if (char === "[") {
+      squareDepth += 1;
+      current += char;
+    } else if (char === "]") {
+      squareDepth -= 1;
+      current += char;
+    } else if (char === "{") {
+      braceDepth += 1;
+      current += char;
+    } else if (char === "}") {
+      braceDepth -= 1;
+      current += char;
+    } else if (char === "," && squareDepth === 0 && braceDepth === 0) {
+      entries.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  entries.push(current.trim());
+  return entries;
+}
+
+function nestedCollectionToken(value) {
+  const token = String(value).trim();
+  if (token.startsWith("\"") || token.startsWith("'")) return false;
+  return token.startsWith("{") || token.startsWith("[") && !token.startsWith("[[");
+}
+
 function parseTopLevelScalars(yamlText) {
   const values = {};
   const nestedFields = new Set();
@@ -211,11 +261,11 @@ function parseTopLevelScalars(yamlText) {
     }
     if (value.startsWith("[") && value.endsWith("]")) {
       const inner = value.slice(1, -1).trim();
-      const entries = inner === "" ? [] : inner.split(",").map(parseScalar);
-      if (entries.some((entry) => entry.startsWith("{") || entry.startsWith("[") && !entry.startsWith("[["))) {
+      const rawEntries = inner === "" ? [] : splitInlineList(inner);
+      if (rawEntries.some(nestedCollectionToken)) {
         nestedFields.add(match[1]);
       } else {
-        values[match[1]] = entries;
+        values[match[1]] = rawEntries.map(parseScalar);
       }
       continue;
     }
@@ -233,9 +283,9 @@ function parseTopLevelScalars(yamlText) {
     if (children.length === 0) {
       values[match[1]] = "";
     } else if (children.every((child) => /^\s{2}-\s+\S/u.test(child) && !/^\s{4,}/u.test(child))) {
-      const entries = children.map((child) => parseScalar(child.replace(/^\s{2}-\s+/u, "")));
-      if (entries.some((entry) => entry.startsWith("{") || entry.startsWith("[") && !entry.startsWith("[["))) nestedFields.add(match[1]);
-      else values[match[1]] = entries;
+      const rawEntries = children.map((child) => child.replace(/^\s{2}-\s+/u, ""));
+      if (rawEntries.some(nestedCollectionToken)) nestedFields.add(match[1]);
+      else values[match[1]] = rawEntries.map(parseScalar);
     } else {
       nestedFields.add(match[1]);
     }
@@ -547,9 +597,18 @@ function validate(vaultPath, options = {}) {
   const compilationStates = new Set(["pending", "compiled", "source-only", "needs-review"]);
   const descriptors = markdownFiles.filter((file) => {
     const data = markdownFrontmatter.get(file) || {};
-    return data.type === "research-boundary" && String(data.research_schema) === "1";
+    return data.type === "research-boundary" && typeof data.research_schema === "string" && data.research_schema === "1";
   });
   const descriptorSet = new Set(descriptors);
+  for (const file of markdownFiles) {
+    const data = markdownFrontmatter.get(file) || {};
+    if (data.type === "research-boundary" && Array.isArray(data.research_schema)) {
+      researchBoundaryWarnings.push(`${file}: research_schema must be a top-level scalar`);
+    }
+    if (Array.isArray(data.type) && data.type.includes("research-boundary") && data.research_schema === "1") {
+      researchBoundaryWarnings.push(`${file}: type must be a top-level scalar`);
+    }
+  }
 
   function resolvedScalarLink(source, value) {
     const link = scalarLinkTarget(value);
@@ -646,6 +705,9 @@ function validate(vaultPath, options = {}) {
     }
     for (const field of ["boundary_id", "scope_path", "raw_hub", "compiled_hub", "inquiry_hub", "synthesis_hub", "view_mode", "rollup_boundaries"]) {
       if (!(field in data) && !nested.has(field)) researchBoundaryWarnings.push(`${descriptor}: missing required ${field}`);
+    }
+    for (const field of ["type", "research_schema", "boundary_id", "scope_path", "raw_hub", "compiled_hub", "inquiry_hub", "synthesis_hub", "thread_hub", "view_mode"]) {
+      if (field in data && typeof data[field] !== "string") researchBoundaryWarnings.push(`${descriptor}: ${field} must be a top-level scalar`);
     }
     if (data.view_mode && !["exact", "rollup"].includes(data.view_mode)) {
       researchBoundaryWarnings.push(`${descriptor}: view_mode must be exact or rollup`);
