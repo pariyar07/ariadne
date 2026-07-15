@@ -94,6 +94,14 @@ try {
   assert(releaseText.includes("Published 2026-07-15"), "release note must record its published state");
   assert(!releaseText.includes("ariadne-eval-lab"), "public release note must not link private eval-lab evidence");
 
+  const changelogText = fs.readFileSync(path.join(tempRoot, "CHANGELOG.md"), "utf8");
+  assert(changelogText.includes("## [0.2.1] - 2026-07-16"), "changelog must promote the v0.2.1 patch release");
+  assert(changelogText.includes("[0.2.1]: https://github.com/pariyar07/ariadne/compare/v0.2.0...v0.2.1"), "changelog must link the v0.2.1 comparison");
+
+  const patchReleaseText = fs.readFileSync(path.join(tempRoot, "docs/releases/v0.2.1.md"), "utf8");
+  assert(patchReleaseText.includes("# Ariadne v0.2.1"), "v0.2.1 release note must exist");
+  assert(patchReleaseText.includes("Obsidian remains an optional"), "v0.2.1 release note must explain frontend compatibility");
+
   const implementationPlan = fs.readFileSync(path.join(tempRoot, "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md"), "utf8");
   assert(implementationPlan.includes("partially superseded by the direct-breaking v0.2.0 release decision"), "implementation plan must identify the direct-breaking supersession");
   assert(!implementationPlan.includes("Compatibility adapters remain for one migration release"), "implementation plan must not direct workers to restore compatibility adapters");
