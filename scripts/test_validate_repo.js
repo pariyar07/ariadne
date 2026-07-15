@@ -58,10 +58,26 @@ try {
   const readmeText = fs.readFileSync(path.join(tempRoot, "README.md"), "utf8");
   assert(!readmeText.includes("11 structural checks"), "README must not preserve the pre-v0.2.0 validator count");
   assert(!readmeText.includes("11 checks"), "README skill table must not preserve the pre-v0.2.0 validator count");
+  assert(readmeText.includes("Markdown knowledge vaults"), "README must lead with frontend-neutral Markdown knowledge vault positioning");
+  assert(readmeText.includes("Obsidian is not required"), "README must explain that Obsidian is an optional frontend");
+  assert(!readmeText.includes("- Obsidian installed, with filesystem access to the target vault."), "README must not require the Obsidian app for core workflows");
 
   const quickstartText = fs.readFileSync(path.join(tempRoot, "docs/guides/quickstart.md"), "utf8");
   assert(!quickstartText.includes("11 counters"), "quickstart must not preserve the pre-v0.2.0 validator count");
   assert(!quickstartText.includes("all 11 counters"), "quickstart target must defer to the canonical validator output");
+  assert(quickstartText.includes("Obsidian is not required"), "quickstart must distinguish the core filesystem workflow from the optional Obsidian frontend");
+
+  const publicBoundaryText = fs.readFileSync(path.join(tempRoot, "PUBLIC_BOUNDARY.md"), "utf8");
+  assert(publicBoundaryText.includes("Markdown knowledge vaults"), "public boundary must define Ariadne around Markdown knowledge vaults");
+
+  const agentsText = fs.readFileSync(path.join(tempRoot, "AGENTS.md"), "utf8");
+  assert(agentsText.includes("Markdown knowledge vaults"), "repository instructions must use frontend-neutral product positioning");
+
+  const socialPreviewPath = path.join(tempRoot, ".github/ariadne-social-preview.png");
+  assert(fs.existsSync(socialPreviewPath), "repository must retain the canonical GitHub social preview asset");
+  const socialPreview = fs.readFileSync(socialPreviewPath);
+  assert.strictEqual(socialPreview.readUInt32BE(16), 1280, "social preview must be 1280 pixels wide");
+  assert.strictEqual(socialPreview.readUInt32BE(20), 640, "social preview must be 640 pixels high");
 
   const scopeText = fs.readFileSync(path.join(tempRoot, "skills/scope/SKILL.md"), "utf8");
   assert(scopeText.includes("most-specific child branch before its parent branch"), "scope skill must require child-before-parent Base formula ordering");

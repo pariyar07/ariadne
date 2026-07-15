@@ -1,7 +1,7 @@
 <!-- ariadne:vault-discovery:start -->
 ## Registered Vault Discovery
 
-This machine has one or more Obsidian vaults registered as long-term knowledge sources.
+This machine has one or more Markdown knowledge vaults registered as long-term knowledge sources.
 
 Registry:
 - ~/.ariadne/vaults.md

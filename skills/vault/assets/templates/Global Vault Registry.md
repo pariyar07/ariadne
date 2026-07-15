@@ -1,6 +1,6 @@
-# Registered Obsidian Vaults
+# Registered Knowledge Vaults
 
-These are local Obsidian vaults registered as long-term knowledge sources for AI-agent navigation.
+These are local Markdown knowledge vaults registered as long-term sources for AI-agent navigation. They may use Obsidian or another Markdown-compatible frontend.
 
 ## {{vault_name}}
 

@@ -6,25 +6,15 @@ This guide covers everything you can do with Ariadne: from bootstrapping a new v
 
 ## Requirements
 
-- Obsidian installed, with access to the vault folder on disk.
-- Obsidian Bases enabled in the vault when you want Ariadne's `.base` dashboards to render in Obsidian.
-- Optional: Obsidian Kanban community plugin for visual drag-and-drop board rendering.
-- Optional: Obsidian Dataview community plugin for dynamic Markdown dashboard query rendering.
+- A filesystem-accessible folder for the Markdown knowledge vault.
 - Node.js with `npm`/`npx` available. Ariadne uses `npx` for skill installation and Node.js for the validator and global-discovery registration script.
-- A skills-capable agent runtime, such as Claude Code, Codex CLI, or another runtime that supports the skills protocol.
-- Recommended companion pack: [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for Obsidian mechanics skills (`obsidian-markdown`, `obsidian-bases`, `json-canvas`, `defuddle`, and `obsidian-cli`).
+- A skills-capable agent runtime, such as ChatGPT/Codex, Claude Code, or another runtime that supports the skills protocol.
 
 Ariadne's scripts use only built-in Node.js modules, so there is no `npm install` step for this repository.
 
-Install the companion Obsidian skills first when your agent does not already have equivalent Obsidian mechanics skills:
+## Optional Obsidian Frontend
 
-```bash
-npx skills add https://github.com/kepano/obsidian-skills \
-  --global \
-  --agent '*' \
-  --copy \
-  --yes
-```
+Obsidian is not required for agent workflows. Use it for its native note, backlink, graph, Canvas, Bases, Kanban, or Dataview interface. Obsidian users may optionally install [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for companion mechanics.
 
 ---
 

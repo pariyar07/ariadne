@@ -1,11 +1,11 @@
 ---
 name: ariadne:maintenance
-description: "Run maintenance and health checks for agent-maintained Obsidian vaults: broken links, orphan notes, stale hubs, invalid frontmatter, uncompiled raw sources, stale queues, unresolved questions, Base coverage, and optional health reports."
+description: "Run maintenance and health checks for agent-maintained Markdown knowledge vaults: broken links, orphan notes, stale hubs, invalid frontmatter, uncompiled raw sources, stale queues, unresolved questions, optional Base coverage, and health reports."
 ---
 
 # Ariadne Maintenance
 
-Use this skill when auditing, repairing, or maintaining an Obsidian vault over time.
+Use this skill when auditing, repairing, or maintaining a Markdown knowledge vault over time.
 
 ## Start
 

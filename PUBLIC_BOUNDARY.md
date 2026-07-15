@@ -1,10 +1,10 @@
 # Public Boundary
 
-Ariadne is an open-source skill package for Obsidian vault structure and navigation.
+Ariadne is an open-source skill package for Markdown knowledge vaults. Obsidian is an optional, recommended frontend and compatibility target rather than a runtime requirement.
 
 ## In Scope
 
-- Obsidian vault bootstrap templates
+- Markdown knowledge-vault bootstrap templates with Obsidian-compatible links and optional view files
 - recursive scope structure, explicit target confirmation, and bounded write sets
 - vault navigation, hubs, routing matrices, and local `AGENTS.md` inheritance
 - Bases, Kanban boards, and Dataview dashboards as optional Obsidian view layers
@@ -23,7 +23,7 @@ Ariadne is an open-source skill package for Obsidian vault structure and navigat
 - private vault content, screenshots, client details, secrets, tokens, or production data
 - maintainer-local absolute paths or personal workflow defaults presented as universal behavior
 
-Generic runtime-adaptive coordination belongs in Kybernetes. Ariadne may provide vault-aware adapter behavior only when it is specific to Obsidian structure, scope selection, artifact placement, validation, or maintenance.
+Generic runtime-adaptive coordination belongs in Kybernetes. Ariadne may provide vault-aware behavior only when it is specific to Markdown knowledge structure, scope selection, artifact placement, validation, maintenance, or an explicitly optional Obsidian-compatible view layer.
 
 ## Public Documentation Rules
 
