@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ariadne Research Stewardship"
+  short_description: "Audit and safely repair one research boundary"
+  default_prompt: "Use $ariadne:research-stewardship to audit this named research boundary before proposing scoped repairs."

@@ -9,11 +9,10 @@ Use this skill when auditing, repairing, or maintaining an Obsidian vault over t
 
 ## Start
 
-1. Read `00 Index.md`.
-2. Read `AGENTS.md` or `CLAUDE.md`.
-3. Read `Agent/00 Agent Navigation.md` if it exists.
-4. Read `Agent/Vault Health Check Procedure.md` if it exists.
-5. Read `Agent/Vault Navigation Standard.md` if navigation is involved.
+1. Read root instructions and every applicable ancestor scope instruction through the target.
+2. Read relevant indexes, agent navigation, health-check procedure, and navigation standard.
+3. Discover findings read-only. In a multi-scope vault, require a current-turn named or confirmed target before scoped repairs.
+4. Construct an explicit `allowed_write_set` before mutation. Parent/root files and sibling scopes are excluded unless named individually.
 
 ## Health Checks
 
@@ -26,11 +25,8 @@ Check for:
 - `.base` files missing from `Bases/00 Bases Index.md`
 - important notes missing from folder hubs
 - folder hubs missing from agent navigation
-- raw sources without compiled notes
-- research notes without source links
 - stale inbox items
 - stale processing queue items
-- stale open questions
 - decisions without rationale
 - generated outputs that should be filed back into the wiki
 - entry files or folder hubs becoming too large to scan
@@ -43,7 +39,6 @@ Check for:
 - local Bases missing folder scope filters
 - local `AGENTS.md` files repeating parent policy instead of local deltas
 - local queues piling up inside child scopes
-- raw sources not compiled within the relevant scope
 - scope indexes becoming full tables of contents instead of navigable maps
 
 ## Proactive Repair Routing
@@ -60,9 +55,11 @@ Use this routing:
 - Global discovery, stale registry entrypoints, or missing adapter marker blocks: use `ariadne:global-discovery` and run the Ariadne discovery doctor.
 - Broken wikilinks, orphan notes, invalid frontmatter, invalid `.base` YAML, unlinked Bases, or validator warnings: use `ariadne:validator` first, then repair with this skill.
 - Navigation bloat, missing hubs, missing parent-child hub links, task routing drift, or unclear scope boundaries: use `ariadne:navigation`.
-- Raw sources, inbox items, processing items, or outputs accumulating without compilation: use `ariadne:knowledge-capture` or `ariadne:research-intake`.
+- General inbox, processing, or output buildup: use `ariadne:knowledge-capture`.
+- Research provenance, compilation coverage, stale synthesis, unresolved research questions, evidence roles, circular corroboration, or older pipeline drift: use `ariadne:research-stewardship`.
 - Missing repeatable research infrastructure inside a scope: use `ariadne:research-pipeline`.
-- Stale synthesis, stale assumptions, or unresolved questions that need consolidation: use `ariadne:synthesis`.
+
+Whole-vault maintenance discovers and routes research-semantic drift; it does not reproduce the research stewardship procedure or make synthesis dispositions.
 
 Keep the repair scoped to the nearest responsible folder or domain. Ask before restructuring navigation, modifying global agent files, or installing/updating skills.
 
@@ -104,9 +101,10 @@ It should report `yaml-ok`, `broken-wikilinks: 0`, `true-orphans-md: 0`, `unlink
 
 ## Related Skills
 
-- Use `ariadne:research-intake` to process research sources found during maintenance when scope routing is unclear.
+- Use `ariadne:research-ingest` to process research sources found during maintenance.
 - Use `ariadne:knowledge-capture` to process raw material found during maintenance.
 - Use `ariadne:research-pipeline` when a scope needs missing research infrastructure.
+- Use `ariadne:research-stewardship` for research-boundary audit, semantic deferral, and allowlisted repair.
 - Use `ariadne:validator` for deterministic structural checks.
 - Use `ariadne:navigation` when maintenance requires durable structural changes.
-- Use `ariadne:synthesis` when stale research threads need updating.
+- Use `ariadne:research-synthesis` when an authorized synthesis pass needs a disposition.

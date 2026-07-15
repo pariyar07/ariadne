@@ -1,144 +1,67 @@
 ---
 name: ariadne:research-pipeline
-description: Create or upgrade a research pipeline inside an existing Obsidian vault scope or domain. Use when a user asks to add research infrastructure, source intake, raw-to-compiled workflow, synthesis/thread hubs, local Concepts/Entities/Relationships/Questions folders, research templates, Bases, or routing for a domain-specific research workflow.
+description: Use when recurring research inside an existing Obsidian vault scope needs a boundary descriptor, raw and compiled routes, inquiry and synthesis hubs, local templates, Bases, or routing.
 ---
 
 # Ariadne Research Pipeline
 
-Use this skill when an existing scope needs recurring research intake and synthesis, but the user is not creating a whole new vault.
+Create the minimum repeatable research topology inside one explicitly authorized scope. This skill owns topology, not source compilation, semantic disposition, or scope creation.
 
-This skill promotes research from "a folder of notes" into a navigable pipeline: raw sources, compiled research, synthesis/thread hubs, durable semantic extraction, task routing, templates, and optional local Bases.
+## Authorization
 
-## Start
+1. Read root instructions and every applicable ancestor scope instruction through the target.
+2. Read root and local indexes, agent navigation, routing matrices, existing research hubs, and knowledge-processing architecture progressively.
+3. In a multi-scope vault, require a current-turn named or confirmed target. One likely match, search result, prior conversation, or current directory is not authorization.
+4. Inventory read-only, then state an explicit `allowed_write_set`. Include the target subtree plus every individually named parent hub, routing matrix, root Base formula, or other external file to change.
+5. Parent/root wiring is a visible obligation, never implicit authorization. Defer paths outside the set.
 
-1. Read root `AGENTS.md` or `CLAUDE.md`.
-2. Read root `00 Index.md`, `Agent/00 Agent Navigation.md`, and `Agent/Task Routing Matrix.md` if present.
-3. Read the target scope's `AGENTS.md`, `00 Index.md`, `Agent/00 Agent Navigation.md`, and `Agent/Task Routing Matrix.md` if present.
-4. Read the existing `Research/00 Research Index.md` if it exists.
-5. Read `Agent/Knowledge Processing Architecture.md` or the local equivalent before structural changes.
+Use `ariadne:scope` when a new or promoted scope is required. Apply `ariadne:navigation` patterns inside this boundary; defer durable cross-scope navigation to that skill. Use `ariadne:research-ingest` for new material, `ariadne:knowledge-capture` for authorized raw and compiled writes, and `ariadne:research-synthesis` for semantic dispositions.
 
-Use `ariadne:navigation` with this skill when the change affects hubs, routing, Bases, or recurring traversal. Use `ariadne:research-intake` when a user gives a source and the target scope may be unclear. Use `ariadne:knowledge-capture` after the pipeline exists and a concrete source needs ingestion. Use `ariadne:synthesis` when updating the actual synthesis content.
+## Boundary Descriptor
 
-## Pipeline Shape
+Create exactly one canonical Markdown research boundary descriptor identified by frontmatter rather than folder name:
 
-Create only what the scope needs. A full domain research pipeline usually includes:
+```yaml
+---
+type: research-boundary
+research_schema: 1
+boundary_id: stable-local-id
+scope_path: Domains/Example
+raw_hub: "[[Domains/Example/Raw/Sources/00 Source Index]]"
+compiled_hub: "[[Domains/Example/Research/00 Research Index]]"
+inquiry_hub: "[[Domains/Example/Questions/00 Questions Index]]"
+synthesis_hub: "[[Domains/Example/Research/00 Example Research Synthesis]]"
+thread_hub: "[[Domains/Example/Relationships/Example Research Thread]]"
+view_mode: exact
+rollup_boundaries: []
+---
+```
 
-- `Raw/Sources/00 Source Index.md` for source captures.
-- `Inbox/00 Inbox Index.md` for rough human input.
-- `Processing Queue/00 Processing Queue Index.md` for follow-up compilation work.
-- `Research/00 Research Index.md` for compiled research.
-- `Research/00 <Scope> Research Synthesis.md` as the primary read-first synthesis.
-- `Relationships/<Scope> Research Thread.md` for ongoing debates, sequence, tensions, and implications.
-- `Concepts/00 Concepts Index.md` for reusable ideas and definitions.
-- `Entities/00 Entities Index.md` for recurring people, projects, tools, companies, protocols, or platforms.
-- `Relationships/00 Relationships Index.md` for durable comparisons and thread maps.
-- `Questions/00 Questions Index.md` for unresolved prompts.
-- `Agent/Ingest Compile Workflow.md` for local intake rules.
-- `Agent/Knowledge Processing Architecture.md` for local filing targets.
-- `Templates/00 Templates Index.md` and minimal note templates when repeated note shapes are expected.
-- `Bases/00 Bases Index.md` and a local `Research Pipeline.base` when metadata/status inspection helps.
+Use vault-relative paths and path-qualified links. `view_mode: exact` includes only artifacts whose `research_boundary` points to this descriptor. Use `rollup` only with explicitly listed descendant descriptors. Folder ancestry never establishes membership. A thread hub may be omitted when the local workflow does not use one.
 
-For a small scope, prefer a lighter version: research index, synthesis note, thread hub, source index, ingest workflow, and routing rows. Add concepts/entities/relationships/questions/templates/Bases when recurring use justifies them.
+## Minimum Shape
+
+Adopt existing structure before creating parallel folders. A small pipeline may need only the descriptor, source index, compiled research index, synthesis or inquiry hub, local ingest workflow, and routing. Add Questions, Relationships, Concepts, Entities, Processing Queue, templates, or Bases only when recurring work justifies them.
+
+Compiled notes separate source claims, interpretation, relevance, implications, and provenance. Inquiry objects use stable IDs, boundary links, status, criteria, evidence, current synthesis, open questions, and append-only history. Bases are optional view layers and must filter to the scope path and declared artifact types.
 
 ## Workflow
 
-1. Identify the target scope path and parent scope.
-2. Inventory existing research, source, concept, entity, relationship, question, template, Base, and Agent files.
-3. Choose the minimum pipeline shape that supports the recurring job.
-4. Create missing folders and `00 ... Index.md` hubs.
-5. Create or update the research synthesis and thread hub.
-6. Create or update local `Agent/Ingest Compile Workflow.md` and `Agent/Knowledge Processing Architecture.md`.
-7. Add routing rows to the nearest useful `Agent/Task Routing Matrix.md`:
-   - shared source material for the scope
-   - research synthesis for the scope
-   - Bases or research pipeline views, if local Bases exist
-8. Link primary research hubs from `Agent/00 Agent Navigation.md`.
-9. Link the pipeline from the scope `00 Index.md` only at the strategic level; keep detailed note lists in folder hubs and Bases.
-10. Add local templates only for repeated note shapes.
-11. Add local Bases only when they will help inspect status, raw-vs-compiled coverage, or metadata.
-12. Link local Bases from `Bases/00 Bases Index.md`.
-13. If a new local Bases index exists, link it from the nearest parent/root Bases index when that parent already tracks project-local Bases.
-14. Run vault validation.
-
-## Local Ingest Workflow Content
-
-A local ingest workflow should add only scope-specific filing rules. It should not repeat the whole root policy.
-
-Include:
-
-- scope-specific source types
-- local folder roles
-- source metadata requirements
-- the raw capture to compiled research pattern
-- required synthesis/thread maintenance
-- rules for extracting concepts, entities, relationships, decisions, roadmap items, and questions
-- links to the local research synthesis, thread hub, source index, and templates
-
-## Research Note Standard
-
-Compiled research notes should separate:
-
-- source claims
-- interpretation
-- relevance to the scope
-- implications
-- related concepts, entities, relationships, decisions, roadmap items, and questions
-
-Synthesis notes should summarize what is known, inferred, contested, strategically important, and still open.
-
-Thread hubs should track the research sequence, major tensions, implications, open questions, and links to source-backed research.
-
-## Base Pattern
-
-For a local research pipeline Base:
-
-```yaml
-filters:
-  and:
-    - file.inFolder("<scope_path>")
-    - or:
-        - type == "raw-source"
-        - type == "research"
-        - type == "research-synthesis"
-formulas:
-  scope: '"<scope_name>"'
-properties:
-  formula.scope:
-    displayName: Scope
-views:
-  - type: table
-    name: "<scope_name> Research Pipeline"
-    order:
-      - file.name
-      - formula.scope
-      - type
-      - status
-      - source_type
-      - author
-      - created
-      - accessed
-      - file.folder
-```
-
-Local Bases must include a folder-scope filter matching the scope path.
+1. Inventory equivalent hubs, workflows, metadata, templates, Bases, and routing inside the target.
+2. Choose the minimum shape and map each planned file into `allowed_write_set`.
+3. Create or confirm the boundary descriptor.
+4. Create only missing local hubs and workflow files; preserve existing paths and user edits.
+5. Link local hubs and Bases inside the target.
+6. Apply parent/root or cross-scope wiring only when each exact file is authorized; otherwise hand it to `ariadne:navigation` as a deferral.
+7. Run scoped validation and report remaining warnings.
 
 ## Guardrails
 
-- Do not duplicate root principles in local files; local files add scope deltas.
-- Do not create local `AGENTS.md` unless the research pipeline has specialized rules beyond existing scope instructions.
-- Do not pre-create entity or concept notes just because they might be useful. Use indexes with candidate lists until extraction is justified.
-- Do not make the scope `00 Index.md` a full table of contents.
-- Use path-qualified wikilinks in navigation files.
-- Read raw sources only when compiled notes are insufficient.
-- Preserve existing notes and user changes.
+- Do not duplicate root policy in local files; local instructions add deltas.
+- Do not create local `AGENTS.md`, templates, Bases, entity notes, or concept notes speculatively.
+- Do not create or promote a scope boundary.
+- Do not add a schema descriptor to a legacy pipeline unless adoption is explicitly requested and the mapping is unambiguous or confirmed.
+- Do not decide whether evidence changed a synthesis.
+- Use path-qualified links in navigation files.
 
-## Validation
-
-Before finishing:
-
-- confirm all new hubs are linked from the right parent or agent navigation route
-- confirm routing points future agents to the smallest useful context set
-- confirm local Bases are linked from their local Bases index
-- confirm local Base filters include `file.inFolder("<scope_path>")`
-- run `ariadne:validator`
-- call out any remaining validator warnings instead of hiding them
+Finish with the target, instructions read, allowed write set, descriptor path, created or adopted topology, navigation deferrals, and validation result.

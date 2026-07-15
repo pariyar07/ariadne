@@ -1,3 +1,4 @@
-display_name: Ariadne Research Intake
-short_description: Cold-start research source intake for scopes.
-default_prompt: Intake this research source into the right Obsidian scope.
+interface:
+  display_name: "Ariadne Research Intake (Deprecated)"
+  short_description: "Compatibility adapter for research ingest"
+  default_prompt: "Use $ariadne:research-intake to route this legacy request to $ariadne:research-ingest."

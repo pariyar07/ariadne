@@ -9,10 +9,10 @@ Use this skill when a vault already exists and the user wants a new durable scop
 
 ## Start
 
-1. Read root `AGENTS.md` or `CLAUDE.md`.
-2. Read root `00 Index.md`.
-3. Read `Agent/00 Agent Navigation.md` and `Agent/Task Routing Matrix.md` if present.
-4. Read the parent scope hub and parent `AGENTS.md` if the new scope is nested.
+1. Read root instructions and every applicable ancestor scope instruction through the intended parent.
+2. Read root/local indexes, agent navigation, task routing, and the parent hub.
+3. In a multi-scope vault, require the new scope name and parent to be named or confirmed in the current turn.
+4. State an explicit `allowed_write_set` before creation. Include the new subtree and each parent/root hub, routing matrix, or Base formula individually.
 
 ## Minimal Questions
 
@@ -68,6 +68,6 @@ Ask only what is missing:
 - Use `ariadne:workspace-instructions` when an external workspace needs instruction files or a link to this scope.
 - Use `ariadne:navigation` for route and hub design.
 - Use `ariadne:research-pipeline` when an existing scope needs a full research pipeline after creation.
-- Use `ariadne:research-intake` for the first research source when scope routing may be unclear.
+- Use `ariadne:research-ingest` for the first research source after the scope exists.
 - Use `obsidian-bases` for Base syntax.
 - Use `ariadne:validator` for deterministic checks.

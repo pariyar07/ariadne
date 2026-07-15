@@ -20,8 +20,9 @@ It also has workflow companion skills:
 - `ariadne:knowledge-capture` for raw inputs, links, documents, and brain dumps.
 - `ariadne:global-discovery` for registering existing vaults so cold agents can find them from any workspace.
 - `ariadne:workspace-instructions` for creating or updating workspace-level `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files that connect a workspace to registered Ariadne context.
-- `ariadne:research-intake` for cold-start research sources when the target scope is missing, unclear, or may need pipeline setup.
-- `ariadne:synthesis` for multi-source research threads.
+- `ariadne:research-ingest` for cold-start research sources, target confirmation, and write-set orchestration.
+- `ariadne:research-synthesis` for multi-source research disposition and inquiry history.
+- `ariadne:research-stewardship` for audit-first research-boundary health and allowlisted repairs.
 - `ariadne:research-pipeline` for adding research intake and synthesis infrastructure inside an existing scope.
 - `ariadne:workstream-tracking` for Kanban work boards, Dataview dashboards, and workstream status tracking.
 - `ariadne:closeout` for post-work capture, checkpoints, handoffs, and safe-to-close decisions.
@@ -58,6 +59,8 @@ These are reference documentation for skill users. They are not files to bootstr
 This skill bootstraps the system. Use the companion skills for ongoing ingest, synthesis, navigation changes, and maintenance.
 
 ## Start Workflow
+
+Before writing, read applicable existing root and ancestor instructions. When refreshing a multi-scope vault, require a current-turn named or confirmed target and state an explicit `allowed_write_set`; name every out-of-target hub, routing matrix, or Base formula separately.
 
 1. Determine the vault path and purpose.
 2. Classify the vault mode:

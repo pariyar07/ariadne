@@ -1,86 +1,53 @@
 ---
 name: ariadne:knowledge-capture
-description: Capture and compile links, documents, PDFs, tweets, transcripts, screenshots, meeting notes, brain dumps, and rough user input into an agent-maintained Obsidian Markdown vault. Human curates; agent compiles raw material into a durable linked wiki.
+description: Use when links, documents, PDFs, transcripts, screenshots, meeting notes, observations, brain dumps, or other material must be compiled into an explicitly selected Obsidian vault destination.
 ---
 
 # Ariadne Knowledge Capture
 
-Use this skill when new material enters an Obsidian vault and should become durable knowledge instead of staying in chat.
+Compile material after its destination and write set are known. This skill does not select a research scope, create research topology, classify evidence independently, or judge synthesis disposition.
 
-## Core Rule
+## Authorization
 
-Do not only answer in chat when the user shares material that should compound. Capture the input, compile it, link it, and update the relevant hub.
+1. Require a known destination and explicit `allowed_write_set` before writing. In a multi-scope vault, the target must be named or confirmed in the current turn.
+2. Read root instructions and every ancestor scope instruction through the target.
+3. Read relevant indexes, agent navigation, routing, local ingest workflow, and folder hubs progressively.
+4. Keep every mutation inside the write set. Parent/root navigation, sibling scopes, and downstream destinations require individually named paths.
 
-## Start
+For research, consume the full `ariadne:research-ingest` handoff envelope without changing it:
 
-1. Read `00 Index.md`.
-2. Read `AGENTS.md` or `CLAUDE.md`.
-3. Read `Agent/00 Agent Navigation.md` if it exists.
-4. Read `Agent/Task Routing Matrix.md` to confirm the target scope for this material.
-5. Read `Agent/Ingest Compile Workflow.md` if it exists (or the local scope equivalent).
-6. Open only the relevant folder hub and notes.
+```text
+target_scope
+research_boundary
+allowed_write_set
+source_type
+evidence_role
+derived_from
+inquiry_links
+pipeline_state
+requested_operation
+```
 
-## Intake Infrastructure Check
+If a research envelope is missing, ambiguous, or requests paths outside the set, return to `ariadne:research-ingest`. Route missing topology to `ariadne:research-pipeline` rather than creating it silently.
 
-Before capturing material, verify the target scope has intake infrastructure. If any of the following are missing, create them before proceeding:
+## Capture And Compile
 
-- `Raw/Sources/` folder and `Raw/Sources/00 Source Index.md`
-- `Inbox/` folder and `Inbox/00 Inbox Index.md`
-- `Processing Queue/` folder and `Processing Queue/00 Processing Queue Index.md`
-- A local `Agent/Ingest Compile Workflow.md` (copy from root or create a minimal one)
+1. Capture one canonical raw artifact when the source must remain inspectable. Preserve title, origin or locator, source type, dates, evidence role, `derived_from`, and the confirmed research boundary when applicable.
+2. Separate observed or source claims from interpretation.
+3. Compile the smallest durable note or notes supported by the material.
+4. For research, link compiled artifacts downstream to upstream with `derived_from`; preserve `inquiry_links` without inventing an inquiry.
+5. Link artifacts from authorized local hubs. Report any out-of-set navigation obligation instead of expanding scope.
+6. Add follow-up items only inside the allowed write set.
+7. If compiled research may affect current understanding, hand it to `ariadne:research-synthesis`. This skill does not judge synthesis disposition.
 
-Add a row to the local `Agent/Task Routing Matrix.md` for "Shared link or source material" pointing to the new workflow file if no row exists.
+Generated analysis and derivative copies retain upstream provenance and do not count as independent corroboration. Capture cross-scope material once; do not duplicate raw evidence.
 
-For root-level intake, these folders already exist. For domain scopes, they may need to be set up. Set them up silently as part of the first capture — do not ask the user to do it manually.
+## Promotion Writes
 
-## Scope Routing
-
-Before writing, determine the target scope:
-
-- Use the root scope for vault-wide material that belongs to no single child scope.
-- Use the current scope for local work inside an active durable area.
-- Use the nearest child scope for a narrower recurring workflow with its own hub.
-
-For cross-scope material, capture the source once where it belongs, then create or update relationship notes, synthesis notes, or routing notes at the nearest common parent scope. Link to child-scope evidence instead of duplicating raw sources across scopes.
-
-## Intake Routing
-
-- External sources go in `Raw/Sources/`.
-- Rough human input goes in `Inbox/`.
-- Follow-up work goes in `Processing Queue/`.
-- Source-backed synthesis goes in `Research/`.
-- Durable ideas go in `Concepts/`.
-- Durable objects go in `Entities/`.
-- Durable connections go in `Relationships/`.
-- Decisions go in `Decisions/`.
-- Unresolved questions go in `Questions/`.
-- Generated artifacts go in `Outputs/`.
-
-## Workflow
-
-1. Capture the raw material with title, source, author, URL/path, source type, created/accessed date, and why it matters.
-2. Extract source claims separately from interpretation.
-3. Identify candidate entities, relationships, concepts, decisions, and open questions.
-4. Compile the durable understanding into the smallest appropriate note or notes.
-5. Add meaningful wikilinks to sources, concepts, entities, relationships, questions, and decisions.
-6. Link new durable notes from the relevant folder hub.
-7. Update synthesis or thread hubs if the source changes the project map.
-8. Add processing items for anything that needs later review.
+Accept a promotion candidate from `ariadne:research-synthesis` only when its destination is named or confirmed in the current turn and included in the write set. Create or update the destination note with `research_basis` or equivalent `derived_from` links. Do not move, duplicate, or silently rewrite the canonical research.
 
 ## Validation
 
-Before finishing:
+Before finishing, confirm that every write was authorized, raw material is compiled or intentionally source-only, provenance is present, claims and interpretation remain distinct, important artifacts are locally discoverable, and focused validation passes or its warnings are reported.
 
-- confirm raw material is either compiled or intentionally left source-only
-- confirm durable notes have frontmatter
-- confirm important new notes are linked from a hub
-- check that claims and interpretations are not mixed together
-- run a focused broken-link check when practical
-
-## Related Skills
-
-- Use `ariadne:research-intake` when the user provides a research source but the target domain/scope is missing or unclear.
-- Use `ariadne:research-pipeline` when the target scope needs research infrastructure before capture.
-- Use `ariadne:synthesis` for multi-source research threads.
-- Use `ariadne:navigation` when knowledge capture creates a new durable workstream.
-- Use `ariadne:maintenance` for health checks after large capture sessions.
+Use `ariadne:research-ingest` for research target resolution and classification, `ariadne:research-pipeline` for topology, `ariadne:research-synthesis` for dispositions, `ariadne:navigation` for separately authorized structural routes, and `ariadne:maintenance` for broad vault health.

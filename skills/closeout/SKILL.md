@@ -29,6 +29,7 @@ Handoff is an output flag, not a mode. Include a handoff or team update when ano
 5. In a multi-scope vault, require a current-turn explicit target before the first write-producing closeout. A target is explicit only when the current prompt names the scope, domain, customer, project, or workstream, or the user confirms one after being asked.
 6. For later checkpoints in the same chat, reuse the previously confirmed target only when you restate the vault/scope and the new work still belongs to the same thread. Any scope, vault, artifact class, or workstream drift re-triggers confirmation.
 7. Read the selected vault and scope entrypoints: root `AGENTS.md`, root index, agent navigation, task routing matrix, local `AGENTS.md`, local hub, and relevant existing notes. For repeat checkpoints, cheaply re-verify the cached route unless the target changed.
+8. Read every applicable ancestor scope instruction and state an explicit `allowed_write_set` before writing. Include each artifact and any individually named parent/root navigation file; defer all other paths.
 
 Do not scan the whole vault by default. Prefer hubs, indexes, decisions, boards, and synthesis notes over raw sources.
 
@@ -100,7 +101,7 @@ For non-git vaults, update docs only when explicitly targeted and report that co
 
 - Use `ariadne:global-discovery` when vault selection starts from the machine registry.
 - Use `ariadne:knowledge-capture` when new raw material or a user artifact needs compilation.
-- Use `ariadne:synthesis` when closeout updates multi-source understanding or a thread hub.
+- Use `ariadne:research-synthesis` when closeout material changes multi-source understanding or needs a durable disposition. Closeout records completed outcomes; it does not own promotion of research conclusions.
 - Use `ariadne:workstream-tracking` when board or dashboard state needs updating.
 - Use `ariadne:maintenance` when closeout finds stale queues, broken navigation, or health drift.
 - Use `ariadne:navigation` when new routes, hubs, or indexes are needed for discoverability.

@@ -1,3 +1,4 @@
-display_name: Ariadne Synthesis
-short_description: Synthesize multi-source research threads inside an Obsidian vault.
-default_prompt: Synthesize this research thread and update the relevant vault notes.
+interface:
+  display_name: "Ariadne Synthesis (Deprecated)"
+  short_description: "Compatibility adapter for research synthesis"
+  default_prompt: "Use $ariadne:synthesis to route this legacy request to $ariadne:research-synthesis."
