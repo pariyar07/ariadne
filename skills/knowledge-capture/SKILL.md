@@ -35,7 +35,7 @@ If a research envelope is missing, ambiguous, or requests paths outside the set,
 1. Capture one canonical raw artifact when the source must remain inspectable. For research, preserve `source_type`, `evidence_role`, `derived_from`, and `research_boundary` exactly from the handoff. Map handoff `inquiry_links` to artifact field `inquiries`; use an empty flat list when no inquiry is known.
 2. Separate observed or source claims from interpretation.
 3. Compile the smallest durable note or notes supported by the material.
-4. For research, link compiled artifacts downstream to upstream with `derived_from`; preserve `inquiry_links` without inventing an inquiry.
+4. For compiled research, map handoff `inquiry_links` to canonical frontmatter field `inquiries` without inventing an inquiry, and link artifacts downstream to upstream with `derived_from`.
 5. Link artifacts from authorized local hubs. Report any out-of-set navigation obligation instead of expanding scope.
 6. Add follow-up items only inside the allowed write set.
 7. If compiled research may affect current understanding, hand it to `ariadne:research-synthesis`. This skill does not judge synthesis disposition.
