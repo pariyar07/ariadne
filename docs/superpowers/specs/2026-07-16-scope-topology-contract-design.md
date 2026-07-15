@@ -86,6 +86,8 @@ Generated blocks are replaceable and validator-controlled. User content outside 
 
 The index, agent navigation, and routing matrix link only immediate parent/direct children. `AGENTS.md` lists the complete root-to-current instruction chain.
 
+The four surfaces are mandatory because each has a distinct cold-start role, but they may be generated-only when a scope has no local additions. Generated-only files link inherited policy and topology without copying parent rules. Empty user-extension sections are valid and do not require invented local content.
+
 ## Promotion Threshold
 
 A folder becomes a scope only when it needs durable independent governance, such as distinct local policy, recurring ownership, local routing, a meaningful write boundary, lifecycle control, child scopes, or separate intake/research/operational workflows. File volume alone does not justify promotion.
@@ -97,13 +99,11 @@ A folder becomes a scope only when it needs durable independent governance, such
 `Bases/Scope Registry.base` is fully generated and includes required views:
 
 - Scope Topology
-- Checkpoint Health
 - Lifecycle
-- Adoption Candidates
 
-Only adopted scopes appear in canonical topology. Adoption candidates are explicitly non-authoritative. Users create separate custom Bases rather than editing the generated registry.
+Only adopted scopes appear in the registry. Users create separate custom Bases rather than editing the generated registry.
 
-Each view owns its filter. Topology, health, and lifecycle views select supported scope-index descriptors; the adoption-candidate view uses conservative legacy-hub heuristics and cannot feed canonical topology or validation claims.
+Each view owns its filter and selects supported scope-index descriptors. Filesystem checkpoint health and legacy adoption candidates remain validator/audit findings because an Obsidian Base cannot reliably prove file existence or infer structural candidates. A future generated snapshot view must be labeled non-authoritative, include `generated_at`, and never feed topology or validation claims.
 
 ### Markdown Tree
 
@@ -119,9 +119,11 @@ The layout is left-to-right: depth determines X, deterministic preorder determin
 
 - Active scopes receive normal work.
 - Archived scopes remain navigable but do not receive routine writes.
-- Retired scopes retain lightweight checkpoint tombstones and cannot own active children.
+- Retired scopes retain all four generated-only checkpoint surfaces as lightweight tombstones and may contain only archived or retired children.
 - Explicit moves preserve `scope_id`, update path/parent, append former paths, and leave non-scope redirects at old locations.
 - Redirects never appear as canonical scopes.
+
+Allowed transitions are `active -> archived`, `archived -> active`, `archived -> retired`, and explicitly authorized `retired -> archived`; direct `active -> retired` is refused. Redirect schema v1 requires `type: scope-redirect`, `redirect_schema: 1`, `former_scope_path`, `target_scope_id`, and `target_scope_path`. Former paths remain reserved while referenced. Moves refuse existing destinations, ambiguous hardlinks, or redirects that cannot be created. Reparenting requires an authorized physical move or explicit ancestor adoption/lifecycle change; metadata-only reparenting cannot violate physical ancestry.
 
 ## Legacy Adoption
 
@@ -134,7 +136,9 @@ Users explicitly choose:
 
 Automatic adoption creates canonical kiosks, preserves existing named hubs, and writes root activation last. It does not move, rename, merge, archive, or delete legacy content. Audit reports overlaps with backlinks and unique-content evidence, then recommends keep/merge/archive/rename/delete actions for explicit user approval.
 
-Only adopted `scope_schema: 1` scopes enter registry/tree/Canvas. Legacy siblings remain unchanged and continue receiving adoption suggestions.
+Only adopted `scope_schema: 1` scopes enter registry/tree/Canvas. Legacy siblings remain unchanged and continue receiving adoption suggestions unless explicitly dismissed.
+
+Strict topology activates only when root `00 Index.md` is a valid schema-v1 root descriptor. Supported descendants without that root are pending adoption and form no canonical topology. Unsupported root versions produce a version warning and disable topology claims. Progressive adoption writes the selected ancestor chain inward and activates root last. Intentional legacy hubs may set `ariadne_scope_adoption: dismissed` to suppress repeated suggestions without becoming scopes.
 
 ## Write Authorization
 
@@ -155,6 +159,10 @@ One deterministic synchronization workflow runs after approved creation, adoptio
 7. Run scoped validation.
 8. Run whole-vault validation.
 9. Confirm a second write pass produces zero changes.
+
+Synchronization is recoverable and single-writer. Before mutation it acquires an exclusive vault-local lock and records an operation manifest containing input hashes, expected output hashes, the authorized write set, phase, and completed replacements. A live lock or changed precondition causes refusal. Stale locks are never stolen automatically; explicit resume or abort validates the manifest and current hashes.
+
+Targets use restrictive same-directory temporary regular files and atomic same-filesystem rename. The manifest advances after every rename. Recovery covers failure before or after activation, during moves, and during derived-artifact regeneration. The write set is not claimed to be transactionally atomic; the manifest is the recovery authority.
 
 Proposed interface:
 
@@ -208,6 +216,8 @@ New non-fatal counters:
 
 Existing inheritance, navigation, routing, Base-scope, and Base-link counters remain authoritative for their current concerns. Every new counter must satisfy the repository full-artifact rule.
 
+Every finding has a stable code and identity, origin path, obligation paths, affected scope IDs, and deterministic sort key. Scoped validation is a pure applicability filter over the whole-vault finding set and never synthesizes new findings.
+
 ## Skill Changes
 
 - `ariadne:vault`: bootstrap root contract and global artifacts.
@@ -220,6 +230,10 @@ Existing inheritance, navigation, routing, Base-scope, and Base-link counters re
 ## Verification Requirements
 
 Public deterministic fixtures must cover root-only, arbitrary layouts, transparent folders, deep ancestry, required checkpoints, marker preservation, cycles, duplicate IDs, moves, redirects, lifecycle, Base ordering, registry views, tree/Canvas drift, scoped isolation, adoption modes, cleanup deferral, exact write roots, interrupted adoption, and idempotency.
+
+They must also cover concurrent writers, locks, changed preconditions, failure at every write boundary, recovery before and after activation, move collisions, redirect reuse, unsupported roots, dismissed candidates, generated-only checkpoints, hardlinks, symlink swaps, Unicode normalization, control and reserved paths, CRLF/BOM input, marker-like prose, temporary permissions, Canvas hash collisions, and exact serializers.
+
+Paths and titles normalize to Unicode NFC. Outputs use `/`, UTF-8 without BOM, LF, deterministic key ordering, and final newlines. Targets are checked with `lstat`, canonical containment, link count, and a final pre-rename identity check. Canvas hash-ID collisions are reported rather than overwritten.
 
 Private behavioral contracts must prove target confirmation, write-set disclosure, adoption-mode choice, legacy preservation, user-content preservation, destructive cleanup deferral, hidden-contract isolation, and stdout/counter assertions.
 
