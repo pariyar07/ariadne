@@ -2,6 +2,8 @@
 "use strict";
 
 const assert = require("assert");
+const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const {
   buildTopology,
@@ -112,15 +114,29 @@ for (const code of [
   "marker-drift", "pending-adoption", "unsupported-root", "dismissed-candidate",
 ]) assert.ok(contractFindings.some((item) => item.code === code), `missing finding code ${code}`);
 assert.deepStrictEqual(contractFindings, [...contractFindings].sort(bySortKey));
+const temporaryContract = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-findings-"));
+fs.cpSync(fixture("contract_failures"), temporaryContract, { recursive: true });
+const dismissedPath = path.join(temporaryContract, "Dismissed", "00 Index.md");
+let proseInventory = inventoryVault(temporaryContract);
+const beforeProse = scopeFindings(buildTopology(proseInventory), proseInventory)
+  .find((item) => item.code === "dismissed-candidate").finding_id;
+fs.appendFileSync(dismissedPath, "\nChanged prose that is not structural.\n");
+proseInventory = inventoryVault(temporaryContract);
+const afterProse = scopeFindings(buildTopology(proseInventory), proseInventory)
+  .find((item) => item.code === "dismissed-candidate").finding_id;
+assert.strictEqual(beforeProse, afterProse);
+fs.rmSync(temporaryContract, { recursive: true, force: true });
 
 const isolationInventory = inventoryVault(fixture("scoped_sibling_isolation"));
 const isolationModel = buildTopology(isolationInventory);
 const whole = scopeFindings(isolationModel, isolationInventory);
-const scoped = filterFindingsByScope(whole, "healthy-child");
+const scoped = filterFindingsByScope(whole, "healthy-child", isolationModel);
 assert.ok(scoped.every((item) => whole.some((candidate) => candidate.finding_id === item.finding_id)));
 assert.deepStrictEqual(scoped.map((item) => item.finding_id), [...scoped].sort(bySortKey).map((item) => item.finding_id));
-assert.ok(whole.some((item) => item.scope_ids.includes("broken-sibling")));
-assert.ok(scoped.every((item) => !item.scope_ids.includes("broken-sibling")));
+assert.ok(scoped.some((item) => item.code === "invalid-schema" && item.origin.startsWith("Healthy/")));
+assert.ok(scoped.some((item) => item.code === "dismissed-candidate" && item.origin.startsWith("Healthy/")));
+assert.ok(scoped.some((item) => item.code === "malformed-redirect" && item.origin.startsWith("Healthy/")));
+assert.ok(scoped.every((item) => !item.origin.startsWith("ZBroken/")), "duplicate ID leaked a sibling finding");
 
 const validator = path.join(__dirname, "..", "scripts", "validate_vault.js");
 const wholeCli = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--profile", "scope"], { encoding: "utf8" });
@@ -130,12 +146,21 @@ assert.match(wholeCli.stdout, /scope-contract-warnings: \d+/u);
 assert.match(wholeCli.stdout, /scope-map-warnings: \d+/u);
 const scopedCli = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--scope", "Healthy", "--profile", "scope"], { encoding: "utf8" });
 assert.strictEqual(scopedCli.status, 0, scopedCli.stderr);
-assert.doesNotMatch(scopedCli.stdout, /Broken\/AGENTS\.md/u);
+assert.doesNotMatch(scopedCli.stdout, /ZBroken\/AGENTS\.md/u);
 const cliFindingIds = (text) => [...text.matchAll(/\[(?:[^\s]+) ([a-f0-9]{64})\]/gu)].map((match) => match[1]);
 const wholeIds = new Set(cliFindingIds(wholeCli.stdout));
 assert.ok(cliFindingIds(scopedCli.stdout).every((id) => wholeIds.has(id)));
 const rootCli = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--scope", ".", "--profile", "scope"], { encoding: "utf8" });
 assert.strictEqual(rootCli.status, 0, rootCli.stderr);
 assert.ok(cliFindingIds(rootCli.stdout).every((id) => wholeIds.has(id)));
+const tracedCli = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--profile", "scope"], {
+  encoding: "utf8",
+  env: { ...process.env, ARIADNE_TEST_INVENTORY_TRACE: "1" },
+});
+assert.strictEqual(tracedCli.status, 0, tracedCli.stderr);
+assert.match(tracedCli.stderr, /^inventory-snapshots: 1; fallback-reads: 0\n$/u);
+const researchMissingScope = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--profile", "research"], { encoding: "utf8" });
+assert.strictEqual(researchMissingScope.status, 1);
+assert.strictEqual(researchMissingScope.stderr, "validator-error: --profile requires --scope\n");
 
 console.log("scope topology tests passed");

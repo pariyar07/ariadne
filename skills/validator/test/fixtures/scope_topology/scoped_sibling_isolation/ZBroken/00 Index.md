@@ -3,8 +3,8 @@
 title: Broken
 type: scope-index
 scope_schema: 1
-scope_id: broken-sibling
-scope_path: Broken
+scope_id: healthy-child
+scope_path: ZBroken
 parent_scope_id: root
 status: active
 ---

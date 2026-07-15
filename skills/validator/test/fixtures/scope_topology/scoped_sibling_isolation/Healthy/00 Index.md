@@ -3,6 +3,9 @@
 [[Healthy/AGENTS]]
 [[Healthy/Agent/00 Agent Navigation]]
 [[Healthy/Agent/Task Routing Matrix]]
+[[Healthy/Invalid/00 Index]]
+[[Healthy/Dismissed/00 Index]]
+[[Healthy/Redirect]]
 title: Healthy
 type: scope-index
 scope_schema: 1

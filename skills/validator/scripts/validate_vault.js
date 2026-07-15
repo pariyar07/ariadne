@@ -19,6 +19,9 @@ const GLOBAL_POLICY_FINGERPRINTS = [
   "Do not read the whole vault",
 ];
 
+let validationSnapshot = null;
+let fallbackReadCount = 0;
+
 function toPosix(file) {
   return file.split(path.sep).join("/");
 }
@@ -101,6 +104,12 @@ function linkAliasesFor(sourceFile, targetFile) {
 }
 
 function readText(file) {
+  const normalized = toPosix(file).replace(/^\.\//u, "");
+  if (validationSnapshot && validationSnapshot.has(normalized)) {
+    const bytes = validationSnapshot.get(normalized);
+    return bytes ? bytes.toString("utf8") : "";
+  }
+  fallbackReadCount += 1;
   return fs.readFileSync(file, "utf8");
 }
 
@@ -389,13 +398,15 @@ function structuredFinding(message, origin, obligations = []) {
   return { message, origin, obligations };
 }
 
-function validate(vaultPath, options = {}) {
+function validate(vaultPath, options = {}, inventory = null) {
   process.chdir(vaultPath);
+  validationSnapshot = inventory ? new Map(inventory.files.map((file) => [file.relativePath, file.rawBytes])) : null;
+  fallbackReadCount = 0;
 
   const errors = [];
   const markdownFrontmatter = new Map();
   const nestedFrontmatter = new Map();
-  const files = walk(".");
+  const files = inventory ? inventory.files.map((file) => file.relativePath) : walk(".");
   const markdownFiles = files.filter((file) => file.endsWith(".md")).sort();
   const baseFiles = files.filter((file) => file.endsWith(".base")).sort();
   const allTargets = files.filter((file) => !file.startsWith(".")).sort();
@@ -995,7 +1006,7 @@ function parseArguments(argv) {
     index += 2;
   }
   if (profile && !["research", "scope"].includes(profile)) throw new Error(`unsupported profile: ${profile}`);
-  if (profile === "research" && !scope) throw new Error("--profile research requires --scope");
+  if (profile === "research" && !scope) throw new Error("--profile requires --scope");
   if (scope) {
     if (path.isAbsolute(scope) || /^[A-Za-z]:[\\/]/u.test(scope)) throw new Error("--scope must be vault-relative");
     if (scope.split(/[\\/]/u).includes("..")) throw new Error("--scope must not contain traversal");
@@ -1060,18 +1071,19 @@ try {
   const options = parseArguments(process.argv.slice(2));
   let targetScopeId = null;
   let topologyFindings = null;
+  let inventory = null;
   if (options.profile === "scope") {
-    const inventory = inventoryVault(options.vault);
+    inventory = inventoryVault(options.vault);
     const topology = buildTopology(inventory);
     topologyFindings = scopeFindings(topology, inventory);
     if (options.scope) {
       const matches = [...topology.descriptorsById.values()].filter((descriptor) => descriptor.scopePath === options.scope);
       if (matches.length !== 1) throw new Error(`--scope must resolve to one canonical adopted scope: ${options.scope}`);
       targetScopeId = matches[0].scopeId;
-      topologyFindings = filterFindingsByScope(topologyFindings, targetScopeId);
+      topologyFindings = filterFindingsByScope(topologyFindings, targetScopeId, topology);
     }
   }
-  const result = filterResults(validate(options.vault, options), options);
+  const result = filterResults(validate(options.vault, options, inventory), options);
   if (topologyFindings) {
     result.scopeAdoptionWarnings = [];
     result.scopeContractWarnings = [];
@@ -1079,6 +1091,9 @@ try {
     for (const item of topologyFindings) result[findingCounter(item)].push(item);
   }
   printResults(result);
+  if (process.env.ARIADNE_TEST_INVENTORY_TRACE === "1") {
+    console.error(`inventory-snapshots: ${inventory ? 1 : 0}; fallback-reads: ${fallbackReadCount}`);
+  }
   const ok = result.errors.length === 0 &&
     result.broken.length === 0 &&
     result.trueOrphans.length === 0 &&

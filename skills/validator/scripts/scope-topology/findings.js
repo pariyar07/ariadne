@@ -8,13 +8,18 @@ function sortedUnique(values) {
   return [...new Set((values || []).map(String))].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
 }
 
+function normalizedFindingPath(value) {
+  const normalized = String(value || "").replace(/\\/gu, "/").normalize("NFC").replace(/^\.\//u, "");
+  return normalized === "." ? "" : normalized;
+}
+
 function finding({ code, origin = "", obligations = [], scopeIds = [], message, discriminator = "" }) {
   const structural = {
     code: String(code),
-    origin: String(origin),
-    obligations: sortedUnique(obligations),
+    origin: normalizedFindingPath(origin),
+    obligations: sortedUnique(obligations.map(normalizedFindingPath)),
     scope_ids: sortedUnique(scopeIds),
-    discriminator: String(discriminator),
+    discriminator: String(discriminator).normalize("NFC"),
   };
   const findingId = crypto.createHash("sha256").update(JSON.stringify(structural)).digest("hex");
   return Object.freeze({
@@ -33,36 +38,32 @@ function descriptorDirectory(file) {
   return directory === "." ? "." : directory;
 }
 
-function scopeApplicability(topology, scopeId) {
-  if (!scopeId || !topology.descriptorsById.has(scopeId)) return scopeId ? [scopeId] : [];
-  const applicable = new Set([scopeId]);
-  let current = topology.descriptorsById.get(scopeId);
-  while (current && current.parentScopeId) {
-    applicable.add(current.parentScopeId);
-    current = topology.descriptorsById.get(current.parentScopeId);
+function descriptorErrorToken(frontmatter) {
+  const nested = Object.entries(frontmatter).filter(([, value]) => value !== null && typeof value === "object" &&
+    (!Array.isArray(value) || value.some((entry) => entry !== null && typeof entry === "object")));
+  if (nested.length > 0) return `nested:${nested.map(([field]) => field).sort().join(",")}`;
+  for (const field of ["scope_schema", "scope_id", "scope_path", "title", "status"]) {
+    if (frontmatter[field] === undefined || frontmatter[field] === null || frontmatter[field] === "") return `missing:${field}`;
   }
-  function descendants(id) {
-    for (const child of topology.childrenById.get(id) || []) {
-      applicable.add(child.scopeId);
-      descendants(child.scopeId);
-    }
-  }
-  descendants(scopeId);
-  return [...applicable];
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(String(frontmatter.scope_id))) return "format:scope_id";
+  if (frontmatter.parent_scope_id !== undefined && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(String(frontmatter.parent_scope_id))) return "format:parent_scope_id";
+  if (!new Set(["active", "archived", "retired"]).has(String(frontmatter.status))) return "value:status";
+  if (frontmatter.scope_order !== undefined && !/^-?\d+$/u.test(String(frontmatter.scope_order))) return "format:scope_order";
+  return "invalid:descriptor";
 }
 
 function scopeFindings(topology, inventory) {
   const results = [];
   const parsed = [];
   const add = (code, origin, message, scopeId = "", obligations = [], discriminator = "") => {
-    results.push(finding({ code, origin, message, obligations, discriminator, scopeIds: scopeApplicability(topology, scopeId) }));
+    results.push(finding({ code, origin, message, obligations, discriminator, scopeIds: scopeId ? [scopeId] : [] }));
   };
 
   for (const file of inventory.files) {
     if (path.posix.basename(file.relativePath) !== "00 Index.md" || !file.frontmatter) continue;
     if (String(file.frontmatter.type || "") !== "scope-index") {
       if (String(file.frontmatter.ariadne_scope_adoption || "") === "dismissed") {
-        add("dismissed-candidate", file.relativePath, `${file.relativePath}: scope adoption candidate is dismissed`, "", [], file.contentHash);
+        add("dismissed-candidate", file.relativePath, `${file.relativePath}: scope adoption candidate is dismissed`, "", [], "dismissed");
       }
       continue;
     }
@@ -71,7 +72,7 @@ function scopeFindings(topology, inventory) {
       parsed.push({ descriptor, file, directory: descriptorDirectory(file) });
       if (!descriptor.supported) add("invalid-schema", file.relativePath, `${file.relativePath}: unsupported scope_schema ${descriptor.schema}`, descriptor.scopeId, [], String(descriptor.schema));
     } catch (error) {
-      add("invalid-schema", file.relativePath, `${file.relativePath}: ${error.message}`, String(file.frontmatter.scope_id || ""), [], error.message);
+      add("invalid-schema", file.relativePath, `${file.relativePath}: ${error.message}`, String(file.frontmatter.scope_id || ""), [], descriptorErrorToken(file.frontmatter));
     }
   }
 
@@ -95,10 +96,12 @@ function scopeFindings(topology, inventory) {
     paths.set(item.descriptor.scopePath, pathGroup);
   }
   for (const [id, group] of ids) if (group.length > 1) {
-    for (const item of group) add("duplicate-scope-id", item.file.relativePath, `${item.file.relativePath}: duplicate scope_id ${id}`, id, group.map((entry) => entry.file.relativePath), id);
+    const participants = sortedUnique(group.map((entry) => entry.file.relativePath));
+    for (const item of group) add("duplicate-scope-id", item.file.relativePath, `${item.file.relativePath}: duplicate scope_id ${id}`, id, [item.file.relativePath], `${id}|${participants.join("|")}`);
   }
   for (const [scopePath, group] of paths) if (group.length > 1) {
-    for (const item of group) add("colliding-scope-path", item.file.relativePath, `${item.file.relativePath}: colliding scope_path ${scopePath}`, item.descriptor.scopeId, group.map((entry) => entry.file.relativePath), scopePath);
+    const participants = sortedUnique(group.map((entry) => entry.file.relativePath));
+    for (const item of group) add("colliding-scope-path", item.file.relativePath, `${item.file.relativePath}: colliding scope_path ${scopePath}`, item.descriptor.scopeId, [item.file.relativePath], `${scopePath}|${participants.join("|")}`);
   }
 
   const byDirectory = new Map(parsed.filter((item) => item.descriptor.supported).map((item) => [item.directory, item]));
@@ -168,8 +171,32 @@ function scopeFindings(topology, inventory) {
   return Object.freeze(results.sort((left, right) => Buffer.from(left.sort_key).compare(Buffer.from(right.sort_key))));
 }
 
-function filterFindingsByScope(findings, targetScopeId) {
-  return Object.freeze(findings.filter((item) => item.scope_ids.includes(targetScopeId)));
+function filterFindingsByScope(findings, targetScopeId, topology) {
+  if (!topology || !topology.descriptorsById.has(targetScopeId)) {
+    return Object.freeze(findings.filter((item) => item.scope_ids.includes(targetScopeId)));
+  }
+  const target = topology.descriptorsById.get(targetScopeId);
+  const ambiguousTargetId = findings.filter((item) => item.code === "duplicate-scope-id" && item.scope_ids.includes(targetScopeId)).length > 1;
+  const targetPath = target.scopePath === "." ? "" : target.scopePath;
+  const ancestorSurfaces = new Set();
+  let current = target;
+  while (current) {
+    const base = current.scopePath === "." ? "" : `${current.scopePath}/`;
+    ancestorSurfaces.add(`${base}00 Index.md`);
+    ancestorSurfaces.add(`${base}AGENTS.md`);
+    ancestorSurfaces.add(`${base}Agent/00 Agent Navigation.md`);
+    ancestorSurfaces.add(`${base}Agent/Task Routing Matrix.md`);
+    current = current.parentScopeId ? topology.descriptorsById.get(current.parentScopeId) : null;
+  }
+  function inTarget(value) {
+    const candidate = normalizedFindingPath(value);
+    return targetPath === "" || candidate === targetPath || candidate.startsWith(`${targetPath}/`);
+  }
+  return Object.freeze(findings.filter((item) => {
+    if (item.origin && (inTarget(item.origin) || ancestorSurfaces.has(item.origin))) return true;
+    if (item.obligations.some((value) => inTarget(value) || ancestorSurfaces.has(value))) return true;
+    return !ambiguousTargetId && item.scope_ids.includes(targetScopeId);
+  }));
 }
 
 const ADOPTION_CODES = new Set(["pending-adoption", "dismissed-candidate", "unsupported-root"]);
