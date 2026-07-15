@@ -34,7 +34,8 @@ function parseOperationRequest(json) {
   if (typeof json.operation !== "string" || !OPERATIONS.has(json.operation)) throw new Error(`unsupported operation: ${json.operation}`);
   if (typeof json.target_scope_id !== "string" || !ID.test(json.target_scope_id)) throw new Error("target_scope_id must be lower-kebab-case");
   for (const field of REQUIRED[json.operation]) if (json[field] === undefined) throw new Error(`${json.operation} requires ${field}`);
-  const permitted = new Set(["operation_schema", "operation", "target_scope_id", "replacement_scope_id", "normalize_files", "allowed_write_paths", ...REQUIRED[json.operation]]);
+  const permitted = new Set(["operation_schema", "operation", "target_scope_id", "normalize_files", "allowed_write_paths", ...REQUIRED[json.operation]]);
+  if (json.operation === "set-status") permitted.add("replacement_scope_id");
   for (const key of Object.keys(json)) if (!permitted.has(key)) throw new Error(`${key} is not valid for ${json.operation}`);
   const result = { operation_schema: 1, operation: json.operation, target_scope_id: json.target_scope_id };
   for (const field of ["source_path", "destination_path"]) if (json[field] !== undefined) result[field] = normalizedPath(json[field], field);
@@ -43,6 +44,8 @@ function parseOperationRequest(json) {
     result.desired_status = json.desired_status;
   }
   if (json.replacement_scope_id !== undefined) {
+    if (json.operation !== "set-status") throw new Error(`replacement_scope_id is not valid for ${json.operation}`);
+    if (json.desired_status !== "retired") throw new Error("replacement_scope_id is only valid when desired_status is retired");
     if (typeof json.replacement_scope_id !== "string" || !ID.test(json.replacement_scope_id)) throw new Error("replacement_scope_id must be lower-kebab-case");
     result.replacement_scope_id = json.replacement_scope_id;
   }
@@ -70,6 +73,7 @@ function descriptorBytes(descriptor, existingBytes = null) {
   lines.push(`status: ${descriptor.status}`);
   if (descriptor.scopeOrder !== null && descriptor.scopeOrder !== undefined) lines.push(`scope_order: ${descriptor.scopeOrder}`);
   if (descriptor.formerScopePaths && descriptor.formerScopePaths.length) lines.push("former_scope_paths:", ...descriptor.formerScopePaths.map((item) => `  - ${item}`));
+  if (descriptor.replacedByScopeId) lines.push(`replaced_by_scope_id: ${descriptor.replacedByScopeId}`);
   lines.push("---");
   let body = `\n# ${descriptor.title}\n`;
   if (existingBytes) {
@@ -106,6 +110,8 @@ function planOperation(inventory, model, requestValue) {
   let changedDescriptorIds = new Set();
 
   if (request.operation === "create") {
+    const knownIds = inventory.files.filter((item) => path.posix.basename(item.relativePath) === "00 Index.md" && item.frontmatter && typeof item.frontmatter.scope_id === "string").map((item) => item.frontmatter.scope_id.normalize("NFC").trim());
+    if (knownIds.includes(request.target_scope_id)) throw new Error(`scope ID already exists: ${request.target_scope_id}`);
     if (!directoryPaths.has(request.destination_path)) throw new Error("create destination directory does not exist");
     if (filePaths.has(`${request.destination_path}/00 Index.md`)) throw new Error("create destination already has a descriptor");
     const ancestors = descriptors.filter((item) => item.scopePath === "." || request.destination_path.startsWith(`${item.scopePath}/`)).sort((a, b) => b.scopePath.length - a.scopePath.length);
@@ -123,6 +129,7 @@ function planOperation(inventory, model, requestValue) {
   }
   if (request.operation === "move") {
     if (current.scopePath !== request.source_path) throw new Error("source_path does not match target scope");
+    if (request.destination_path === request.source_path || request.destination_path.startsWith(`${request.source_path}/`)) throw new Error("move destination must not be equal to or beneath the source subtree");
     if (directoryPaths.has(request.destination_path) || filePaths.has(request.destination_path)) throw new Error("move destination already exists");
     for (const item of model.descriptorsById.values()) if ((item.formerScopePaths || []).includes(request.destination_path)) throw new Error("move destination is a reserved former path");
     const parentPath = path.posix.dirname(request.destination_path);
@@ -138,11 +145,18 @@ function planOperation(inventory, model, requestValue) {
     replacements.push({ kind: "redirect", path: `${request.source_path}/00 Index.md`, bytes: `---\ntype: scope-redirect\nredirect_schema: 1\nformer_scope_path: ${request.source_path}\ntarget_scope_id: ${current.scopeId}\ntarget_scope_path: ${request.destination_path}\n---\n` });
   }
   if (request.operation === "set-status") {
+    let replacement = null;
+    if (request.replacement_scope_id !== undefined) {
+      replacement = model.descriptorsById.get(request.replacement_scope_id);
+      if (request.replacement_scope_id === current.scopeId) throw new Error("replacement_scope_id must name a distinct scope");
+      if (!replacement || !["active", "archived"].includes(replacement.status)) throw new Error("replacement_scope_id must name an active or archived adopted scope");
+    }
+    if (request.desired_status === "retired" && !replacement) throw new Error("set-status to retired requires replacement_scope_id");
     const allowed = current.status === request.desired_status || current.status === "active" && request.desired_status === "archived" || current.status === "archived" && ["active", "retired"].includes(request.desired_status) || current.status === "retired" && request.desired_status === "archived";
     lifecycle_checks.push({ from: current.status, to: request.desired_status, allowed });
     if (allowed && request.desired_status === "retired" && (model.childrenById.get(current.scopeId) || []).some((item) => item.status === "active")) lifecycle_checks[0] = { ...lifecycle_checks[0], allowed: false, reason: "retired scopes may not contain active children" };
     if (lifecycle_checks[0].allowed) {
-      descriptors = descriptors.map((item) => item.scopeId === current.scopeId ? { ...item, status: request.desired_status } : item);
+      descriptors = descriptors.map((item) => item.scopeId === current.scopeId ? { ...item, status: request.desired_status, ...(replacement ? { replacedByScopeId: replacement.scopeId } : {}) } : item);
       changedDescriptorIds.add(current.scopeId);
     }
   }
@@ -159,13 +173,25 @@ function planOperation(inventory, model, requestValue) {
     const activation = replacements.findIndex((item) => item.activation);
     if (activation >= 0) replacements.push(...replacements.splice(activation, 1));
   }
-  const base_formula_proposals = inventory.files.filter((item) => item.relativePath.startsWith("Bases/") && item.relativePath.endsWith(".base") && item.rawBytes && /file\.inFolder/u.test(item.rawBytes.toString("utf8")))
-    .map((item) => ({ path: item.relativePath, recognized: /file\.inFolder\(\s*["'][^"']+["']\s*\)/u.test(item.rawBytes.toString("utf8")), authorized: request.allowed_write_paths.includes(item.relativePath), action: "add child-before-parent scope branches" }));
-  const content_write_paths = [...new Set([...replacements.map((item) => item.path), ...request.normalize_files, ...base_formula_proposals.map((item) => item.path)])].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
+  const baseMentions = inventory.files.filter((item) => item.relativePath.startsWith("Bases/") && item.relativePath.endsWith(".base") && item.rawBytes && /file\.inFolder/u.test(item.rawBytes.toString("utf8")))
+    .map((item) => ({ path: item.relativePath, recognized: /file\.inFolder\(\s*["'][^"']+["']\s*\)/u.test(item.rawBytes.toString("utf8")) }));
+  const base_formula_proposals = baseMentions.filter((item) => item.recognized)
+    .map((item) => ({ path: item.path, recognized: true, authorized: request.allowed_write_paths.includes(item.path), action: "add child-before-parent scope branches" }));
+  const base_formula_reports = baseMentions.filter((item) => !item.recognized)
+    .map((item) => ({ path: item.path, code: "unsupported-base-formula", rewrite_proposed: false }));
+  const content_write_paths = [...new Set([...replacements.map((item) => item.path), ...request.normalize_files, ...base_formula_proposals.filter((item) => item.recognized).map((item) => item.path)])].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
   const refusals = [];
-  for (const item of content_write_paths) if (!request.allowed_write_paths.includes(item)) refusals.push({ code: "unauthorized-write", path: item });
   if (lifecycle_checks.some((item) => !item.allowed)) refusals.push({ code: "lifecycle-transition-refused", path: descriptorPath(current) });
-  return Object.freeze({ plan_schema: 1, operation: request.operation, target_scope_id: request.target_scope_id, preconditions, lifecycle_checks, moves, replacements, base_formula_proposals, content_write_paths, refusals, write_authorized: refusals.length === 0 });
+  const missing = content_write_paths.filter((item) => !request.allowed_write_paths.includes(item));
+  const unused = request.allowed_write_paths.filter((item) => !content_write_paths.includes(item));
+  if (missing.length || unused.length) {
+    const details = [missing.length ? `missing: ${missing.join(", ")}` : "", unused.length ? `unused: ${unused.join(", ")}` : ""].filter(Boolean).join("; ");
+    const error = new Error(`allowed_write_paths must exactly match planned content writes; ${details}`);
+    error.missing_paths = missing;
+    error.unused_paths = unused;
+    throw error;
+  }
+  return Object.freeze({ plan_schema: 1, operation: request.operation, target_scope_id: request.target_scope_id, preconditions, lifecycle_checks, moves, replacements, base_formula_proposals, base_formula_reports, content_write_paths, refusals, write_authorized: true });
 }
 
 module.exports = { hashPlan, parseOperationRequest, planOperation };

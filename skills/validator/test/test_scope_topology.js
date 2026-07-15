@@ -51,12 +51,31 @@ assert.strictEqual(hashPlan({ b: 2, a: 1 }), hashPlan({ a: 1, b: 2 }));
 
 const operationInventory = inventoryVault(fixture("deep_transparent_ancestry"));
 const operationModel = buildTopology(operationInventory);
-const repairPlan = planOperation(operationInventory, operationModel, parsedRepair);
+function authorizePlan(inventory, model, request) {
+  try { return planOperation(inventory, model, parseOperationRequest(request)); }
+  catch (error) {
+    assert.match(error.message, /allowed_write_paths must exactly match/u);
+    assert(Array.isArray(error.missing_paths));
+    return planOperation(inventory, model, parseOperationRequest({ ...request, allowed_write_paths: [...(request.allowed_write_paths || []), ...error.missing_paths] }));
+  }
+}
+
+assert.throws(() => planOperation(operationInventory, operationModel, parsedRepair), /allowed_write_paths must exactly match/u);
+const repairPlan = authorizePlan(operationInventory, operationModel, operationFixture("repair"));
 assert.deepStrictEqual(repairPlan.content_write_paths, [...repairPlan.content_write_paths].sort((a, b) => Buffer.from(a).compare(Buffer.from(b))));
 assert.ok(repairPlan.replacements.some((item) => item.path === "Agent/Scope Map.md"));
-assert.ok(repairPlan.refusals.some((item) => item.code === "unauthorized-write" && item.path === "Agent/Scope Map.canvas"));
-assert.strictEqual(repairPlan.write_authorized, false);
-assert.strictEqual(hashPlan(repairPlan), hashPlan(planOperation(operationInventory, operationModel, parsedRepair)));
+assert.strictEqual(repairPlan.write_authorized, true);
+assert.throws(() => planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: [...repairPlan.content_write_paths, "Unused.md"] })), /unused: Unused.md/u);
+assert.strictEqual(hashPlan(repairPlan), hashPlan(authorizePlan(operationInventory, operationModel, operationFixture("repair"))));
+
+assert.throws(() => parseOperationRequest({ ...operationFixture("repair"), replacement_scope_id: "alpha" }), /replacement_scope_id is not valid/u);
+assert.throws(() => parseOperationRequest({ ...operationFixture("set-status"), desired_status: "archived", replacement_scope_id: "zulu" }), /only valid.*retired/u);
+assert.throws(() => authorizePlan(operationInventory, operationModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "alpha" }), /distinct/u);
+assert.throws(() => authorizePlan(operationInventory, operationModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "missing" }), /adopted scope/u);
+const archivedAlphaModel = { ...operationModel, descriptorsById: new Map(operationModel.descriptorsById) };
+archivedAlphaModel.descriptorsById.set("alpha", { ...archivedAlphaModel.descriptorsById.get("alpha"), status: "archived" });
+const retirement = authorizePlan(operationInventory, archivedAlphaModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "zulu" });
+assert.match(retirement.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Alpha/00 Index.md")).bytes, /replaced_by_scope_id: zulu/u);
 
 for (const [from, to, allowed] of [
   ["active", "active", true], ["archived", "archived", true], ["retired", "retired", true],
@@ -65,22 +84,27 @@ for (const [from, to, allowed] of [
 ]) {
   const synthetic = { ...operationModel, descriptorsById: new Map(operationModel.descriptorsById) };
   synthetic.descriptorsById.set("alpha", { ...synthetic.descriptorsById.get("alpha"), status: from });
-  const plan = planOperation(operationInventory, synthetic, parseOperationRequest({ ...operationFixture("set-status"), desired_status: to }));
+  const request = { ...operationFixture("set-status"), desired_status: to };
+  if (to === "retired") request.replacement_scope_id = "zulu";
+  const plan = authorizePlan(operationInventory, synthetic, request);
   assert.strictEqual(plan.lifecycle_checks[0].allowed, allowed, `${from} -> ${to}`);
 }
 
-const movePlan = planOperation(operationInventory, operationModel, parseOperationRequest(operationFixture("move")));
+const movePlan = authorizePlan(operationInventory, operationModel, operationFixture("move"));
 assert.deepStrictEqual(movePlan.moves, [{ source_path: "Domains/Product/Workstreams/Alpha", destination_path: "Domains/Product/Workstreams/Beta" }]);
 assert.ok(movePlan.replacements.some((item) => item.kind === "redirect" && item.path === "Domains/Product/Workstreams/Alpha/00 Index.md"));
 assert.match(movePlan.replacements.find((item) => item.kind === "redirect").bytes, /redirect_schema: 1/u);
 assert.match(movePlan.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Beta/00 Index.md")).bytes, /parent_scope_id: product/u);
 assert.throws(() => planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("move"), source_path: "Domains/Product/Zulu" })), /does not match target/u);
 assert.throws(() => planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("move"), destination_path: "Domains/Product/Zulu" })), /destination already exists/u);
+assert.throws(() => planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("move"), destination_path: "Domains/Product/Workstreams/Alpha/Child" })), /source subtree/u);
+assert.throws(() => planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("move"), destination_path: "Domains/Product/Workstreams/Alpha" })), /source subtree/u);
 const reservedModel = { ...operationModel, descriptorsById: new Map(operationModel.descriptorsById) };
 reservedModel.descriptorsById.set("zulu", { ...reservedModel.descriptorsById.get("zulu"), formerScopePaths: ["Legacy/Alpha"] });
 assert.throws(() => planOperation(operationInventory, reservedModel, parseOperationRequest({ ...operationFixture("move"), destination_path: "Legacy/Alpha" })), /reserved former path/u);
 
-const adoption = planOperation(inventoryVault(fixture("pending_without_root")), buildTopology(inventoryVault(fixture("pending_without_root"))), parseOperationRequest(operationFixture("adopt")));
+const adoptionInventory = inventoryVault(fixture("pending_without_root"));
+const adoption = authorizePlan(adoptionInventory, buildTopology(adoptionInventory), operationFixture("adopt"));
 assert.strictEqual(adoption.replacements.at(-1).path, "00 Index.md");
 assert.strictEqual(adoption.replacements.at(-1).activation, true);
 
@@ -88,9 +112,9 @@ const createVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-cre
 fs.cpSync(fixture("root_only"), createVault, { recursive: true });
 fs.mkdirSync(path.join(createVault, "New Scope"));
 const createInventory = inventoryVault(createVault);
-const createPlan = planOperation(createInventory, buildTopology(createInventory), parseOperationRequest({
+const createPlan = authorizePlan(createInventory, buildTopology(createInventory), {
   operation_schema: 1, operation: "create", target_scope_id: "new-scope", destination_path: "New Scope", allowed_write_paths: [],
-}));
+});
 assert.ok(createPlan.replacements.some((item) => item.path === "New Scope/00 Index.md" && item.kind === "descriptor"));
 assert.ok(createPlan.replacements.some((item) => item.path === "New Scope/AGENTS.md" && item.kind === "checkpoint"));
 fs.rmSync(createVault, { recursive: true, force: true });
@@ -101,16 +125,26 @@ fs.mkdirSync(path.join(baseVault, "Bases"), { recursive: true });
 fs.writeFileSync(path.join(baseVault, "Bases", "Recognized.base"), 'formulas:\n  scope: file.inFolder("Domains/Alpha")\n');
 fs.writeFileSync(path.join(baseVault, "Bases", "Unsupported.base"), "formulas:\n  scope: file.inFolder(dynamicPath)\n");
 const baseInventory = inventoryVault(baseVault);
-const basePlan = planOperation(baseInventory, buildTopology(baseInventory), parseOperationRequest({
-  ...operationFixture("repair"), allowed_write_paths: ["Bases/Recognized.base"],
-}));
+const basePlan = authorizePlan(baseInventory, buildTopology(baseInventory), { ...operationFixture("repair"), allowed_write_paths: [] });
 assert.deepStrictEqual(basePlan.base_formula_proposals.map(({ path: itemPath, recognized, authorized }) => ({ path: itemPath, recognized, authorized })), [
   { path: "Bases/Recognized.base", recognized: true, authorized: true },
-  { path: "Bases/Unsupported.base", recognized: false, authorized: false },
 ]);
-assert.ok(basePlan.refusals.some((item) => item.path === "Bases/Unsupported.base"));
+assert.deepStrictEqual(basePlan.base_formula_reports, [{ path: "Bases/Unsupported.base", code: "unsupported-base-formula", rewrite_proposed: false }]);
+assert.ok(!basePlan.content_write_paths.includes("Bases/Unsupported.base"));
+assert.throws(() => planOperation(baseInventory, buildTopology(baseInventory), parseOperationRequest({
+  ...operationFixture("repair"), allowed_write_paths: [...basePlan.content_write_paths, "Bases/Unsupported.base"],
+})), /unused: Bases\/Unsupported\.base/u);
 assert.ok(!basePlan.replacements.some((item) => item.path.endsWith(".base") && item.path !== "Bases/Scope Registry.base"), "Base proposals must not become implicit rewrites");
 fs.rmSync(baseVault, { recursive: true, force: true });
+
+const duplicateCreateVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-duplicate-"));
+fs.cpSync(fixture("pending_without_root"), duplicateCreateVault, { recursive: true });
+fs.mkdirSync(path.join(duplicateCreateVault, "Elsewhere"));
+const duplicateInventory = inventoryVault(duplicateCreateVault);
+assert.throws(() => planOperation(duplicateInventory, buildTopology(duplicateInventory), parseOperationRequest({
+  operation_schema: 1, operation: "create", target_scope_id: "pending", destination_path: "Elsewhere", allowed_write_paths: [],
+})), /scope ID already exists/u);
+fs.rmSync(duplicateCreateVault, { recursive: true, force: true });
 
 assert.strictEqual(normalizeNfc("Cafe\u0301"), "Café");
 assert.strictEqual(normalizeScopePath("Domains\\Cafe\u0301/./Research"), "Domains/Café/Research");
