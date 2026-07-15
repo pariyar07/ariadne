@@ -10,8 +10,8 @@ const path = require("path");
 const VALIDATOR = path.resolve(__dirname, "../scripts/validate_vault.sh");
 const FIXTURES = path.resolve(__dirname, "fixtures/recursive_scopes");
 
-function runValidatorPath(vaultPath) {
-  const result = childProcess.spawnSync(VALIDATOR, [vaultPath], {
+function runValidatorPath(vaultPath, args = []) {
+  const result = childProcess.spawnSync(VALIDATOR, [vaultPath, ...args], {
     encoding: "utf8",
   });
   return {
@@ -21,8 +21,8 @@ function runValidatorPath(vaultPath) {
   };
 }
 
-function runValidator(fixtureName) {
-  return runValidatorPath(path.join(FIXTURES, fixtureName));
+function runValidator(fixtureName, args = []) {
+  return runValidatorPath(path.join(FIXTURES, fixtureName), args);
 }
 
 function assertSuccess(result) {
@@ -48,6 +48,11 @@ const COUNTERS = [
   "scope-navigation-warnings",
   "routing-matrix-warnings",
   "base-scope-formula-warnings",
+  "research-boundary-warnings",
+  "research-provenance-warnings",
+  "provenance-cycle-warnings",
+  "uncompiled-raw-source-warnings",
+  "research-hub-warnings",
 ];
 
 function assertCounters(output, expected = {}) {
@@ -227,6 +232,155 @@ const tests = [
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  },
+
+  function researchSchemaValidPassesWithFlatLists() {
+    const result = runValidator("research_schema_valid", ["--scope", "Domain", "--profile", "research"]);
+
+    assertSuccess(result);
+    assertCounters(result.stdout);
+  },
+
+  function researchWarningsAreRegisteredAndNonFatal() {
+    const result = runValidator("research_schema_warnings", ["--scope", "Domain", "--profile", "research"]);
+
+    assertSuccess(result);
+    assertCounters(result.stdout, {
+      "research-boundary-warnings": 2,
+      "research-provenance-warnings": 2,
+      "provenance-cycle-warnings": 2,
+      "uncompiled-raw-source-warnings": 2,
+      "research-hub-warnings": 1,
+    });
+    assert.match(result.stdout, /nested schema value/);
+    assert.match(result.stdout, /generated-analysis.*derived_from/);
+    assert.match(result.stdout, /provenance cycle/);
+    assert.match(result.stdout, /compilation_status: pending/);
+    assert.match(result.stdout, /does not link member/);
+  },
+
+  function legacyResearchWithoutSchemaIsGated() {
+    const result = runValidator("research_legacy_gated", ["--scope", "Domain", "--profile", "research"]);
+
+    assertSuccess(result);
+    assertCounters(result.stdout);
+  },
+
+  function semanticStalenessDoesNotBecomeStructuralWarning() {
+    const result = runValidator("research_semantically_stale_structurally_valid", ["--scope", "Domain", "--profile", "research"]);
+
+    assertSuccess(result);
+    assertCounters(result.stdout);
+    assert.doesNotMatch(result.stdout, /stale|credib|contradict/iu);
+  },
+
+  function scopedResearchExcludesSiblingDefects() {
+    const whole = runValidator("scoped_research_sibling_isolation");
+    assertFailure(whole);
+    assert.match(whole.stdout, /^yaml-errors: 1$/m);
+    assertCounter(whole.stdout, "broken-wikilinks", 1);
+    assertCounter(whole.stdout, "true-orphans-md", 1);
+    assertCounter(whole.stdout, "unlinked-base-files", 1);
+
+    const result = runValidator("scoped_research_sibling_isolation", ["--scope", "Domains/Healthy", "--profile", "research"]);
+
+    assertSuccess(result);
+    assertCounters(result.stdout);
+    assert.doesNotMatch(result.stdout, /Domains\/Broken/);
+  },
+
+  function nearestScopeBareLinksCreditOneTarget() {
+    const result = runValidator("research_schema_valid", ["--scope", "Domain", "--profile", "research"]);
+
+    assertSuccess(result);
+    assertCounter(result.stdout, "ambiguous-wikilink-warnings", 0);
+    assertCounter(result.stdout, "uncompiled-raw-source-warnings", 0);
+  },
+
+  function researchNavigationRequiresQualifiedMemberLinks() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const hub = path.join(vault, "Domain/Compiled Hub.md");
+      fs.writeFileSync(hub, fs.readFileSync(hub, "utf8").replace("[[Domain/Compiled Note]]", "[[Compiled Note]]"));
+
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assertCounter(result.stdout, "research-hub-warnings", 1);
+      assert.match(result.stdout, /does not link member/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function invalidRollupMustNameDescendantDescriptor() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const descriptor = path.join(vault, "Domain/Research Boundary.md");
+      const changed = fs.readFileSync(descriptor, "utf8")
+        .replace("view_mode: exact", "view_mode: rollup")
+        .replace("rollup_boundaries: []", "rollup_boundaries:\n  - \"[[Other/Shared]]\"");
+      fs.writeFileSync(descriptor, changed);
+
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assertCounter(result.stdout, "research-boundary-warnings", 1);
+      assert.match(result.stdout, /not a declared descendant descriptor/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function nestedArtifactSchemaWarnsWithoutYamlFailure() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const note = path.join(vault, "Domain/Compiled Note.md");
+      const changed = fs.readFileSync(note, "utf8")
+        .replace("derived_from:\n  - \"[[Shared]]\"", "derived_from:\n  source: \"[[Shared]]\"");
+      fs.writeFileSync(note, changed);
+
+      const result = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(result);
+      assert.match(result.stdout, /^yaml-ok$/m);
+      assertCounter(result.stdout, "research-provenance-warnings", 1);
+      assert.match(result.stdout, /nested schema value/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
+  function invalidScopesAndProfilesAreRejected() {
+    const fixture = path.join(FIXTURES, "research_schema_valid");
+    for (const args of [
+      ["--scope", "/absolute"],
+      ["--scope", "../outside"],
+      ["--scope", "Missing"],
+      ["--scope", "00 Index.md"],
+      ["--profile", "research"],
+      ["--scope", "Domain", "--profile", "unsupported"],
+    ]) {
+      const result = runValidatorPath(fixture, args);
+      assertFailure(result);
+      assert.match(result.stderr, /^validator-error:/m);
+    }
+  },
+
+  function noFlagCounterOrderAndFatalSemanticsStayCompatible() {
+    const result = runValidator("root_only_legacy_pass");
+    assertSuccess(result);
+    const counterNames = result.stdout.split("\n")
+      .filter((line) => /^[a-z][a-z-]+: \d+$/u.test(line))
+      .map((line) => line.split(":", 1)[0]);
+    assert.deepStrictEqual(counterNames, COUNTERS);
+
+    const fatal = runValidator("duplicate_basename_wikilink_ambiguity_warning");
+    assertSuccess(fatal);
+    assertCounter(fatal.stdout, "ambiguous-wikilink-warnings", 1);
   },
 ];
 

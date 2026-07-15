@@ -239,6 +239,8 @@ Run the validator from a vault root:
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
 
+Use `--scope "Domains/Product"` for a vault-relative subtree, and add `--profile research` for schema-v1 research obligations. Scoped runs inventory the whole vault before filtering results.
+
 A healthy vault reports all zeros:
 
 ```text
@@ -253,6 +255,11 @@ ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
 base-scope-formula-warnings: 0
+research-boundary-warnings: 0
+research-provenance-warnings: 0
+provenance-cycle-warnings: 0
+uncompiled-raw-source-warnings: 0
+research-hub-warnings: 0
 ```
 
 See `docs/guides/validator.md` for the full counter reference.
