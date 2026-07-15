@@ -4,6 +4,8 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-16
+
 ### Changed
 
 - Position Ariadne around filesystem-backed Markdown knowledge vaults; Obsidian remains an optional, recommended frontend and compatibility target.
@@ -34,5 +36,6 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 This is a breaking release. Reinstall the skill package, remove stale copied retired folders, and update saved prompts and external automations. See [Research Lifecycle Migration](docs/guides/research-lifecycle-migration.md).
 
-[Unreleased]: https://github.com/pariyar07/ariadne/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/pariyar07/ariadne/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/pariyar07/ariadne/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/pariyar07/ariadne/releases/tag/v0.2.0
