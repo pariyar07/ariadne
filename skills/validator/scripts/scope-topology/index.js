@@ -8,4 +8,5 @@ module.exports = {
   ...require("./markers"),
   ...require("./render"),
   ...require("./operations"),
+  ...require("./synchronizer"),
 };

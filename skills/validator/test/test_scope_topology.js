@@ -22,6 +22,8 @@ const {
   renderScopeMapMarkdown,
   renderScopeMapCanvas,
   scopeFindings,
+  checkTopology,
+  applyOperation,
 } = require("../scripts/scope-topology");
 const { spawnSync } = require("child_process");
 
@@ -51,6 +53,7 @@ assert.strictEqual(hashPlan({ b: 2, a: 1 }), hashPlan({ a: 1, b: 2 }));
 
 const operationInventory = inventoryVault(fixture("deep_transparent_ancestry"));
 const operationModel = buildTopology(operationInventory);
+assert.ok(checkTopology(fixture("deep_transparent_ancestry")).changes.length > 0);
 function planWithDisclosedWrites(inventory, model, request) {
   const preview = planOperation(inventory, model, parseOperationRequest({ ...request, allowed_write_paths: [] }));
   assert.strictEqual(preview.write_authorized, false);
@@ -101,6 +104,13 @@ for (const [from, to, allowed] of [
 
 const movePlan = planWithDisclosedWrites(operationInventory, operationModel, operationFixture("move"));
 assert.deepStrictEqual(movePlan.moves, [{ source_path: "Domains/Product/Workstreams/Alpha", destination_path: "Domains/Product/Workstreams/Beta" }]);
+const moveVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-move-"));
+fs.cpSync(fixture("deep_transparent_ancestry"), moveVault, { recursive: true });
+const moved = applyOperation(moveVault, { ...operationFixture("move"), allowed_write_paths: movePlan.content_write_paths });
+assert.deepStrictEqual(moved.changes, []);
+assert.ok(fs.existsSync(path.join(moveVault, "Domains/Product/Workstreams/Beta/00 Index.md")));
+assert.ok(fs.existsSync(path.join(moveVault, "Domains/Product/Workstreams/Alpha/00 Index.md")));
+fs.rmSync(moveVault, { recursive: true, force: true });
 assert.ok(movePlan.replacements.some((item) => item.kind === "redirect" && item.path === "Domains/Product/Workstreams/Alpha/00 Index.md"));
 assert.match(movePlan.replacements.find((item) => item.kind === "redirect").bytes, /redirect_schema: 1/u);
 assert.match(movePlan.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Beta/00 Index.md")).bytes, /parent_scope_id: product/u);
