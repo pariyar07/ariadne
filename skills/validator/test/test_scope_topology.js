@@ -51,31 +51,35 @@ assert.strictEqual(hashPlan({ b: 2, a: 1 }), hashPlan({ a: 1, b: 2 }));
 
 const operationInventory = inventoryVault(fixture("deep_transparent_ancestry"));
 const operationModel = buildTopology(operationInventory);
-function authorizePlan(inventory, model, request) {
-  try { return planOperation(inventory, model, parseOperationRequest(request)); }
-  catch (error) {
-    assert.match(error.message, /allowed_write_paths must exactly match/u);
-    assert(Array.isArray(error.missing_paths));
-    return planOperation(inventory, model, parseOperationRequest({ ...request, allowed_write_paths: [...(request.allowed_write_paths || []), ...error.missing_paths] }));
-  }
+function planWithDisclosedWrites(inventory, model, request) {
+  const preview = planOperation(inventory, model, parseOperationRequest({ ...request, allowed_write_paths: [] }));
+  assert.strictEqual(preview.write_authorized, false);
+  if (preview.content_write_paths.length) assert.ok(preview.refusals.some((item) => item.code === "missing-write-authorization"));
+  return planOperation(inventory, model, parseOperationRequest({ ...request, allowed_write_paths: preview.content_write_paths }));
 }
 
-assert.throws(() => planOperation(operationInventory, operationModel, parsedRepair), /allowed_write_paths must exactly match/u);
-const repairPlan = authorizePlan(operationInventory, operationModel, operationFixture("repair"));
+const repairPreview = planOperation(operationInventory, operationModel, parsedRepair);
+assert.strictEqual(repairPreview.write_authorized, false);
+assert.ok(repairPreview.refusals.some((item) => item.code === "missing-write-authorization" && item.path === "Agent/Scope Map.canvas"));
+const repairPlan = planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: repairPreview.content_write_paths }));
 assert.deepStrictEqual(repairPlan.content_write_paths, [...repairPlan.content_write_paths].sort((a, b) => Buffer.from(a).compare(Buffer.from(b))));
 assert.ok(repairPlan.replacements.some((item) => item.path === "Agent/Scope Map.md"));
 assert.strictEqual(repairPlan.write_authorized, true);
-assert.throws(() => planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: [...repairPlan.content_write_paths, "Unused.md"] })), /unused: Unused.md/u);
-assert.strictEqual(hashPlan(repairPlan), hashPlan(authorizePlan(operationInventory, operationModel, operationFixture("repair"))));
+const unusedAuthorization = planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: [...repairPlan.content_write_paths, "Unused.md"] }));
+assert.strictEqual(unusedAuthorization.write_authorized, false);
+assert.ok(unusedAuthorization.refusals.some((item) => item.code === "unused-write-authorization" && item.path === "Unused.md"));
+assert.strictEqual(hashPlan(repairPlan), hashPlan(planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: repairPreview.content_write_paths }))));
 
 assert.throws(() => parseOperationRequest({ ...operationFixture("repair"), replacement_scope_id: "alpha" }), /replacement_scope_id is not valid/u);
 assert.throws(() => parseOperationRequest({ ...operationFixture("set-status"), desired_status: "archived", replacement_scope_id: "zulu" }), /only valid.*retired/u);
-assert.throws(() => authorizePlan(operationInventory, operationModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "alpha" }), /distinct/u);
-assert.throws(() => authorizePlan(operationInventory, operationModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "missing" }), /adopted scope/u);
+assert.throws(() => planWithDisclosedWrites(operationInventory, operationModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "alpha" }), /distinct/u);
+assert.throws(() => planWithDisclosedWrites(operationInventory, operationModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "missing" }), /adopted scope/u);
 const archivedAlphaModel = { ...operationModel, descriptorsById: new Map(operationModel.descriptorsById) };
 archivedAlphaModel.descriptorsById.set("alpha", { ...archivedAlphaModel.descriptorsById.get("alpha"), status: "archived" });
-const retirement = authorizePlan(operationInventory, archivedAlphaModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "zulu" });
+const retirement = planWithDisclosedWrites(operationInventory, archivedAlphaModel, { ...operationFixture("set-status"), desired_status: "retired", replacement_scope_id: "zulu" });
 assert.match(retirement.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Alpha/00 Index.md")).bytes, /replaced_by_scope_id: zulu/u);
+const retirementWithoutReplacement = planWithDisclosedWrites(operationInventory, archivedAlphaModel, { ...operationFixture("set-status"), desired_status: "retired" });
+assert.doesNotMatch(retirementWithoutReplacement.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Alpha/00 Index.md")).bytes, /replaced_by_scope_id/u);
 
 for (const [from, to, allowed] of [
   ["active", "active", true], ["archived", "archived", true], ["retired", "retired", true],
@@ -86,11 +90,16 @@ for (const [from, to, allowed] of [
   synthetic.descriptorsById.set("alpha", { ...synthetic.descriptorsById.get("alpha"), status: from });
   const request = { ...operationFixture("set-status"), desired_status: to };
   if (to === "retired") request.replacement_scope_id = "zulu";
-  const plan = authorizePlan(operationInventory, synthetic, request);
+  const plan = planWithDisclosedWrites(operationInventory, synthetic, request);
   assert.strictEqual(plan.lifecycle_checks[0].allowed, allowed, `${from} -> ${to}`);
+  if (!allowed) {
+    assert.deepStrictEqual(plan.replacements, []);
+    assert.deepStrictEqual(plan.content_write_paths, []);
+    assert.strictEqual(plan.write_authorized, false);
+  }
 }
 
-const movePlan = authorizePlan(operationInventory, operationModel, operationFixture("move"));
+const movePlan = planWithDisclosedWrites(operationInventory, operationModel, operationFixture("move"));
 assert.deepStrictEqual(movePlan.moves, [{ source_path: "Domains/Product/Workstreams/Alpha", destination_path: "Domains/Product/Workstreams/Beta" }]);
 assert.ok(movePlan.replacements.some((item) => item.kind === "redirect" && item.path === "Domains/Product/Workstreams/Alpha/00 Index.md"));
 assert.match(movePlan.replacements.find((item) => item.kind === "redirect").bytes, /redirect_schema: 1/u);
@@ -104,7 +113,7 @@ reservedModel.descriptorsById.set("zulu", { ...reservedModel.descriptorsById.get
 assert.throws(() => planOperation(operationInventory, reservedModel, parseOperationRequest({ ...operationFixture("move"), destination_path: "Legacy/Alpha" })), /reserved former path/u);
 
 const adoptionInventory = inventoryVault(fixture("pending_without_root"));
-const adoption = authorizePlan(adoptionInventory, buildTopology(adoptionInventory), operationFixture("adopt"));
+const adoption = planWithDisclosedWrites(adoptionInventory, buildTopology(adoptionInventory), operationFixture("adopt"));
 assert.strictEqual(adoption.replacements.at(-1).path, "00 Index.md");
 assert.strictEqual(adoption.replacements.at(-1).activation, true);
 
@@ -112,7 +121,7 @@ const createVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-cre
 fs.cpSync(fixture("root_only"), createVault, { recursive: true });
 fs.mkdirSync(path.join(createVault, "New Scope"));
 const createInventory = inventoryVault(createVault);
-const createPlan = authorizePlan(createInventory, buildTopology(createInventory), {
+const createPlan = planWithDisclosedWrites(createInventory, buildTopology(createInventory), {
   operation_schema: 1, operation: "create", target_scope_id: "new-scope", destination_path: "New Scope", allowed_write_paths: [],
 });
 assert.ok(createPlan.replacements.some((item) => item.path === "New Scope/00 Index.md" && item.kind === "descriptor"));
@@ -125,15 +134,16 @@ fs.mkdirSync(path.join(baseVault, "Bases"), { recursive: true });
 fs.writeFileSync(path.join(baseVault, "Bases", "Recognized.base"), 'formulas:\n  scope: file.inFolder("Domains/Alpha")\n');
 fs.writeFileSync(path.join(baseVault, "Bases", "Unsupported.base"), "formulas:\n  scope: file.inFolder(dynamicPath)\n");
 const baseInventory = inventoryVault(baseVault);
-const basePlan = authorizePlan(baseInventory, buildTopology(baseInventory), { ...operationFixture("repair"), allowed_write_paths: [] });
+const basePlan = planWithDisclosedWrites(baseInventory, buildTopology(baseInventory), { ...operationFixture("repair"), allowed_write_paths: [] });
 assert.deepStrictEqual(basePlan.base_formula_proposals.map(({ path: itemPath, recognized, authorized }) => ({ path: itemPath, recognized, authorized })), [
   { path: "Bases/Recognized.base", recognized: true, authorized: true },
 ]);
 assert.deepStrictEqual(basePlan.base_formula_reports, [{ path: "Bases/Unsupported.base", code: "unsupported-base-formula", rewrite_proposed: false }]);
 assert.ok(!basePlan.content_write_paths.includes("Bases/Unsupported.base"));
-assert.throws(() => planOperation(baseInventory, buildTopology(baseInventory), parseOperationRequest({
+const unsupportedAuthorization = planOperation(baseInventory, buildTopology(baseInventory), parseOperationRequest({
   ...operationFixture("repair"), allowed_write_paths: [...basePlan.content_write_paths, "Bases/Unsupported.base"],
-})), /unused: Bases\/Unsupported\.base/u);
+}));
+assert.ok(unsupportedAuthorization.refusals.some((item) => item.code === "unused-write-authorization" && item.path === "Bases/Unsupported.base"));
 assert.ok(!basePlan.replacements.some((item) => item.path.endsWith(".base") && item.path !== "Bases/Scope Registry.base"), "Base proposals must not become implicit rewrites");
 fs.rmSync(baseVault, { recursive: true, force: true });
 

@@ -151,7 +151,6 @@ function planOperation(inventory, model, requestValue) {
       if (request.replacement_scope_id === current.scopeId) throw new Error("replacement_scope_id must name a distinct scope");
       if (!replacement || !["active", "archived"].includes(replacement.status)) throw new Error("replacement_scope_id must name an active or archived adopted scope");
     }
-    if (request.desired_status === "retired" && !replacement) throw new Error("set-status to retired requires replacement_scope_id");
     const allowed = current.status === request.desired_status || current.status === "active" && request.desired_status === "archived" || current.status === "archived" && ["active", "retired"].includes(request.desired_status) || current.status === "retired" && request.desired_status === "archived";
     lifecycle_checks.push({ from: current.status, to: request.desired_status, allowed });
     if (allowed && request.desired_status === "retired" && (model.childrenById.get(current.scopeId) || []).some((item) => item.status === "active")) lifecycle_checks[0] = { ...lifecycle_checks[0], allowed: false, reason: "retired scopes may not contain active children" };
@@ -162,11 +161,12 @@ function planOperation(inventory, model, requestValue) {
   }
 
   const desired = virtualModel(descriptors);
-  for (const item of descriptors) if (changedDescriptorIds.has(item.scopeId)) {
+  const lifecycleRefused = lifecycle_checks.some((item) => !item.allowed);
+  for (const item of descriptors) if (!lifecycleRefused && changedDescriptorIds.has(item.scopeId)) {
     const original = model.descriptorsById.get(item.scopeId) || model.pendingDescriptors.find((candidate) => candidate.scopeId === item.scopeId);
     replacements.push({ kind: "descriptor", path: descriptorPath(item), bytes: descriptorBytes(item, original && original.fileRecord && original.fileRecord.rawBytes), activation: request.operation === "adopt" && item.scopeId === "root" });
   }
-  const generated = [...renderCheckpointBlocks(desired), renderScopeRegistry(desired), renderScopeMapMarkdown(desired), renderScopeMapCanvas(desired)]
+  const generated = lifecycleRefused ? [] : [...renderCheckpointBlocks(desired), renderScopeRegistry(desired), renderScopeMapMarkdown(desired), renderScopeMapCanvas(desired)]
     .map((item) => ({ kind: item.owner === "generated-file" ? "generated" : "checkpoint", path: item.path, bytes: item.bytes.toString("utf8") }));
   replacements.push(...generated);
   if (request.operation === "adopt") {
@@ -179,19 +179,14 @@ function planOperation(inventory, model, requestValue) {
     .map((item) => ({ path: item.path, recognized: true, authorized: request.allowed_write_paths.includes(item.path), action: "add child-before-parent scope branches" }));
   const base_formula_reports = baseMentions.filter((item) => !item.recognized)
     .map((item) => ({ path: item.path, code: "unsupported-base-formula", rewrite_proposed: false }));
-  const content_write_paths = [...new Set([...replacements.map((item) => item.path), ...request.normalize_files, ...base_formula_proposals.filter((item) => item.recognized).map((item) => item.path)])].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
+  const content_write_paths = lifecycleRefused ? [] : [...new Set([...replacements.map((item) => item.path), ...request.normalize_files, ...base_formula_proposals.filter((item) => item.recognized).map((item) => item.path)])].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
   const refusals = [];
-  if (lifecycle_checks.some((item) => !item.allowed)) refusals.push({ code: "lifecycle-transition-refused", path: descriptorPath(current) });
+  if (lifecycleRefused) refusals.push({ code: "lifecycle-transition-refused", path: descriptorPath(current) });
   const missing = content_write_paths.filter((item) => !request.allowed_write_paths.includes(item));
   const unused = request.allowed_write_paths.filter((item) => !content_write_paths.includes(item));
-  if (missing.length || unused.length) {
-    const details = [missing.length ? `missing: ${missing.join(", ")}` : "", unused.length ? `unused: ${unused.join(", ")}` : ""].filter(Boolean).join("; ");
-    const error = new Error(`allowed_write_paths must exactly match planned content writes; ${details}`);
-    error.missing_paths = missing;
-    error.unused_paths = unused;
-    throw error;
-  }
-  return Object.freeze({ plan_schema: 1, operation: request.operation, target_scope_id: request.target_scope_id, preconditions, lifecycle_checks, moves, replacements, base_formula_proposals, base_formula_reports, content_write_paths, refusals, write_authorized: true });
+  refusals.push(...missing.map((item) => ({ code: "missing-write-authorization", path: item })));
+  refusals.push(...unused.map((item) => ({ code: "unused-write-authorization", path: item })));
+  return Object.freeze({ plan_schema: 1, operation: request.operation, target_scope_id: request.target_scope_id, preconditions, lifecycle_checks, moves, replacements, base_formula_proposals, base_formula_reports, content_write_paths, refusals, write_authorized: refusals.length === 0 });
 }
 
 module.exports = { hashPlan, parseOperationRequest, planOperation };
