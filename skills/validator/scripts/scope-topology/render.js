@@ -65,12 +65,69 @@ function renderCheckpointBlocks(model) {
 }
 
 function renderScopeRegistry(model) {
+  const filter = ["    filters:", "      and:", '        - file.ext == "md"', '        - file.name == "00 Index"', '        - type == "scope-index"'];
   const yaml = [
-    "filters:", "  and:", '    - file.ext == "md"', '    - file.name == "00 Index"', '    - type == "scope-index"', "views:",
-    "  - name: Scope Topology", "    type: table", "    order:", "      - scope_id", "      - scope_path", "      - parent_scope_id", "      - status", "      - scope_order",
-    "  - name: Lifecycle", "    type: table", "    order:", "      - status", "      - scope_id", "      - scope_path", "      - former_scope_paths", "",
+    "views:",
+    "  - name: Scope Topology", "    type: table", ...filter, "    order:", "      - scope_id", "      - scope_path", "      - parent_scope_id", "      - status", "      - scope_order",
+    "  - name: Lifecycle", "    type: table", ...filter, "    order:", "      - status", "      - scope_id", "      - scope_path", "      - former_scope_paths", "",
   ].join("\n");
   return result("Bases/Scope Registry.base", yaml, "regenerate scope registry", "generated-file");
+}
+
+function yamlScalar(value) {
+  const text = String(value).trim();
+  if ((text.startsWith("'") && text.endsWith("'")) || (text.startsWith('"') && text.endsWith('"'))) return text.slice(1, -1);
+  return text;
+}
+
+function yamlList(value) {
+  const text = String(value || "").trim();
+  if (!text.startsWith("[") || !text.endsWith("]")) return [];
+  return text.slice(1, -1).split(",").map(yamlScalar).filter(Boolean);
+}
+
+function normalizeScopeRegistry(text) {
+  const lines = String(text).split(/\r?\n/gu).map((line) => line.trim()).filter((line) => line && !line.startsWith("#"));
+  if (!lines.includes("views:")) throw new Error("registry requires views");
+  const views = [];
+  let view = null;
+  let section = null;
+  for (const line of lines.slice(lines.indexOf("views:") + 1)) {
+    const start = line.match(/^-(?:\s+)(name|type|filters|order):\s*(.*)$/u);
+    if (start) {
+      if (view) views.push(view);
+      view = { name: "", type: "", filters: [], order: [] };
+      section = null;
+      const [, key, value] = start;
+      if (key === "name" || key === "type") view[key] = yamlScalar(value);
+      else { section = key; view[key].push(...yamlList(value)); }
+      continue;
+    }
+    if (!view) throw new Error("registry content outside a view");
+    const property = line.match(/^(name|type|filters|order):\s*(.*)$/u);
+    if (property) {
+      const [, key, value] = property;
+      if (key === "name" || key === "type") { view[key] = yamlScalar(value); section = null; }
+      else { section = key; view[key].push(...yamlList(value)); }
+      continue;
+    }
+    const and = line.match(/^and:\s*(.*)$/u);
+    if (and && section === "filters") { view.filters.push(...yamlList(and[1])); continue; }
+    const item = line.match(/^-(?:\s+)(.*)$/u);
+    if (item && section) { view[section].push(yamlScalar(item[1])); continue; }
+    throw new Error(`unsupported registry YAML: ${line}`);
+  }
+  if (view) views.push(view);
+  for (const item of views) item.filters.sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
+  views.sort((a, b) => Buffer.from(a.name).compare(Buffer.from(b.name)));
+  return views;
+}
+
+function normalizeScopeCanvas(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || !Array.isArray(value.nodes) || !Array.isArray(value.edges)) throw new Error("invalid Canvas");
+  const canonicalObject = (item) => Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]]));
+  const byId = (left, right) => Buffer.from(String(left.id)).compare(Buffer.from(String(right.id)));
+  return { nodes: value.nodes.map(canonicalObject).sort(byId), edges: value.edges.map(canonicalObject).sort(byId) };
 }
 
 function treeLines(model, descriptor, prefix = "") {
@@ -104,4 +161,4 @@ function renderScopeMapCanvas(model) {
   return result("Agent/Scope Map.canvas", `${JSON.stringify({ nodes, edges }, null, 2)}\n`, "regenerate scope canvas", "generated-file");
 }
 
-module.exports = { renderCheckpointBlocks, renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry };
+module.exports = { normalizeScopeCanvas, normalizeScopeRegistry, renderCheckpointBlocks, renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry };

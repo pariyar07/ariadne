@@ -3,7 +3,7 @@
 const crypto = require("crypto");
 const path = require("path");
 const { parseScopeDescriptor } = require("./schema");
-const { renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry } = require("./render");
+const { normalizeScopeCanvas, normalizeScopeRegistry, renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry } = require("./render");
 
 function sortedUnique(values) {
   return [...new Set((values || []).map(String))].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
@@ -88,11 +88,12 @@ function scopeFindings(topology, inventory) {
       const expected = artifact.bytes.toString("utf8");
       if (artifact.path.endsWith(".canvas")) {
         try {
-          if (JSON.stringify(JSON.parse(actual)) !== JSON.stringify(JSON.parse(expected))) addMap(artifact, "Canvas topology differs");
+          if (JSON.stringify(normalizeScopeCanvas(JSON.parse(actual))) !== JSON.stringify(normalizeScopeCanvas(JSON.parse(expected)))) addMap(artifact, "Canvas topology differs");
         } catch { addMap(artifact, "Canvas is not valid JSON"); }
       } else if (artifact.path.endsWith(".base")) {
-        const semanticLines = (text) => text.split(/\r?\n/gu).map((line) => line.trim()).filter(Boolean);
-        if (JSON.stringify(semanticLines(actual)) !== JSON.stringify(semanticLines(expected))) addMap(artifact, "registry views or filters differ");
+        try {
+          if (JSON.stringify(normalizeScopeRegistry(actual)) !== JSON.stringify(normalizeScopeRegistry(expected))) addMap(artifact, "registry views or filters differ");
+        } catch { addMap(artifact, "registry is not supported semantic YAML"); }
       } else {
         const marker = (text) => {
           const start = "<!-- ariadne:scope-map:start -->";

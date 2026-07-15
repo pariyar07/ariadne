@@ -104,6 +104,8 @@ const registry = renderScopeRegistry(deep).bytes.toString("utf8");
 assert.strictEqual((registry.match(/^  - name:/gmu) || []).length, 2);
 assert.match(registry, /name: Scope Topology/u);
 assert.match(registry, /name: Lifecycle/u);
+assert.doesNotMatch(registry, /^filters:/u);
+assert.strictEqual((registry.match(/^    filters:/gmu) || []).length, 2);
 const canvas = JSON.parse(renderScopeMapCanvas(deep).bytes);
 assert.strictEqual(canvas.nodes.length, 4);
 assert.strictEqual(canvas.edges.length, 3);
@@ -130,16 +132,58 @@ const canvasPath = path.join(semanticVault, "Agent", "Scope Map.canvas");
 fs.writeFileSync(canvasPath, JSON.stringify(JSON.parse(fs.readFileSync(canvasPath, "utf8"))));
 semanticInventory = inventoryVault(semanticVault);
 assert.strictEqual(scopeFindings(buildTopology(semanticInventory), semanticInventory).filter((item) => item.code === "scope-map-drift").length, 0);
-const mutatedCanvas = JSON.parse(fs.readFileSync(canvasPath, "utf8"));
-mutatedCanvas.nodes.push({ id: "stale", type: "text", text: "stale", x: 0, y: 0, width: 1, height: 1 });
-fs.writeFileSync(canvasPath, JSON.stringify(mutatedCanvas));
+const reorderedCanvas = JSON.parse(fs.readFileSync(canvasPath, "utf8"));
+reorderedCanvas.nodes.reverse();
+reorderedCanvas.edges.reverse();
+reorderedCanvas.nodes = reorderedCanvas.nodes.map((node) => Object.fromEntries(Object.entries(node).reverse()));
+fs.writeFileSync(canvasPath, JSON.stringify({ edges: reorderedCanvas.edges, nodes: reorderedCanvas.nodes }));
 semanticInventory = inventoryVault(semanticVault);
-assert.ok(scopeFindings(buildTopology(semanticInventory), semanticInventory).some((item) => item.code === "scope-map-drift" && /Canvas topology/u.test(item.message)));
+assert.strictEqual(scopeFindings(buildTopology(semanticInventory), semanticInventory).filter((item) => item.code === "scope-map-drift").length, 0);
+const expectedCanvas = JSON.parse(renderScopeMapCanvas(deep).bytes);
+for (const mutate of [
+  (value) => { value.nodes[0].id = "wrong-id"; },
+  (value) => { value.nodes[0].x += 1; },
+  (value) => { value.edges[0].toNode = value.nodes[0].id; },
+  (value) => { value.nodes.push({ id: "stale", type: "text", text: "stale", x: 0, y: 0, width: 1, height: 1 }); },
+]) {
+  const changed = structuredClone(expectedCanvas);
+  mutate(changed);
+  fs.writeFileSync(canvasPath, JSON.stringify(changed));
+  semanticInventory = inventoryVault(semanticVault);
+  assert.ok(scopeFindings(buildTopology(semanticInventory), semanticInventory).some((item) => item.code === "scope-map-drift" && /Canvas topology/u.test(item.message)));
+}
+fs.writeFileSync(canvasPath, renderScopeMapCanvas(deep).bytes);
+const registryPath = path.join(semanticVault, "Bases", "Scope Registry.base");
+fs.writeFileSync(registryPath, `views:
+- type: table
+  name: 'Lifecycle'
+  order: [status, scope_id, scope_path, former_scope_paths]
+  filters:
+    and: ['type == "scope-index"', 'file.name == "00 Index"', 'file.ext == "md"']
+- filters:
+    and: ['file.name == "00 Index"', 'type == "scope-index"', 'file.ext == "md"']
+  order: [scope_id, scope_path, parent_scope_id, status, scope_order]
+  type: table
+  name: "Scope Topology"
+`);
+semanticInventory = inventoryVault(semanticVault);
+assert.strictEqual(scopeFindings(buildTopology(semanticInventory), semanticInventory).filter((item) => item.code === "scope-map-drift").length, 0);
+fs.writeFileSync(registryPath, fs.readFileSync(registryPath, "utf8").replace('type == "scope-index"', 'type == "note"'));
+semanticInventory = inventoryVault(semanticVault);
+assert.ok(scopeFindings(buildTopology(semanticInventory), semanticInventory).some((item) => item.code === "scope-map-drift" && /registry/u.test(item.message)));
 fs.rmSync(semanticVault, { recursive: true, force: true });
 
 const bomCrlf = Buffer.from(JSON.parse(fs.readFileSync(fixture("marker_preservation/input.json"), "utf8")).bytes);
 const replaced = replaceMarkerBlock(bomCrlf, "scope-map", "new\nbody");
 assert.strictEqual(replaced.toString("utf8"), "\ufeffBefore\r\n`<!-- ariadne:scope-map:start -->`\r\n<!-- ariadne:scope-map:start -->\r\nnew\r\nbody\r\n<!-- ariadne:scope-map:end -->\r\nAfter\r\n");
+const binaryOutside = Buffer.concat([
+  Buffer.from([0xff, 0xfe, 0x00, 0x80]),
+  Buffer.from("\n<!-- ariadne:x:start -->\nold\n<!-- ariadne:x:end -->\n"),
+  Buffer.from([0xc0, 0xaf, 0xf5]),
+]);
+const binaryReplaced = replaceMarkerBlock(binaryOutside, "x", "new");
+assert.deepStrictEqual(binaryReplaced.subarray(0, 5), binaryOutside.subarray(0, 5));
+assert.deepStrictEqual(binaryReplaced.subarray(binaryReplaced.length - 3), binaryOutside.subarray(binaryOutside.length - 3));
 for (const malformed of [
   "plain", "<!-- ariadne:x:start -->\n", "<!-- ariadne:x:end -->\n<!-- ariadne:x:start -->\n",
   "<!-- ariadne:x:start -->\n<!-- ariadne:x:start -->\n<!-- ariadne:x:end -->\n",
