@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    { "id": "3cfe8658e4429068", "type": "file", "file": "00 Index.md", "x": 0, "y": 0, "width": 320, "height": 120, "color": "4" },
+    { "id": "3b200a1402db0f62", "type": "file", "file": "Domains/Product/00 Index.md", "x": 480, "y": 180, "width": 320, "height": 120, "color": "4" },
+    { "id": "650c9ffa63ef1c91", "type": "file", "file": "Domains/Product/Workstreams/Alpha/00 Index.md", "x": 960, "y": 360, "width": 320, "height": 120, "color": "4" },
+    { "id": "698192002a5490fe", "type": "file", "file": "Domains/Product/Zulu/00 Index.md", "x": 960, "y": 540, "width": 320, "height": 120, "color": "6" }
+  ],
+  "edges": [
+    { "id": "398ba11a0bca9488", "fromNode": "3cfe8658e4429068", "fromSide": "right", "toNode": "3b200a1402db0f62", "toSide": "left" },
+    { "id": "2d01ed17b288d221", "fromNode": "3b200a1402db0f62", "fromSide": "right", "toNode": "650c9ffa63ef1c91", "toSide": "left" },
+    { "id": "a2ab45877df52c89", "fromNode": "3b200a1402db0f62", "fromSide": "right", "toNode": "698192002a5490fe", "toSide": "left" }
+  ]
+}

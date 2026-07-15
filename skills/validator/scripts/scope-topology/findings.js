@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 const path = require("path");
 const { parseScopeDescriptor } = require("./schema");
+const { renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry } = require("./render");
 
 function sortedUnique(values) {
   return [...new Set((values || []).map(String))].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
@@ -73,6 +74,36 @@ function scopeFindings(topology, inventory) {
       if (!descriptor.supported) add("invalid-schema", file.relativePath, `${file.relativePath}: unsupported scope_schema ${descriptor.schema}`, descriptor.scopeId, [], String(descriptor.schema));
     } catch (error) {
       add("invalid-schema", file.relativePath, `${file.relativePath}: ${error.message}`, String(file.frontmatter.scope_id || ""), [], descriptorErrorToken(file.frontmatter));
+    }
+  }
+
+  if (topology.active) {
+    const artifacts = [renderScopeRegistry(topology), renderScopeMapMarkdown(topology), renderScopeMapCanvas(topology)];
+    const recordAt = (target) => inventory.files.find((candidate) => candidate.relativePath === target);
+    const addMap = (artifact, detail) => add("scope-map-drift", artifact.path, `${artifact.path}: ${detail}`, "root", [artifact.path], detail);
+    for (const artifact of artifacts) {
+      const record = recordAt(artifact.path);
+      if (!record || !record.lstat.isFile()) { addMap(artifact, "missing generated artifact"); continue; }
+      const actual = record.rawBytes.toString("utf8");
+      const expected = artifact.bytes.toString("utf8");
+      if (artifact.path.endsWith(".canvas")) {
+        try {
+          if (JSON.stringify(JSON.parse(actual)) !== JSON.stringify(JSON.parse(expected))) addMap(artifact, "Canvas topology differs");
+        } catch { addMap(artifact, "Canvas is not valid JSON"); }
+      } else if (artifact.path.endsWith(".base")) {
+        const semanticLines = (text) => text.split(/\r?\n/gu).map((line) => line.trim()).filter(Boolean);
+        if (JSON.stringify(semanticLines(actual)) !== JSON.stringify(semanticLines(expected))) addMap(artifact, "registry views or filters differ");
+      } else {
+        const marker = (text) => {
+          const start = "<!-- ariadne:scope-map:start -->";
+          const end = "<!-- ariadne:scope-map:end -->";
+          const lines = text.split(/\r?\n/gu);
+          const starts = lines.reduce((all, line, index) => line === start ? [...all, index] : all, []);
+          const ends = lines.reduce((all, line, index) => line === end ? [...all, index] : all, []);
+          return starts.length === 1 && ends.length === 1 && starts[0] < ends[0] ? lines.slice(starts[0], ends[0] + 1).join("\n") : null;
+        };
+        if (marker(actual) !== marker(expected)) addMap(artifact, "Markdown scope map differs");
+      }
     }
   }
 
@@ -200,7 +231,7 @@ function filterFindingsByScope(findings, targetScopeId, topology) {
 }
 
 const ADOPTION_CODES = new Set(["pending-adoption", "dismissed-candidate", "unsupported-root"]);
-const MAP_CODES = new Set([]);
+const MAP_CODES = new Set(["scope-map-drift"]);
 function findingCounter(item) {
   if (ADOPTION_CODES.has(item.code)) return "scopeAdoptionWarnings";
   if (MAP_CODES.has(item.code)) return "scopeMapWarnings";

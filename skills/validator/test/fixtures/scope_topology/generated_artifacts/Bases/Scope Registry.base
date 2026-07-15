@@ -1,0 +1,21 @@
+filters:
+  and:
+    - file.ext == "md"
+    - file.name == "00 Index"
+    - type == "scope-index"
+views:
+  - name: Scope Topology
+    type: table
+    order:
+      - scope_id
+      - scope_path
+      - parent_scope_id
+      - status
+      - scope_order
+  - name: Lifecycle
+    type: table
+    order:
+      - status
+      - scope_id
+      - scope_path
+      - former_scope_paths

@@ -13,6 +13,11 @@ const {
   normalizeNfc,
   normalizeScopePath,
   parseScopeDescriptor,
+  replaceMarkerBlock,
+  renderCheckpointBlocks,
+  renderScopeRegistry,
+  renderScopeMapMarkdown,
+  renderScopeMapCanvas,
   scopeFindings,
 } = require("../scripts/scope-topology");
 const { spawnSync } = require("child_process");
@@ -79,6 +84,67 @@ assert.strictEqual(deep.descriptorsById.get("alpha").parentScopeId, "product");
 assert.strictEqual(deep.descriptorsById.get("alpha").transparentPath, "Workstreams/Alpha");
 assert.strictEqual(deep.candidates.length, 1);
 assert.strictEqual(deep.candidates[0].relativePath, "Ideas/00 Index.md");
+
+const generated = fixture("generated_artifacts");
+const renders = [
+  ...renderCheckpointBlocks(deep).slice(0, 4),
+  renderScopeRegistry(deep),
+  renderScopeMapMarkdown(deep),
+  renderScopeMapCanvas(deep),
+];
+for (const result of renders) {
+  assert.deepStrictEqual(Object.keys(result), ["path", "bytes", "reason", "owner"]);
+  assert(Buffer.isBuffer(result.bytes));
+  const golden = path.join(generated, result.path);
+  if (result.path.endsWith(".canvas")) assert.deepStrictEqual(JSON.parse(result.bytes), JSON.parse(fs.readFileSync(golden, "utf8")), result.path);
+  else assert.strictEqual(result.bytes.toString("utf8"), fs.readFileSync(golden, "utf8"), result.path);
+}
+assert.strictEqual(renderCheckpointBlocks(deep).length, 16);
+const registry = renderScopeRegistry(deep).bytes.toString("utf8");
+assert.strictEqual((registry.match(/^  - name:/gmu) || []).length, 2);
+assert.match(registry, /name: Scope Topology/u);
+assert.match(registry, /name: Lifecycle/u);
+const canvas = JSON.parse(renderScopeMapCanvas(deep).bytes);
+assert.strictEqual(canvas.nodes.length, 4);
+assert.strictEqual(canvas.edges.length, 3);
+assert.deepStrictEqual(canvas.nodes.map(({ x, y, width, height, color }) => ({ x, y, width, height, color })), [
+  { x: 0, y: 0, width: 320, height: 120, color: "4" },
+  { x: 480, y: 180, width: 320, height: 120, color: "4" },
+  { x: 960, y: 360, width: 320, height: 120, color: "4" },
+  { x: 960, y: 540, width: 320, height: 120, color: "6" },
+]);
+for (const item of [...canvas.nodes, ...canvas.edges]) assert.match(item.id, /^[a-f0-9]{16}$/u);
+assert.strictEqual(new Set([...canvas.nodes, ...canvas.edges].map((item) => item.id)).size, 7);
+assert.deepStrictEqual(JSON.parse(renderScopeMapCanvas(deep).bytes), canvas);
+
+const semanticVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-render-"));
+fs.cpSync(fixture("deep_transparent_ancestry"), semanticVault, { recursive: true });
+fs.mkdirSync(path.join(semanticVault, "Bases"), { recursive: true });
+fs.mkdirSync(path.join(semanticVault, "Agent"), { recursive: true });
+for (const artifact of [renderScopeRegistry(deep), renderScopeMapMarkdown(deep), renderScopeMapCanvas(deep)]) {
+  fs.writeFileSync(path.join(semanticVault, artifact.path), artifact.bytes);
+}
+let semanticInventory = inventoryVault(semanticVault);
+assert.strictEqual(scopeFindings(buildTopology(semanticInventory), semanticInventory).filter((item) => item.code === "scope-map-drift").length, 0);
+const canvasPath = path.join(semanticVault, "Agent", "Scope Map.canvas");
+fs.writeFileSync(canvasPath, JSON.stringify(JSON.parse(fs.readFileSync(canvasPath, "utf8"))));
+semanticInventory = inventoryVault(semanticVault);
+assert.strictEqual(scopeFindings(buildTopology(semanticInventory), semanticInventory).filter((item) => item.code === "scope-map-drift").length, 0);
+const mutatedCanvas = JSON.parse(fs.readFileSync(canvasPath, "utf8"));
+mutatedCanvas.nodes.push({ id: "stale", type: "text", text: "stale", x: 0, y: 0, width: 1, height: 1 });
+fs.writeFileSync(canvasPath, JSON.stringify(mutatedCanvas));
+semanticInventory = inventoryVault(semanticVault);
+assert.ok(scopeFindings(buildTopology(semanticInventory), semanticInventory).some((item) => item.code === "scope-map-drift" && /Canvas topology/u.test(item.message)));
+fs.rmSync(semanticVault, { recursive: true, force: true });
+
+const bomCrlf = Buffer.from(JSON.parse(fs.readFileSync(fixture("marker_preservation/input.json"), "utf8")).bytes);
+const replaced = replaceMarkerBlock(bomCrlf, "scope-map", "new\nbody");
+assert.strictEqual(replaced.toString("utf8"), "\ufeffBefore\r\n`<!-- ariadne:scope-map:start -->`\r\n<!-- ariadne:scope-map:start -->\r\nnew\r\nbody\r\n<!-- ariadne:scope-map:end -->\r\nAfter\r\n");
+for (const malformed of [
+  "plain", "<!-- ariadne:x:start -->\n", "<!-- ariadne:x:end -->\n<!-- ariadne:x:start -->\n",
+  "<!-- ariadne:x:start -->\n<!-- ariadne:x:start -->\n<!-- ariadne:x:end -->\n",
+  "<!-- ariadne:x:start -->\n<!-- ariadne:y:start -->\n<!-- ariadne:y:end -->\n<!-- ariadne:x:end -->\n",
+]) assert.throws(() => replaceMarkerBlock(Buffer.from(malformed), "x", "body"), /marker/u);
 
 const rejectedAncestor = buildTopology(inventoryVault(fixture("rejected_ancestor_is_transparent")));
 assert.strictEqual(rejectedAncestor.active, true);

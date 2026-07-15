@@ -5,4 +5,6 @@ module.exports = {
   ...require("./inventory"),
   ...require("./model"),
   ...require("./findings"),
+  ...require("./markers"),
+  ...require("./render"),
 };
