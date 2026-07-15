@@ -158,7 +158,7 @@ const tracedCli = spawnSync(process.execPath, [validator, fixture("scoped_siblin
   env: { ...process.env, ARIADNE_TEST_INVENTORY_TRACE: "1" },
 });
 assert.strictEqual(tracedCli.status, 0, tracedCli.stderr);
-assert.match(tracedCli.stderr, /^inventory-snapshots: 1; fallback-reads: 0\n$/u);
+assert.match(tracedCli.stderr, /^inventory-snapshots: 1; fallback-reads: 0; live-observations: 0\n$/u);
 const researchMissingScope = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--profile", "research"], { encoding: "utf8" });
 assert.strictEqual(researchMissingScope.status, 1);
 assert.strictEqual(researchMissingScope.stderr, "validator-error: --profile requires --scope\n");

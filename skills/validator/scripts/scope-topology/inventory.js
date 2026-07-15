@@ -78,8 +78,23 @@ function inventoryVault(vaultRoot) {
   const root = path.resolve(vaultRoot);
   const canonicalRoot = fs.realpathSync(root);
   const files = [];
+  const directories = [];
 
-  function walk(directory) {
+  function directoryRecord(absolutePath, relativePath) {
+    const lstat = fs.lstatSync(absolutePath);
+    let canonicalPath = null;
+    let canonicalContained = false;
+    try {
+      canonicalPath = fs.realpathSync(absolutePath);
+      canonicalContained = canonicalPath === canonicalRoot || canonicalPath.startsWith(`${canonicalRoot}${path.sep}`);
+    } catch (_error) {
+      // An unreadable directory remains represented by its captured metadata.
+    }
+    return Object.freeze({ relativePath, lexicalPath: absolutePath, canonicalPath, canonicalContained, lstat });
+  }
+
+  function walk(directory, relativeDirectory = ".") {
+    directories.push(directoryRecord(directory, relativeDirectory));
     const entries = fs.readdirSync(directory, { withFileTypes: true })
       .sort((left, right) => Buffer.from(left.name).compare(Buffer.from(right.name)));
     for (const entry of entries) {
@@ -88,7 +103,7 @@ function inventoryVault(vaultRoot) {
       if (excluded(relativePath)) continue;
       const lstat = fs.lstatSync(absolutePath);
       if (lstat.isDirectory()) {
-        walk(absolutePath);
+        walk(absolutePath, relativePath);
         continue;
       }
       let canonicalPath = null;
@@ -124,7 +139,8 @@ function inventoryVault(vaultRoot) {
     caseFoldCollisions.set(file.caseFoldPath, group);
   }
   for (const [key, group] of [...caseFoldCollisions]) if (group.length < 2) caseFoldCollisions.delete(key);
-  return Object.freeze({ root, canonicalRoot, files: Object.freeze(files), caseFoldCollisions });
+  directories.sort((left, right) => Buffer.from(left.relativePath).compare(Buffer.from(right.relativePath)));
+  return Object.freeze({ root, canonicalRoot, files: Object.freeze(files), directories: Object.freeze(directories), caseFoldCollisions });
 }
 
 module.exports = { inventoryVault, parseFrontmatter };
