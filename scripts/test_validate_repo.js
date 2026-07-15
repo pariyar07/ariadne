@@ -55,6 +55,10 @@ try {
   assert(migrationText.includes("v0.2.0"), "migration guide must name the breaking v0.2.0 release");
   assert(!migrationText.includes("one compatibility release"), "v0.2.0 must not promise a compatibility release");
 
+  const implementationPlan = fs.readFileSync(path.join(tempRoot, "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md"), "utf8");
+  assert(implementationPlan.includes("partially superseded by the direct-breaking v0.2.0 release decision"), "implementation plan must identify the direct-breaking supersession");
+  assert(!implementationPlan.includes("Compatibility adapters remain for one migration release"), "implementation plan must not direct workers to restore compatibility adapters");
+
   assert(
     fs.readFileSync(path.join(tempRoot, "docs/guides/quickstart.md"), "utf8").includes(
       "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material."
@@ -66,6 +70,15 @@ try {
   assert.strictEqual(baseline.status, 0, baseline.stderr || baseline.stdout);
 
   let restore = replace(
+    tempRoot,
+    "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md",
+    "partially superseded by the direct-breaking v0.2.0 release decision",
+    "implementation remains active"
+  );
+  assertRejected(runValidator(tempRoot), "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md must preserve the direct-breaking v0.2.0 supersession notice");
+  restore();
+
+  restore = replace(
     tempRoot,
     "docs/guides/quickstart.md",
     "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material.",

@@ -2,7 +2,10 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a scope-safe, provenance-aware Ariadne research lifecycle with versioned schema, deterministic scoped validation, compatibility adapters, migration guidance, and private behavioral evaluation.
+> [!IMPORTANT]
+> This implementation plan is complete and partially superseded by the direct-breaking v0.2.0 release decision. Do not execute its former compatibility-adapter steps. v0.2.0 removes the retired skill folders and requires installed-copy cleanup.
+
+**Goal:** Ship a scope-safe, provenance-aware Ariadne research lifecycle with versioned schema, deterministic scoped validation, direct removal of retired skills, migration guidance, and private behavioral evaluation.
 
 **Architecture:** Research behavior is split across pipeline topology, ingest orchestration, general compilation, synthesis disposition, and audit-first stewardship. A versioned `research-boundary` descriptor establishes membership independently of folder layout; research artifacts use flat schema-v1 metadata and downstream-to-upstream provenance. The existing validator inventories the whole vault, resolves one canonical target per link, computes all findings, then filters scoped/profile output without changing the no-flag contract.
 
@@ -17,8 +20,8 @@
 - Always inventory the whole vault before scoped filtering; nested scopes are never treated as vault roots.
 - Research schema v1 supports top-level scalar values and flat scalar lists only.
 - Legacy research without a supported `research_schema` receives no unconditional new-schema warnings.
-- Retired skill names are allowed only in compatibility adapters, migration/release documentation, and decision history.
-- Compatibility adapters remain for one migration release; the effective release and removal release versions remain explicitly undecided until release planning assigns them.
+- Retired skill names are allowed only in migration/release documentation, decision history, and bounded stale-name tests.
+- v0.2.0 removes the retired skill folders without a compatibility release.
 - Do not push until all in-scope verification gates pass; do not merge pull requests.
 
 ---
@@ -50,10 +53,8 @@
 - Create: `skills/research-synthesis/agents/openai.yaml`
 - Create: `skills/research-stewardship/SKILL.md`
 - Create: `skills/research-stewardship/agents/openai.yaml`
-- Replace: `skills/research-intake/SKILL.md`
-- Modify: `skills/research-intake/agents/openai.yaml`
-- Replace: `skills/synthesis/SKILL.md`
-- Modify: `skills/synthesis/agents/openai.yaml`
+- Delete: retired ingest skill folder (see the v0.2.0 migration guide for its historical path)
+- Delete: retired synthesis skill folder (see the v0.2.0 migration guide for its historical path)
 - Modify: `skills/research-pipeline/SKILL.md`
 - Modify: `skills/knowledge-capture/SKILL.md`
 - Modify: `skills/maintenance/SKILL.md`
@@ -67,7 +68,7 @@
 - `research-ingest` confirms target/write set; `knowledge-capture` compiles only inside it; `research-synthesis` owns dispositions; `research-stewardship` audits/repairs one boundary.
 
 - [ ] Run baseline pressure/eval scenarios without the new skills and retain the observed scope/ownership failures in the private eval lab.
-- [ ] Write the three complete successor skills and UI metadata; reduce old folders to deprecation adapters that delegate and perform no duplicate workflow.
+- [ ] Write the three complete successor skills and UI metadata; remove both retired skill folders for v0.2.0.
 - [ ] Rewrite ownership boundaries and ancestor-instruction/write-set requirements across companion skills.
 - [ ] Encode stewardship audit zero-write behavior, exact repair write set, idempotency, allowlist, deferrals, nested-child rules, opt-in legacy adoption, and scoped plus whole-vault post-repair validation.
 - [ ] Run skill guardrails and focused stale-name searches; inspect every surviving retired-name hit.
@@ -136,13 +137,13 @@
 - Modify: applicable public templates/references under `skills/vault/`
 
 **Interfaces:**
-- Active docs use successor names; compatibility/migration sections explicitly name retired adapters.
+- Active docs use successor names; migration/release sections explicitly name removed skills.
 - Weekly prompt exposes a stable prompt-version marker and routes research semantics to stewardship.
 
 - [ ] Add/extend guardrail assertions for active-name coverage, retired-name allowlist boundaries, and automation prompt version marker.
 - [ ] Migrate intentional active references without replacing ordinary uses of the word “synthesis.”
 - [ ] Document installed-skill cleanup, saved prompt/external scheduler limitations, generated-vault opt-in migration, and `AGENTS.override.md` body resynchronization.
-- [ ] Record migration-release and adapter-removal versions as undecided release placeholders, not published versions.
+- [ ] Record v0.2.0 as the direct-breaking removal release and document mandatory installed-copy cleanup.
 - [ ] Re-run both repository guardrail modes and inspect all stale-name matches.
 
 ### Task 6: Add private deterministic research lifecycle evaluation
@@ -165,7 +166,7 @@
 - Metadata pins baseline/candidate Ariadne commits, eval-lab commit, and installed skill-name sets.
 - Oracles assert stdout/counters, tree hashes for read-only behavior, allowed/forbidden write roots, hidden-contract isolation, and snapshot chains.
 
-- [ ] Write failing oracle tests for explicit write sets, no-confirmation zero writes, provenance/mirrors, dispositions, promotion without evidence movement, nested isolation, stewardship audit/repair/defer/idempotency, scoped validator consistency, adapters/stale names, and legacy gating.
+- [ ] Write failing oracle tests for explicit write sets, no-confirmation zero writes, provenance/mirrors, dispositions, promotion without evidence movement, nested isolation, stewardship audit/repair/defer/idempotency, scoped validator consistency, removed skills/stale installed copies, and legacy gating.
 - [ ] Build deterministic generated fixtures and hidden contracts without real vault context.
 - [ ] Implement hash, write-root, stdout/counter, metadata-pin, and isolation assertions.
 - [ ] Wire research checks into `npm run evals`, run focused tests, then run the full suite with `ARIADNE_REPO` pointing to the candidate checkout.

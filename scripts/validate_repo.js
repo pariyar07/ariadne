@@ -84,6 +84,8 @@ const ACTIVE_RESEARCH_SKILL_REFERENCES = new Map([
 const WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER = "ARIADNE_WEEKLY_MAINTENANCE_PROMPT_VERSION: 1";
 const RESEARCH_INGEST_ZERO_WRITE_GUIDANCE =
   "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material.";
+const RESEARCH_LIFECYCLE_PLAN = "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md";
+const RESEARCH_LIFECYCLE_PLAN_SUPERSESSION = "partially superseded by the direct-breaking v0.2.0 release decision";
 const PREPUBLIC_TERM_PATTERNS = [
   new RegExp("Memory " + "Map", "iu"),
   new RegExp("memory " + "lens(?:es)?", "iu"),
@@ -251,6 +253,16 @@ function validateResearchLifecycleDocs(errors) {
   const quickstart = "docs/guides/quickstart.md";
   if (fs.existsSync(path.join(ROOT, quickstart)) && !read(quickstart).includes(RESEARCH_INGEST_ZERO_WRITE_GUIDANCE)) {
     fail(errors, `${quickstart} must preserve the no-target zero-write gate`);
+  }
+
+  if (fs.existsSync(path.join(ROOT, RESEARCH_LIFECYCLE_PLAN))) {
+    const plan = read(RESEARCH_LIFECYCLE_PLAN);
+    if (!plan.includes(RESEARCH_LIFECYCLE_PLAN_SUPERSESSION)) {
+      fail(errors, `${RESEARCH_LIFECYCLE_PLAN} must preserve the direct-breaking v0.2.0 supersession notice`);
+    }
+    if (plan.includes("Compatibility adapters remain for one migration release")) {
+      fail(errors, `${RESEARCH_LIFECYCLE_PLAN} must not direct workers to restore compatibility adapters`);
+    }
   }
 }
 
