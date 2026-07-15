@@ -125,9 +125,16 @@ function normalizeScopeRegistry(text) {
 
 function normalizeScopeCanvas(value) {
   if (!value || typeof value !== "object" || Array.isArray(value) || !Array.isArray(value.nodes) || !Array.isArray(value.edges)) throw new Error("invalid Canvas");
-  const canonicalObject = (item) => Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]]));
+  const canonical = (item) => {
+    if (Array.isArray(item)) return item.map(canonical);
+    if (item && typeof item === "object") return Object.fromEntries(Object.keys(item).sort().map((key) => [key, canonical(item[key])]));
+    return item;
+  };
   const byId = (left, right) => Buffer.from(String(left.id)).compare(Buffer.from(String(right.id)));
-  return { nodes: value.nodes.map(canonicalObject).sort(byId), edges: value.edges.map(canonicalObject).sort(byId) };
+  const normalized = canonical(value);
+  normalized.nodes.sort(byId);
+  normalized.edges.sort(byId);
+  return normalized;
 }
 
 function treeLines(model, descriptor, prefix = "") {

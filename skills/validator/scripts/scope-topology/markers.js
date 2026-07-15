@@ -16,17 +16,29 @@ function replaceMarkerBlock(bytes, markerName, generatedBody) {
   }
   if (bytes.length === 0) lines.push({ start: 0, end: 0, content: Buffer.alloc(0) });
   const owned = [];
+  const tokens = [];
   for (let index = 0; index < lines.length; index += 1) {
     const content = lines[index].content;
     const isAscii = content.every((byte) => byte < 0x80);
     const value = isAscii ? content.toString("ascii") : "";
-    if (content.equals(Buffer.from(startText))) owned.push({ index, kind: "start" });
-    if (content.equals(Buffer.from(endText))) owned.push({ index, kind: "end" });
-    if (isAscii && /^<!-- ariadne:[a-z0-9-]+:(?:start|end) -->$/u.test(value) && value !== startText && value !== endText) {
-      const between = owned.length === 1 && owned[0].kind === "start";
-      if (between) throw new Error("nested or mixed marker pair");
+    const token = isAscii && value.match(/^<!-- ariadne:([a-z0-9-]+):(start|end) -->$/u);
+    if (token) {
+      const item = { index, name: token[1], kind: token[2] };
+      tokens.push(item);
+      if (item.name === markerName) owned.push({ index, kind: item.kind });
     }
   }
+  let open = null;
+  for (const token of tokens) {
+    if (token.kind === "start") {
+      if (open) throw new Error("nested or mixed marker ownership");
+      open = token;
+    } else {
+      if (!open || open.name !== token.name) throw new Error("crossed or reversed marker pair");
+      open = null;
+    }
+  }
+  if (open) throw new Error("missing marker end");
   if (owned.length !== 2 || owned[0].kind !== "start" || owned[1].kind !== "end") {
     throw new Error("missing, duplicate, or reversed marker pair");
   }

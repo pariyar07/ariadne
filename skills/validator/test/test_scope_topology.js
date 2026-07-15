@@ -145,6 +145,7 @@ for (const mutate of [
   (value) => { value.nodes[0].x += 1; },
   (value) => { value.edges[0].toNode = value.nodes[0].id; },
   (value) => { value.nodes.push({ id: "stale", type: "text", text: "stale", x: 0, y: 0, width: 1, height: 1 }); },
+  (value) => { value.manualMetadata = { note: "unsupported" }; },
 ]) {
   const changed = structuredClone(expectedCanvas);
   mutate(changed);
@@ -188,6 +189,9 @@ for (const malformed of [
   "plain", "<!-- ariadne:x:start -->\n", "<!-- ariadne:x:end -->\n<!-- ariadne:x:start -->\n",
   "<!-- ariadne:x:start -->\n<!-- ariadne:x:start -->\n<!-- ariadne:x:end -->\n",
   "<!-- ariadne:x:start -->\n<!-- ariadne:y:start -->\n<!-- ariadne:y:end -->\n<!-- ariadne:x:end -->\n",
+  "<!-- ariadne:y:start -->\n<!-- ariadne:x:start -->\n<!-- ariadne:x:end -->\n<!-- ariadne:y:end -->\n",
+  "<!-- ariadne:y:start -->\n<!-- ariadne:x:start -->\n<!-- ariadne:y:end -->\n<!-- ariadne:x:end -->\n",
+  "<!-- ariadne:x:start -->\n<!-- ariadne:y:start -->\n<!-- ariadne:x:end -->\n<!-- ariadne:y:end -->\n",
 ]) assert.throws(() => replaceMarkerBlock(Buffer.from(malformed), "x", "body"), /marker/u);
 
 const rejectedAncestor = buildTopology(inventoryVault(fixture("rejected_ancestor_is_transparent")));
