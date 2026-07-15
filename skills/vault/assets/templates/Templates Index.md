@@ -22,7 +22,10 @@ Templates are reusable scaffolds. They may not link deeply into the knowledge gr
 
 ## Durable Note Templates
 
+- [[Templates/Research Boundary]]
 - [[Templates/Research Note]]
+- [[Templates/Research Inquiry]]
+- [[Templates/Research Synthesis]]
 - [[Templates/Concept Note]]
 - [[Templates/Entity Note]]
 - [[Templates/Relationship Note]]
@@ -32,6 +35,8 @@ Templates are reusable scaffolds. They may not link deeply into the knowledge gr
 ## Operating Templates
 
 - [[Templates/Knowledge Health Check]]
+
+Research templates use schema-v1 top-level scalar properties and flat scalar lists. Customize descriptor paths for the selected boundary; do not infer membership from folders.
 
 ## Related
 

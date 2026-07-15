@@ -27,7 +27,7 @@ Use wikilinks for Base files from this index so Obsidian can traverse the view l
 | Base | Purpose | Related hub |
 | --- | --- | --- |
 | [[Bases/Project Notes.base]] | Shows all Markdown notes except templates, with type, status, created date, and folder. | [[00 Index]] |
-| [[Bases/Research Pipeline.base]] | Shows raw-source and research notes for source ingestion and compilation checks. | [[Research/00 Research Index]] |
+| [[Bases/Research Pipeline.base]] | Shows only declared research artifact types whose `research_boundary` exactly matches the configured descriptor. Descendant rollup is explicit, never folder-derived. | [[Research/00 Research Index]] |
 | [[Bases/Entities.base]] | Shows durable entity notes. | [[Entities/00 Entities Index]] |
 | [[Bases/Relationships.base]] | Shows durable relationship notes and relationship metadata. | [[Relationships/00 Relationships Index]] |
 | [[Bases/Decisions.base]] | Shows dated decision notes. | [[Decisions/00 Decisions Index]] |

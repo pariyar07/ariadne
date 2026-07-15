@@ -3,6 +3,7 @@ title: "{{date}} {{title}}"
 type: decision
 status: proposed
 created: "{{date}}"
+research_basis: []
 tags:
   - decision
 ---
@@ -14,6 +15,7 @@ tags:
 
 ## Context
 
+When research informed the decision, list the canonical research artifacts in `research_basis`. Do not move or duplicate their evidence into this note.
 
 ## Options Considered
 
@@ -22,4 +24,3 @@ tags:
 
 
 ## Consequences
-

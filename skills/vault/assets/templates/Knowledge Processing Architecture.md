@@ -21,6 +21,8 @@ Task agents may answer questions, generate outputs, or execute project work. A k
 
 The foundational design philosophy: the human curates what enters; agents compile raw material into a linked Markdown wiki; the compiled wiki is the source of truth; Bases and views are read-only lenses over it. Every raw input should eventually compile into a concept, thesis, decision, or open question.
 
+Research is an opt-in capability inside a selected scope. A schema-v1 pipeline has one canonical `type: research-boundary` descriptor. Its stable `boundary_id`, vault-relative `scope_path`, hub links, `view_mode`, and explicit `rollup_boundaries` define the boundary independently of folder layout.
+
 ## Intake Interfaces
 
 - `Raw/Sources/` for external sources.
@@ -34,6 +36,15 @@ The foundational design philosophy: the human curates what enters; agents compil
 3. Link context meaningfully.
 4. Compile durable notes in the appropriate folder.
 5. Make the result visible through indexes, Bases, canvases, or health reports.
+
+## Research Provenance And Promotion
+
+- Use only top-level scalar metadata and flat scalar lists for research schema version 1.
+- Assign membership with `research_boundary`. An exact view includes only that descriptor; rollup adds only explicitly listed child descriptors.
+- Canonical provenance runs downstream to upstream through `derived_from`; reverse coverage comes from backlinks.
+- Preserve source type and evidence role. Generated analysis and derivative copies require upstream provenance and do not independently corroborate it.
+- Keep durable inquiry disposition history append-only.
+- Promotion creates or updates an explicitly authorized downstream note with `research_basis`; it does not move, duplicate, or silently rewrite research evidence. `promoted_to` is optional.
 
 ## Guardrail
 

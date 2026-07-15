@@ -53,14 +53,15 @@ Check for:
 - folders where agents repeatedly need user guidance because global instructions are too generic
 - stale or missing local `AGENTS.md` files for specialized folders
 
-### 3. Pipeline
+### 3. Research Routing
 
 Check for:
 
-- raw sources without compiled notes
-- research notes without source links
-- important actors or objects missing from entity indexes
-- claims without supporting sources
+- research descriptors or Bases with broken structural links
+- schema-v1 research findings reported by `ariadne:validator`
+- research-semantic work that belongs in one named boundary
+
+Route provenance coverage, evidence roles, compilation status, contradictions, stale synthesis, and inquiry dispositions to `ariadne:research-stewardship`. Whole-vault maintenance must not guess or silently repair those judgments.
 
 ### 4. Work Queues
 
@@ -95,9 +96,10 @@ Suggested routing:
 - Discovery registry, entrypoint, or adapter marker issues: `ariadne:global-discovery` and the Ariadne discovery doctor.
 - Broken links, orphan notes, invalid frontmatter, invalid Bases, or unlinked Bases: `ariadne:validator`, then `ariadne:maintenance`.
 - Oversized hubs, missing hubs, unclear scope boundaries, or routing drift: `ariadne:navigation`.
-- Raw, inbox, processing, or output buildup: `ariadne:knowledge-capture` or `ariadne:research-intake`.
+- Raw, inbox, processing, or output buildup: `ariadne:knowledge-capture`; research ingest: `ariadne:research-ingest`.
 - Missing research pipeline structure: `ariadne:research-pipeline`.
-- Stale conclusions, assumptions, or unresolved questions: `ariadne:synthesis`.
+- Research provenance, compilation coverage, stale conclusions, contradictions, or unresolved inquiry history: `ariadne:research-stewardship`.
+- Synthesis disposition or promotion candidates: `ariadne:research-synthesis`.
 
 ## Report Format
 
