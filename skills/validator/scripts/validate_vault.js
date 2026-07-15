@@ -608,6 +608,23 @@ function validate(vaultPath, options = {}) {
     return data.type === "research-boundary" && typeof data.research_schema === "string" && data.research_schema === "1";
   });
   const descriptorSet = new Set(descriptors);
+  const vaultRootReal = fs.realpathSync(".");
+
+  function canonicalDescriptorScope(value) {
+    if (typeof value !== "string" || value === "" || path.posix.isAbsolute(value) || /^[A-Za-z]:[\\/]/u.test(value)) return null;
+    const normalized = path.posix.normalize(value);
+    const absolute = path.resolve(vaultRootReal, normalized);
+    if (!fs.existsSync(absolute) || !fs.statSync(absolute).isDirectory()) return null;
+    const realScope = fs.realpathSync(absolute);
+    const relative = toPosix(path.relative(vaultRootReal, realScope));
+    if (relative === ".." || relative.startsWith("../")) return null;
+    return relative === "" ? "." : relative;
+  }
+
+  const canonicalScopeByDescriptor = new Map(descriptors.map((descriptor) => [
+    descriptor,
+    canonicalDescriptorScope((markdownFrontmatter.get(descriptor) || {}).scope_path),
+  ]));
   for (const file of markdownFiles) {
     const data = markdownFrontmatter.get(file) || {};
     if (data.type === "research-boundary" && Array.isArray(data.research_schema)) {
@@ -621,7 +638,7 @@ function validate(vaultPath, options = {}) {
   for (const [field, label] of [["boundary_id", "boundary_id"], ["scope_path", "canonical scope_path"]]) {
     const groups = new Map();
     for (const descriptor of descriptors) {
-      const value = (markdownFrontmatter.get(descriptor) || {})[field];
+      const value = field === "scope_path" ? canonicalScopeByDescriptor.get(descriptor) : (markdownFrontmatter.get(descriptor) || {})[field];
       if (typeof value !== "string" || value === "") continue;
       if (!groups.has(value)) groups.set(value, []);
       groups.get(value).push(descriptor);
@@ -631,7 +648,7 @@ function validate(vaultPath, options = {}) {
       const sorted = filesForValue.slice().sort();
       for (const descriptor of sorted) {
         const others = sorted.filter((file) => file !== descriptor);
-        const scopePath = String((markdownFrontmatter.get(descriptor) || {}).scope_path || "");
+        const scopePath = canonicalScopeByDescriptor.get(descriptor) || "";
         researchBoundaryWarnings.push(structuredFinding(
           `${descriptor}: duplicate ${label} ${value} also declared by ${others.join(", ")}`,
           descriptor,
@@ -648,8 +665,8 @@ function validate(vaultPath, options = {}) {
 
   const descriptorScopes = descriptors.map((descriptor) => ({
     descriptor,
-    scope: String((markdownFrontmatter.get(descriptor) || {}).scope_path || ""),
-  })).filter((entry) => entry.scope && !path.posix.isAbsolute(entry.scope) && entry.scope !== ".." && !entry.scope.startsWith("../"))
+    scope: canonicalScopeByDescriptor.get(descriptor),
+  })).filter((entry) => entry.scope)
     .sort((first, second) => second.scope.length - first.scope.length || first.descriptor.localeCompare(second.descriptor));
 
   function supportedScopeDescriptor(file) {
@@ -750,7 +767,7 @@ function validate(vaultPath, options = {}) {
       const normalizedScope = path.posix.normalize(data.scope_path);
       if (path.posix.isAbsolute(data.scope_path) || normalizedScope === ".." || normalizedScope.startsWith("../")) {
         researchBoundaryWarnings.push(`${descriptor}: scope_path must be vault-relative and contained`);
-      } else if (!fs.existsSync(normalizedScope) || !fs.statSync(normalizedScope).isDirectory()) {
+      } else if (!canonicalScopeByDescriptor.get(descriptor)) {
         researchBoundaryWarnings.push(`${descriptor}: scope_path does not name an existing directory: ${data.scope_path}`);
       }
     }
@@ -759,9 +776,8 @@ function validate(vaultPath, options = {}) {
     if (data.view_mode === "rollup") {
       for (const value of valuesAsList(data.rollup_boundaries)) {
         const child = resolvedScalarLink(descriptor, value);
-        const childData = markdownFrontmatter.get(child) || {};
-        const parentScope = String(data.scope_path || "");
-        const childScope = String(childData.scope_path || "");
+        const parentScope = canonicalScopeByDescriptor.get(descriptor) || "";
+        const childScope = canonicalScopeByDescriptor.get(child) || "";
         if (!descriptorSet.has(child) || !childScope.startsWith(`${parentScope}/`)) {
           researchBoundaryWarnings.push(`${descriptor}: rollup boundary ${value} is not a declared descendant descriptor`);
         } else {
@@ -780,16 +796,16 @@ function validate(vaultPath, options = {}) {
       const targetText = scalarLinkTarget(data[field]);
       const hub = resolvedScalarLink(descriptor, data[field]);
       if (!targetText || !targetText.includes("/") || !hub) {
-        researchHubWarnings.push(structuredFinding(`${descriptor}: ${field} must be a path-qualified link to an existing hub`, descriptor, [String(data.scope_path || "")]));
+        researchHubWarnings.push(structuredFinding(`${descriptor}: ${field} must be a path-qualified link to an existing hub`, descriptor, [canonicalScopeByDescriptor.get(descriptor) || ""]));
         continue;
       }
       if (!fileLinksToQualified(hub, descriptor)) {
-        researchHubWarnings.push(structuredFinding(`${hub} does not link its boundary descriptor ${descriptor}`, hub, [String(data.scope_path || ""), descriptor]));
+        researchHubWarnings.push(structuredFinding(`${hub} does not link its boundary descriptor ${descriptor}`, hub, [canonicalScopeByDescriptor.get(descriptor) || "", descriptor]));
       }
       const missing = members.filter((member) => typesForHub.has((markdownFrontmatter.get(member) || {}).type))
         .filter((member) => !fileLinksToQualified(hub, member));
       if (missing.length > 0) {
-        researchHubWarnings.push(structuredFinding(`${hub} does not link member(s) declared by ${descriptor}: ${missing.sort().join(", ")}`, hub, [String(data.scope_path || ""), descriptor, ...missing]));
+        researchHubWarnings.push(structuredFinding(`${hub} does not link member(s) declared by ${descriptor}: ${missing.sort().join(", ")}`, hub, [canonicalScopeByDescriptor.get(descriptor) || "", descriptor, ...missing]));
       }
       const expected = new Set(members.filter((member) => typesForHub.has((markdownFrontmatter.get(member) || {}).type)));
       const linkedResearch = [...wikilinkTargets(textWithoutCode(readText(hub))), ...markdownLinkTargets(textWithoutCode(readText(hub)))]
@@ -797,7 +813,7 @@ function validate(vaultPath, options = {}) {
         .filter((linked) => linked && researchTypes.has((markdownFrontmatter.get(linked) || {}).type));
       const extra = Array.from(new Set(linkedResearch.filter((linked) => typesForHub.has((markdownFrontmatter.get(linked) || {}).type) && !expected.has(linked))));
       if (extra.length > 0) {
-        researchHubWarnings.push(structuredFinding(`${hub} links member(s) outside the exact or declared rollup boundary: ${extra.sort().join(", ")}`, hub, [String(data.scope_path || ""), ...extra]));
+        researchHubWarnings.push(structuredFinding(`${hub} links member(s) outside the exact or declared rollup boundary: ${extra.sort().join(", ")}`, hub, [canonicalScopeByDescriptor.get(descriptor) || "", ...extra]));
       }
     }
 
@@ -881,13 +897,13 @@ function validate(vaultPath, options = {}) {
     });
   }
 
-  const descriptorScopesByFile = new Map(descriptors.map((descriptor) => [descriptor, String((markdownFrontmatter.get(descriptor) || {}).scope_path || "")]));
+  const descriptorScopesByFile = new Map(descriptors.map((descriptor) => [descriptor, canonicalScopeByDescriptor.get(descriptor) || ""]));
   const hubScopesByFile = new Map();
   for (const descriptor of descriptors) {
     const data = markdownFrontmatter.get(descriptor) || {};
     for (const field of ["raw_hub", "compiled_hub", "inquiry_hub", "synthesis_hub", "thread_hub"]) {
       const hub = resolvedScalarLink(descriptor, data[field]);
-      if (hub) hubScopesByFile.set(hub, String(data.scope_path || ""));
+      if (hub) hubScopesByFile.set(hub, canonicalScopeByDescriptor.get(descriptor) || "");
     }
   }
 

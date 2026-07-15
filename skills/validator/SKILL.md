@@ -68,7 +68,7 @@ The validator reports:
 - `scope-navigation-warnings: N` for promoted child scope hubs that are not linked bidirectionally with their parent hub
 - `routing-matrix-warnings: N` for scope hubs that are not linked from their nearest local or inherited `Agent/Task Routing Matrix.md`
 - `base-scope-formula-warnings: N` for root `Bases/*.base` files with a `file.inFolder` scope formula that is missing a branch for a known scope path
-- `research-boundary-warnings: N` for invalid supported boundary descriptors, including unsupported nested schema values, duplicate `boundary_id` values, and multiple canonical descriptors for one `scope_path`
+- `research-boundary-warnings: N` for invalid supported boundary descriptors, including unsupported nested schema values, duplicate `boundary_id` values, and multiple canonical descriptors resolving to one normalized real `scope_path`
 - `research-provenance-warnings: N` for invalid downstream-to-upstream provenance and generated or derivative evidence-family structure
 - `provenance-cycle-warnings: N` for artifacts in a `derived_from` cycle
 - `uncompiled-raw-source-warnings: N` for pending or review-needed sources and compiled sources without a downstream backlink

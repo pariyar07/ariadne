@@ -565,6 +565,39 @@ inquiries: []
     }
   },
 
+  function equivalentScopePathSpellingsShareOneCanonicalDescriptorKey() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "research_schema_valid"), vault);
+      const original = fs.readFileSync(path.join(vault, "Domain/Research Boundary.md"), "utf8");
+      writeFile(vault, "Elsewhere/Dot Boundary.md", original
+        .replace("boundary_id: domain-research", "boundary_id: dot-domain")
+        .replace("scope_path: Domain", "scope_path: ./Domain/."));
+      writeFile(vault, "Elsewhere/Repeated Boundary.md", original
+        .replace("boundary_id: domain-research", "boundary_id: repeated-domain")
+        .replace("scope_path: Domain", "scope_path: Domain//"));
+      fs.symlinkSync("Domain", path.join(vault, "AliasDomain"), "dir");
+      writeFile(vault, "Elsewhere/Alias Boundary.md", original
+        .replace("boundary_id: domain-research", "boundary_id: alias-domain")
+        .replace("scope_path: Domain", "scope_path: AliasDomain"));
+      fs.appendFileSync(path.join(vault, "00 Index.md"), "\n- [[Elsewhere/Alias Boundary]]\n- [[Elsewhere/Dot Boundary]]\n- [[Elsewhere/Repeated Boundary]]\n");
+
+      const whole = runValidatorPath(vault);
+      assertSuccess(whole);
+      assert.match(whole.stdout, /Elsewhere\/Dot Boundary\.md: duplicate canonical scope_path Domain also declared by Domain\/Research Boundary\.md, Elsewhere\/Alias Boundary\.md, Elsewhere\/Repeated Boundary\.md/);
+      assert.match(whole.stdout, /Elsewhere\/Repeated Boundary\.md: duplicate canonical scope_path Domain also declared by Domain\/Research Boundary\.md, Elsewhere\/Alias Boundary\.md, Elsewhere\/Dot Boundary\.md/);
+
+      const scoped = runValidatorPath(vault, ["--scope", "Domain", "--profile", "research"]);
+      assertSuccess(scoped);
+      assert.match(scoped.stdout, /Elsewhere\/Alias Boundary\.md: duplicate canonical scope_path Domain/);
+      assert.match(scoped.stdout, /Elsewhere\/Dot Boundary\.md: duplicate canonical scope_path Domain/);
+      assert.match(scoped.stdout, /Elsewhere\/Repeated Boundary\.md: duplicate canonical scope_path Domain/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
   function nearestScopeBareLinksCreditOneTarget() {
     const result = runValidator("research_schema_valid", ["--scope", "Domain", "--profile", "research"]);
 
