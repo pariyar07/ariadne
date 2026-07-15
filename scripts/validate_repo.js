@@ -255,6 +255,38 @@ function validateResearchLifecycleDocs(errors) {
     fail(errors, `${quickstart} must preserve the no-target zero-write gate`);
   }
 
+  const staleValidatorCounts = new Map([
+    ["README.md", ["11 structural checks", "11 checks"]],
+    [quickstart, ["11 counters", "all 11 counters"]],
+  ]);
+  for (const [file, phrases] of staleValidatorCounts) {
+    if (!fs.existsSync(path.join(ROOT, file))) continue;
+    const text = read(file);
+    for (const phrase of phrases) {
+      if (text.includes(phrase)) fail(errors, `${file} contains stale pre-v0.2.0 validator count: ${phrase}`);
+    }
+  }
+
+  const requiredDocumentationContracts = new Map([
+    ["skills/scope/SKILL.md", ["most-specific child branch before its parent branch", "Run scoped validation first, then whole-vault validation", "explicit inheritance from both the nearest parent scope and the vault root", "Preserve unrelated modified and untracked files"]],
+    ["CONTRIBUTING.md", ["closeout/", "`agents/openai.yaml` is required"]],
+    ["docs/releases/v0.2.0.md", ["Published 2026-07-15", "https://github.com/pariyar07/ariadne/releases/tag/v0.2.0"]],
+  ]);
+  for (const [file, phrases] of requiredDocumentationContracts) {
+    if (!fs.existsSync(path.join(ROOT, file))) {
+      fail(errors, `documentation contract missing: ${file}`);
+      continue;
+    }
+    const text = read(file);
+    for (const phrase of phrases) {
+      if (!text.includes(phrase)) fail(errors, `${file} must preserve documentation contract: ${phrase}`);
+    }
+  }
+  const releaseNote = "docs/releases/v0.2.0.md";
+  if (fs.existsSync(path.join(ROOT, releaseNote)) && read(releaseNote).includes("ariadne-eval-lab")) {
+    fail(errors, `${releaseNote} must not link private eval-lab evidence`);
+  }
+
   if (fs.existsSync(path.join(ROOT, RESEARCH_LIFECYCLE_PLAN))) {
     const plan = read(RESEARCH_LIFECYCLE_PLAN);
     if (!plan.includes(RESEARCH_LIFECYCLE_PLAN_SUPERSESSION)) {

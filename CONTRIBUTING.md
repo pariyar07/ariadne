@@ -17,14 +17,19 @@ skills/
   research-stewardship/ ← scoped research audit and repair (`ariadne:research-stewardship`)
   research-pipeline/ ← domain research pipeline setup (`ariadne:research-pipeline`)
   workstream-tracking/  ← Kanban boards and Dataview dashboards (`ariadne:workstream-tracking`)
+  closeout/     ← durable work checkpoint and safe-to-close decisions (`ariadne:closeout`)
   global-discovery/ ← existing vault discovery registration (`ariadne:global-discovery`)
   workspace-instructions/ ← workspace instruction files (`ariadne:workspace-instructions`)
   maintenance/ ← health checks and repair (`ariadne:maintenance`)
   validator/   ← deterministic structural validation (`ariadne:validator`)
     scripts/validate_vault.js ← the validator (Node.js, no deps)
 docs/
+  guides/quickstart.md         ← usage scenarios and skill chains
   guides/global-discovery.md  ← global discovery registration guide
+  guides/research-lifecycle-migration.md ← v0.2.0 breaking migration guide
+  guides/weekly-maintenance-automation.md ← versioned recurring maintenance prompt
   guides/validator.md         ← validator counter reference
+  releases/                   ← published release notes
   pressure-scenarios/         ← edge case docs
 ```
 
@@ -54,7 +59,7 @@ Good contributions:
 ### Adding a new skill
 
 1. Create `skills/<skill-name>/SKILL.md`
-2. Add an `agents/` folder with at least `openai.yaml` if you want multi-agent support
+2. Add `agents/openai.yaml`; `agents/openai.yaml` is required for every skill's Codex display metadata
 3. Add a row to the Skills table in `README.md`
 4. Run `node scripts/validate_repo.js --skills-only`
 

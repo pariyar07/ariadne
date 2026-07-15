@@ -29,7 +29,7 @@ Parent rules are inherited. Child files should say what is different locally.
 Good local `AGENTS.md`:
 
 ```markdown
-This file inherits parent scope rules from `../../AGENTS.md`.
+This file explicitly inherits the vault-root `AGENTS.md` and the nearest parent-scope `AGENTS.md`.
 It only adds rules for this scope.
 ```
 
@@ -62,3 +62,33 @@ Multi-scope vaults will have duplicate filenames (`AGENTS.md`, `00 Index.md`, `C
 
 Root Bases inspect across scopes and include `formula.scope`.
 Local Bases must include a folder-scope filter matching their scope path.
+
+Root Base scope formulas are first-match classifiers. Put a nested child's `file.inFolder()` branch before its parent branch:
+
+```yaml
+scope: 'if(file.inFolder("Domains/Ariadne/Evaluation"), "Ariadne Evaluation", if(file.inFolder("Domains/Ariadne"), "Ariadne", "Global"))'
+```
+
+Adding the child after the parent is structurally present but semantically ineffective because the parent branch absorbs it.
+
+## Nested-Scope Wiring
+
+```mermaid
+flowchart TD
+  Root["Vault root\nroot AGENTS + root Bases"]
+  Parent["Parent scope\nparent hub + routing"]
+  Child["Child scope\nlocal hub + delta AGENTS"]
+  Formula["Root Base formula\nchild branch before parent"]
+  Scoped["Scoped validation\nnew subtree"]
+  Whole["Whole-vault validation\ncross-scope regression check"]
+
+  Root --> Parent --> Child
+  Child -->|"links back"| Parent
+  Child -.->|"inherits vault-root policy"| Root
+  Child -.->|"inherits parent policy"| Parent
+  Formula --> Child
+  Formula --> Parent
+  Child --> Scoped --> Whole
+```
+
+Run scoped validation first so defects owned by the new child are unambiguous. Then run whole-vault validation and distinguish new regressions from unrelated warnings that already existed elsewhere.

@@ -28,9 +28,12 @@ skills/
 scripts/
   validate_repo.js               ← public-boundary and repository guardrail checks
 docs/
+  guides/quickstart.md          ← usage scenarios and skill chains
   guides/global-discovery.md     ← cold-agent vault discovery registration
+  guides/research-lifecycle-migration.md ← breaking research lifecycle migration
   guides/weekly-maintenance-automation.md ← recurring maintenance automation prompt
   guides/validator.md            ← validator counter reference
+  releases/                      ← published release notes
   pressure-scenarios/            ← edge case documentation
 ```
 
@@ -68,6 +71,8 @@ Each skill is a folder with:
 | Run repo guardrails | `node scripts/validate_repo.js` |
 | Run skill guardrails | `node scripts/validate_repo.js --skills-only` |
 | Read validator counter docs | `docs/guides/validator.md` |
+| Read usage scenarios and skill chains | `docs/guides/quickstart.md` |
+| Read research lifecycle migration guidance | `docs/guides/research-lifecycle-migration.md` |
 | Read global discovery docs | `docs/guides/global-discovery.md` |
 | Read weekly automation prompt | `docs/guides/weekly-maintenance-automation.md` |
 | Read public boundary | `PUBLIC_BOUNDARY.md` |

@@ -6,10 +6,12 @@ Use scoped Bases to keep the view layer aligned with recursive scope boundaries.
 
 Root Bases inspect across scopes and include a `Scope` column.
 
+Order nested paths from most specific to least specific. `if()` formulas return the first matching branch, so a parent branch placed first absorbs all descendants.
+
 ```yaml
 filters: type == "entity"
 formulas:
-  scope: 'if(file.inFolder("Domains/Alpha"), "Alpha", if(file.inFolder("Domains/Beta"), "Beta", "Global"))'
+  scope: 'if(file.inFolder("Domains/Alpha/Research"), "Alpha Research", if(file.inFolder("Domains/Alpha"), "Alpha", if(file.inFolder("Domains/Beta"), "Beta", "Global")))'
 properties:
   formula.scope:
     displayName: Scope
