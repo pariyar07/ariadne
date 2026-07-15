@@ -10,6 +10,8 @@ const { execFileSync } = require("child_process");
 const SKILL_ROOT = path.resolve(__dirname, "..");
 const CHECKER = path.join(SKILL_ROOT, "scripts/check_workspace.js");
 const FIXTURES = path.join(__dirname, "fixtures");
+const REPO_ROOT = path.resolve(SKILL_ROOT, "../..");
+const REPO_VALIDATOR = path.join(REPO_ROOT, "scripts/validate_repo.js");
 
 function run(cmd, args, cwd) {
   execFileSync(cmd, args, {
@@ -78,6 +80,18 @@ function runChecker(workspace) {
   }));
 }
 
+function runRepoValidator() {
+  try {
+    return execFileSync(process.execPath, [REPO_VALIDATOR, "--skills-only"], {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch (error) {
+    return `${error.stdout || ""}${error.stderr || ""}`;
+  }
+}
+
 function assertArrayEqual(actual, expected, label) {
   assert.deepStrictEqual([...(actual || [])].sort(), [...expected].sort(), label);
 }
@@ -92,7 +106,7 @@ function assertForbiddenSignals(report, forbidden, scenarioName) {
 
 function assertObjectContains(actual, expected, label) {
   for (const [key, value] of Object.entries(expected)) {
-    assert.deepStrictEqual(actual[key], value, `${label}: ${key}`);
+    assert.deepStrictEqual((actual || {})[key], value, `${label}: ${key}`);
   }
 }
 
@@ -139,6 +153,12 @@ function main() {
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
   }
+
+  const repoValidation = runRepoValidator();
+  assert.ok(
+    !repoValidation.includes("removed skill reference found in skills/workspace-instructions/test/fixtures/current_research_skill_names/scenario.json"),
+    "active successor research skill names must not be rejected by the repository guardrail"
+  );
 
   console.log(`${fixtureNames.length} workspace instruction scenarios passed`);
 }

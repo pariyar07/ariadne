@@ -43,10 +43,44 @@ const REMOVED_SKILL_PATTERNS = [
   new RegExp("ariadne:" + "project-agents", "u"),
   new RegExp("ariadne:" + "discovery", "u"),
   new RegExp("ariadne:" + "ingest", "u"),
-  new RegExp("ariadne:" + "research-ingest", "u"),
   new RegExp("ariadne:" + "workstream-board", "u"),
   new RegExp("ariadne:" + "maintainer", "u"),
 ];
+const RETIRED_RESEARCH_SKILL_PATTERNS = [
+  new RegExp("ariadne:" + "research-intake", "u"),
+  new RegExp("ariadne:" + "synthesis", "u"),
+];
+const RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES = [
+  "skills/research-intake/",
+  "skills/synthesis/",
+  "docs/migration/",
+  "docs/migrations/",
+  "docs/release/",
+  "docs/releases/",
+  "docs/decision/",
+  "docs/decisions/",
+  "docs/superpowers/plans/",
+  "skills/workspace-instructions/test/fixtures/current_research_skill_names/",
+  "skills/workspace-instructions/test/fixtures/retired_research_skill_names/",
+];
+const RETIRED_RESEARCH_SKILL_ALLOWED_FILES = new Set([
+  "AGENTS.md",
+  "CONTRIBUTING.md",
+  "README.md",
+  "docs/guides/quickstart.md",
+  "docs/guides/weekly-maintenance-automation.md",
+  "skills/closeout/SKILL.md",
+  "skills/knowledge-capture/SKILL.md",
+  "skills/maintenance/SKILL.md",
+  "skills/navigation/SKILL.md",
+  "skills/research-pipeline/SKILL.md",
+  "skills/scope/SKILL.md",
+  "skills/validator/SKILL.md",
+  "skills/vault/SKILL.md",
+  "skills/vault/assets/templates/AGENTS.md",
+  "skills/vault/assets/templates/Vault Health Check Procedure.md",
+  "skills/workspace-instructions/scripts/check_workspace.js",
+]);
 const PREPUBLIC_TERM_PATTERNS = [
   new RegExp("Memory " + "Map", "iu"),
   new RegExp("memory " + "lens(?:es)?", "iu"),
@@ -107,6 +141,13 @@ function isTextFile(file) {
   return TEXT_EXTENSIONS.has(path.extname(file));
 }
 
+function allowsRetiredResearchSkillNames(file) {
+  if (RETIRED_RESEARCH_SKILL_ALLOWED_FILES.has(file)) return true;
+  if (RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES.some((prefix) => file.startsWith(prefix))) return true;
+  return /^(?:CHANGELOG|MIGRATION|MIGRATIONS|RELEASE|RELEASES)\.md$/u.test(file) ||
+    /^docs\/(?:guides\/)?[^/]*(?:migration|release|decision)[^/]*\.md$/iu.test(file);
+}
+
 function fail(errors, message) {
   errors.push(message);
 }
@@ -159,6 +200,11 @@ function validateTextSafety(errors, files) {
     }
     for (const pattern of REMOVED_SKILL_PATTERNS) {
       if (pattern.test(text)) fail(errors, `removed skill reference found in ${file}: ${pattern}`);
+    }
+    if (!allowsRetiredResearchSkillNames(file)) {
+      for (const pattern of RETIRED_RESEARCH_SKILL_PATTERNS) {
+        if (pattern.test(text)) fail(errors, `retired research skill reference found outside migration allowlist in ${file}: ${pattern}`);
+      }
     }
     for (const pattern of PREPUBLIC_TERM_PATTERNS) {
       if (pattern.test(text)) fail(errors, `pre-public memory architecture term found in ${file}: ${pattern}`);

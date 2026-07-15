@@ -1,0 +1,26 @@
+{
+  "name": "current_research_skill_names",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\nHistorical prose outside generated blocks may mention `ariadne:research-intake` and `ariadne:synthesis` without being rewritten.\n\n<!-- ariadne:workspace-vault-link:start -->\nUse `ariadne:research-ingest` for intake orchestration and `ariadne:research-synthesis` for synthesis disposition.\n<!-- ariadne:workspace-vault-link:end -->\n"
+    }
+  ],
+  "expected": {
+    "git": {
+      "insideWorkTree": false,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "retiredResearchSkillNameFiles": []
+    },
+    "objects": {
+      "retiredResearchSkillNamesByFile": {
+        "AGENTS.md": []
+      }
+    },
+    "values": {
+      "retiredResearchSkillRepairGuidance": null
+    }
+  }
+}
