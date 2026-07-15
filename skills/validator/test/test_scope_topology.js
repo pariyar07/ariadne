@@ -13,6 +13,9 @@ const {
   normalizeNfc,
   normalizeScopePath,
   parseScopeDescriptor,
+  parseOperationRequest,
+  planOperation,
+  hashPlan,
   replaceMarkerBlock,
   renderCheckpointBlocks,
   renderScopeRegistry,
@@ -29,6 +32,85 @@ function fixture(name) {
 function bySortKey(left, right) {
   return Buffer.from(left.sort_key).compare(Buffer.from(right.sort_key));
 }
+
+const operationFixture = (name) => JSON.parse(fs.readFileSync(fixture(`operations/${name}.json`), "utf8"));
+
+assert.throws(() => parseOperationRequest({}), /missing field/u);
+assert.throws(() => parseOperationRequest({ ...operationFixture("repair"), surprise: true }), /unknown field/u);
+assert.throws(() => parseOperationRequest({ ...operationFixture("repair"), operation_schema: 2 }), /operation_schema/u);
+assert.throws(() => parseOperationRequest({ ...operationFixture("repair"), operation: "delete" }), /unsupported operation/u);
+assert.throws(() => parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: ["Agent/Scope Map.md", "Agent/./Scope Map.md"] }), /duplicate normalized/u);
+assert.throws(() => parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: ["/tmp/out"] }), /vault-relative/u);
+assert.throws(() => parseOperationRequest({ ...operationFixture("move"), destination_path: "../outside" }), /traversal/u);
+assert.throws(() => parseOperationRequest({ ...operationFixture("move"), source_path: undefined }), /requires source_path/u);
+
+const parsedRepair = parseOperationRequest(operationFixture("repair"));
+assert(Object.isFrozen(parsedRepair));
+assert.deepStrictEqual(parsedRepair.allowed_write_paths, [...parsedRepair.allowed_write_paths].sort((a, b) => Buffer.from(a).compare(Buffer.from(b))));
+assert.strictEqual(hashPlan({ b: 2, a: 1 }), hashPlan({ a: 1, b: 2 }));
+
+const operationInventory = inventoryVault(fixture("deep_transparent_ancestry"));
+const operationModel = buildTopology(operationInventory);
+const repairPlan = planOperation(operationInventory, operationModel, parsedRepair);
+assert.deepStrictEqual(repairPlan.content_write_paths, [...repairPlan.content_write_paths].sort((a, b) => Buffer.from(a).compare(Buffer.from(b))));
+assert.ok(repairPlan.replacements.some((item) => item.path === "Agent/Scope Map.md"));
+assert.ok(repairPlan.refusals.some((item) => item.code === "unauthorized-write" && item.path === "Agent/Scope Map.canvas"));
+assert.strictEqual(repairPlan.write_authorized, false);
+assert.strictEqual(hashPlan(repairPlan), hashPlan(planOperation(operationInventory, operationModel, parsedRepair)));
+
+for (const [from, to, allowed] of [
+  ["active", "active", true], ["archived", "archived", true], ["retired", "retired", true],
+  ["active", "archived", true], ["archived", "active", true], ["archived", "retired", true],
+  ["retired", "archived", true], ["active", "retired", false], ["retired", "active", false],
+]) {
+  const synthetic = { ...operationModel, descriptorsById: new Map(operationModel.descriptorsById) };
+  synthetic.descriptorsById.set("alpha", { ...synthetic.descriptorsById.get("alpha"), status: from });
+  const plan = planOperation(operationInventory, synthetic, parseOperationRequest({ ...operationFixture("set-status"), desired_status: to }));
+  assert.strictEqual(plan.lifecycle_checks[0].allowed, allowed, `${from} -> ${to}`);
+}
+
+const movePlan = planOperation(operationInventory, operationModel, parseOperationRequest(operationFixture("move")));
+assert.deepStrictEqual(movePlan.moves, [{ source_path: "Domains/Product/Workstreams/Alpha", destination_path: "Domains/Product/Workstreams/Beta" }]);
+assert.ok(movePlan.replacements.some((item) => item.kind === "redirect" && item.path === "Domains/Product/Workstreams/Alpha/00 Index.md"));
+assert.match(movePlan.replacements.find((item) => item.kind === "redirect").bytes, /redirect_schema: 1/u);
+assert.match(movePlan.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Beta/00 Index.md")).bytes, /parent_scope_id: product/u);
+assert.throws(() => planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("move"), source_path: "Domains/Product/Zulu" })), /does not match target/u);
+assert.throws(() => planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("move"), destination_path: "Domains/Product/Zulu" })), /destination already exists/u);
+const reservedModel = { ...operationModel, descriptorsById: new Map(operationModel.descriptorsById) };
+reservedModel.descriptorsById.set("zulu", { ...reservedModel.descriptorsById.get("zulu"), formerScopePaths: ["Legacy/Alpha"] });
+assert.throws(() => planOperation(operationInventory, reservedModel, parseOperationRequest({ ...operationFixture("move"), destination_path: "Legacy/Alpha" })), /reserved former path/u);
+
+const adoption = planOperation(inventoryVault(fixture("pending_without_root")), buildTopology(inventoryVault(fixture("pending_without_root"))), parseOperationRequest(operationFixture("adopt")));
+assert.strictEqual(adoption.replacements.at(-1).path, "00 Index.md");
+assert.strictEqual(adoption.replacements.at(-1).activation, true);
+
+const createVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-create-"));
+fs.cpSync(fixture("root_only"), createVault, { recursive: true });
+fs.mkdirSync(path.join(createVault, "New Scope"));
+const createInventory = inventoryVault(createVault);
+const createPlan = planOperation(createInventory, buildTopology(createInventory), parseOperationRequest({
+  operation_schema: 1, operation: "create", target_scope_id: "new-scope", destination_path: "New Scope", allowed_write_paths: [],
+}));
+assert.ok(createPlan.replacements.some((item) => item.path === "New Scope/00 Index.md" && item.kind === "descriptor"));
+assert.ok(createPlan.replacements.some((item) => item.path === "New Scope/AGENTS.md" && item.kind === "checkpoint"));
+fs.rmSync(createVault, { recursive: true, force: true });
+
+const baseVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-base-"));
+fs.cpSync(fixture("root_only"), baseVault, { recursive: true });
+fs.mkdirSync(path.join(baseVault, "Bases"), { recursive: true });
+fs.writeFileSync(path.join(baseVault, "Bases", "Recognized.base"), 'formulas:\n  scope: file.inFolder("Domains/Alpha")\n');
+fs.writeFileSync(path.join(baseVault, "Bases", "Unsupported.base"), "formulas:\n  scope: file.inFolder(dynamicPath)\n");
+const baseInventory = inventoryVault(baseVault);
+const basePlan = planOperation(baseInventory, buildTopology(baseInventory), parseOperationRequest({
+  ...operationFixture("repair"), allowed_write_paths: ["Bases/Recognized.base"],
+}));
+assert.deepStrictEqual(basePlan.base_formula_proposals.map(({ path: itemPath, recognized, authorized }) => ({ path: itemPath, recognized, authorized })), [
+  { path: "Bases/Recognized.base", recognized: true, authorized: true },
+  { path: "Bases/Unsupported.base", recognized: false, authorized: false },
+]);
+assert.ok(basePlan.refusals.some((item) => item.path === "Bases/Unsupported.base"));
+assert.ok(!basePlan.replacements.some((item) => item.path.endsWith(".base") && item.path !== "Bases/Scope Registry.base"), "Base proposals must not become implicit rewrites");
+fs.rmSync(baseVault, { recursive: true, force: true });
 
 assert.strictEqual(normalizeNfc("Cafe\u0301"), "Café");
 assert.strictEqual(normalizeScopePath("Domains\\Cafe\u0301/./Research"), "Domains/Café/Research");

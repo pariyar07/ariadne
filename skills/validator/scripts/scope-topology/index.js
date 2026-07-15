@@ -7,4 +7,5 @@ module.exports = {
   ...require("./findings"),
   ...require("./markers"),
   ...require("./render"),
+  ...require("./operations"),
 };
