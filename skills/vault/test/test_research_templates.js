@@ -13,6 +13,15 @@ const RESEARCH_TYPES = new Set([
   "research-inquiry",
   "research-synthesis",
 ]);
+const EVIDENCE_ROLES = new Set([
+  "external-evidence",
+  "first-party-evidence",
+  "context",
+  "hypothesis",
+  "generated-analysis",
+  "derivative-copy",
+]);
+const COMPILATION_STATES = new Set(["pending", "compiled", "source-only", "needs-review"]);
 
 function readTemplate(name) {
   return fs.readFileSync(path.join(TEMPLATES, name), "utf8");
@@ -73,6 +82,39 @@ function frontmatter(text) {
   return result;
 }
 
+function parseResearchBaseFilters(text) {
+  const lines = text.split("\n");
+  const filtersIndex = lines.indexOf("filters:");
+  assert.notStrictEqual(filtersIndex, -1, "Base must declare filters");
+  assert.strictEqual(lines[filtersIndex + 1], "  and:", "Base filters must use a top-level and");
+
+  const and = [];
+  for (let index = filtersIndex + 2; index < lines.length && lines[index] !== "views:";) {
+    if (lines[index] === "") {
+      index += 1;
+      continue;
+    }
+    const scalar = lines[index].match(/^    - '(.+)'$/);
+    if (scalar) {
+      and.push(scalar[1]);
+      index += 1;
+      continue;
+    }
+    assert.strictEqual(lines[index], "    - or:", `unexpected Base filter structure: ${lines[index]}`);
+    const or = [];
+    index += 1;
+    while (index < lines.length) {
+      const nested = lines[index].match(/^        - '(.+)'$/);
+      if (!nested) break;
+      or.push(nested[1]);
+      index += 1;
+    }
+    assert.ok(or.length > 0, "nested type or must not be empty");
+    and.push({ or });
+  }
+  return { and };
+}
+
 function linkTarget(value) {
   const match = typeof value === "string" && value.match(/^\[\[([^\]|#]+)(?:[|#][^\]]+)?\]\]$/);
   return match ? match[1] : null;
@@ -117,14 +159,12 @@ function generatedFixture() {
     compiled_hub: "Programs/Atlas/Maps/Knowledge Registry",
     inquiry_hub: "Programs/Atlas/Maps/Inquiry Registry",
     synthesis_hub: "Programs/Atlas/Maps/Synthesis Registry",
-    thread_hub: "Programs/Atlas/Maps/Research Thread",
   };
   const childHubs = {
     raw_hub: "Experiments/Nested/Maps/Evidence Registry",
     compiled_hub: "Experiments/Nested/Maps/Knowledge Registry",
     inquiry_hub: "Experiments/Nested/Maps/Inquiry Registry",
     synthesis_hub: "Experiments/Nested/Maps/Synthesis Registry",
-    thread_hub: "Experiments/Nested/Maps/Research Thread",
   };
 
   write(
@@ -157,12 +197,68 @@ function generatedFixture() {
   const inquiryPath = "Open Loops/Atlas Adoption Inquiry";
   const synthesisPath = "Programs/Atlas/Maps/Atlas Current Synthesis";
   const decisionPath = "Strategy/2026-07-15 Atlas Rollout Decision";
-  write(root, `${rawPath}.md`, noteFromTemplate("Raw Source Note.md", {}, {
-    research_boundary: `"${rootBoundaryLink}"`,
-    source_type: "meeting",
-    evidence_role: "first-party-evidence",
-    compilation_status: "compiled",
-  }));
+  const evidenceCases = [
+    {
+      path: rawPath,
+      role: "first-party-evidence",
+      state: "compiled",
+      sourceType: "meeting",
+      origin: "Atlas operator interview",
+      derivedFrom: [],
+    },
+    {
+      path: "Library/Vendor Benchmarks",
+      role: "external-evidence",
+      state: "source-only",
+      sourceType: "dataset",
+      origin: "Vendor benchmark dataset",
+      derivedFrom: [],
+    },
+    {
+      path: "Background/Legacy Constraints",
+      role: "context",
+      state: "needs-review",
+      sourceType: "notes",
+      origin: "Legacy context notes",
+      derivedFrom: [],
+    },
+    {
+      path: "Working/Hypothesized Adoption Risk",
+      role: "hypothesis",
+      state: "pending",
+      sourceType: "human-note",
+      origin: "Researcher hypothesis",
+      derivedFrom: [],
+    },
+    {
+      path: "Generated/Interview Analysis",
+      role: "generated-analysis",
+      state: "compiled",
+      sourceType: "generated-analysis",
+      origin: "Shared analyst output",
+      derivedFrom: [rawPath],
+    },
+    {
+      path: "Mirrors/Interview Analysis Copy",
+      role: "derivative-copy",
+      state: "source-only",
+      sourceType: "mirror",
+      origin: "Shared analyst output",
+      derivedFrom: ["Generated/Interview Analysis"],
+    },
+  ];
+  for (const evidence of evidenceCases) {
+    write(root, `${evidence.path}.md`, noteFromTemplate("Raw Source Note.md", {}, {
+      research_boundary: `"${rootBoundaryLink}"`,
+      source_type: evidence.sourceType,
+      evidence_role: evidence.role,
+      origin: `"${evidence.origin}"`,
+      compilation_status: evidence.state,
+      derived_from: evidence.derivedFrom.length === 0
+        ? "[]"
+        : `\n${evidence.derivedFrom.map((upstream) => `  - "[[${upstream}]]"`).join("\n")}`,
+    }));
+  }
   write(root, `${researchPath}.md`, noteFromTemplate("Research Note.md", {}, {
     research_boundary: `"${rootBoundaryLink}"`,
     derived_from: `\n  - "[[${rawPath}]]"`,
@@ -196,7 +292,18 @@ function generatedFixture() {
   });
   write(root, "Views/Atlas Evidence.base", base);
 
-  return { root, rootBoundary, childBoundary, rawPath, researchPath, inquiryPath, synthesisPath, decisionPath, base };
+  return {
+    root,
+    rootBoundary,
+    childBoundary,
+    rawPath,
+    researchPath,
+    inquiryPath,
+    synthesisPath,
+    decisionPath,
+    evidenceCases,
+    base,
+  };
 }
 
 function markdownNotes(root) {
@@ -231,6 +338,21 @@ function exactMembers(notes, descriptorPath) {
   });
 }
 
+function provenanceRoots(notePath, notesByPath, visiting = new Set()) {
+  assert.ok(!visiting.has(notePath), `provenance cycle at ${notePath}`);
+  const data = notesByPath.get(notePath);
+  assert.ok(data, `missing provenance note ${notePath}`);
+  if (data.derived_from.length === 0) return new Set([notePath]);
+  const nextVisiting = new Set(visiting).add(notePath);
+  const roots = new Set();
+  for (const upstream of data.derived_from) {
+    const target = linkTarget(upstream);
+    assert.ok(target, `invalid derived_from link ${upstream}`);
+    for (const root of provenanceRoots(target, notesByPath, nextVisiting)) roots.add(root);
+  }
+  return roots;
+}
+
 function testTemplateSchemaAndGeneratedFixture() {
   for (const name of ["Research Boundary.md", "Research Inquiry.md", "Research Synthesis.md"])
     assert.ok(fs.existsSync(path.join(TEMPLATES, name)), `${name} must be shipped`);
@@ -239,11 +361,19 @@ function testTemplateSchemaAndGeneratedFixture() {
   const notes = markdownNotes(fixture.root);
   const rootDescriptor = frontmatter(fs.readFileSync(path.join(fixture.root, `${fixture.rootBoundary}.md`), "utf8"));
   const childDescriptor = frontmatter(fs.readFileSync(path.join(fixture.root, `${fixture.childBoundary}.md`), "utf8"));
+  const boundaryTemplate = readTemplate("Research Boundary.md");
+
+  assert.doesNotMatch(boundaryTemplate, /^thread_hub:/m, "optional thread_hub must be omitted by default");
+  assert.doesNotMatch(boundaryTemplate, /^- Research thread:/m, "omitted thread_hub must not leave a body link");
 
   assert.strictEqual(rootDescriptor.type, "research-boundary");
   assert.strictEqual(rootDescriptor.research_schema, 1);
   assert.strictEqual(rootDescriptor.boundary_id, "atlas-research");
   assert.strictEqual(rootDescriptor.scope_path, "Programs/Atlas");
+  assert.strictEqual(rootDescriptor.raw_hub, "[[Programs/Atlas/Maps/Evidence Registry]]");
+  assert.strictEqual(rootDescriptor.compiled_hub, "[[Programs/Atlas/Maps/Knowledge Registry]]");
+  assert.strictEqual(rootDescriptor.inquiry_hub, "[[Programs/Atlas/Maps/Inquiry Registry]]");
+  assert.strictEqual(rootDescriptor.synthesis_hub, "[[Programs/Atlas/Maps/Synthesis Registry]]");
   assert.strictEqual(rootDescriptor.view_mode, "rollup");
   assert.deepStrictEqual(rootDescriptor.rollup_boundaries, [`[[${fixture.childBoundary}]]`]);
   assert.strictEqual(childDescriptor.view_mode, "exact");
@@ -252,14 +382,30 @@ function testTemplateSchemaAndGeneratedFixture() {
   const exact = exactMembers(notes, fixture.rootBoundary);
   assert.deepStrictEqual(
     exact.map((file) => path.relative(fixture.root, file)).sort(),
-    [fixture.rawPath, fixture.researchPath, fixture.inquiryPath, fixture.synthesisPath].map((item) => `${item}.md`).sort(),
+    [
+      ...fixture.evidenceCases.map((evidence) => evidence.path),
+      fixture.researchPath,
+      fixture.inquiryPath,
+      fixture.synthesisPath,
+    ].map((item) => `${item}.md`).sort(),
   );
   const rollup = [...exact, ...exactMembers(notes, fixture.childBoundary)];
-  assert.strictEqual(rollup.length, 5, "rollup includes only the explicitly listed child boundary");
+  assert.strictEqual(rollup.length, 10, "rollup includes only the explicitly listed child boundary");
 
-  assert.match(fixture.base, /research_boundary\s*==\s*link\("Programs\/Atlas\/Maps\/Atlas Research Boundary"\)/);
+  const baseFilters = parseResearchBaseFilters(fixture.base);
+  assert.deepStrictEqual(baseFilters, {
+    and: [
+      'research_boundary == link("Programs/Atlas/Maps/Atlas Research Boundary")',
+      { or: [...RESEARCH_TYPES].map((type) => `type == "${type}"`) },
+    ],
+  });
+  const mutatedBase = fixture.base.replace(/^  and:/m, "  or:");
+  assert.throws(
+    () => parseResearchBaseFilters(mutatedBase),
+    /top-level and/,
+    "changing top-level and to or must fail the structural assertion",
+  );
   assert.doesNotMatch(fixture.base, /file\.inFolder|file\.folder/);
-  for (const type of RESEARCH_TYPES) assert.match(fixture.base, new RegExp(`type == "${type}"`));
   assert.doesNotMatch(fixture.base, /type == "(?:product|decision|roadmap)"/);
 
   const raw = frontmatter(fs.readFileSync(path.join(fixture.root, `${fixture.rawPath}.md`), "utf8"));
@@ -275,10 +421,34 @@ function testTemplateSchemaAndGeneratedFixture() {
   assert.deepStrictEqual(synthesis.promoted_to, [`[[${fixture.decisionPath}]]`]);
   assert.ok(fs.existsSync(path.join(fixture.root, `${fixture.rawPath}.md`)), "promotion does not move raw evidence");
 
+  const evidenceByPath = new Map(fixture.evidenceCases.map((evidence) => {
+    const data = frontmatter(fs.readFileSync(path.join(fixture.root, `${evidence.path}.md`), "utf8"));
+    return [evidence.path, data];
+  }));
+  assert.deepStrictEqual(new Set([...evidenceByPath.values()].map((data) => data.evidence_role)), EVIDENCE_ROLES);
+  assert.deepStrictEqual(new Set([...evidenceByPath.values()].map((data) => data.compilation_status)), COMPILATION_STATES);
+  for (const role of ["generated-analysis", "derivative-copy"]) {
+    const [, data] = [...evidenceByPath].find(([, item]) => item.evidence_role === role);
+    assert.ok(data.derived_from.length > 0, `${role} must declare upstream derived_from links`);
+  }
+  const generatedPath = "Generated/Interview Analysis";
+  const mirrorPath = "Mirrors/Interview Analysis Copy";
+  assert.strictEqual(evidenceByPath.get(generatedPath).origin, evidenceByPath.get(mirrorPath).origin);
+  assert.deepStrictEqual([...provenanceRoots(generatedPath, evidenceByPath)], [fixture.rawPath]);
+  assert.deepStrictEqual([...provenanceRoots(mirrorPath, evidenceByPath)], [fixture.rawPath]);
+  const corroboratingFamilies = new Set([
+    ...provenanceRoots(generatedPath, evidenceByPath),
+    ...provenanceRoots(mirrorPath, evidenceByPath),
+  ]);
+  assert.strictEqual(corroboratingFamilies.size, 1, "shared-origin generated and mirror notes are one evidence family");
+
   const inquiry = fs.readFileSync(path.join(fixture.root, `${fixture.inquiryPath}.md`), "utf8");
   assert.match(inquiry, /## Disposition History/);
   assert.match(inquiry, /\| Date \| Sources \| Disposition \| Note \|/);
   assert.match(inquiry, /append-only/i);
+  const architecture = readTemplate("Knowledge Processing Architecture.md");
+  assert.match(architecture, /compiled into durable knowledge or intentionally marked `source-only`/i);
+  assert.doesNotMatch(architecture, /Every raw input should eventually compile/i);
   assertLinksResolve(fixture.root, notes);
 }
 

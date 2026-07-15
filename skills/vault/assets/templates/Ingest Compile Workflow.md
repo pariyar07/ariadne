@@ -32,7 +32,7 @@ Examples:
 
 1. Confirm the target scope, research descriptor when applicable, and explicit write set.
 2. Capture source material in the boundary's declared raw location; no folder name is mandatory.
-3. Record `research_boundary`, source metadata, `evidence_role`, `compilation_status`, and any upstream `derived_from` links. Generated analysis and derivative copies require upstream links and are not independent corroboration.
+3. Record `research_boundary`, source metadata, `evidence_role`, `compilation_status`, and any upstream `derived_from` links. Generated analysis and derivative copies require upstream links. Captures that share a generated origin or mirror chain form one evidence family and are not independent corroboration.
 4. Extract source claims and keep them separate from interpretation.
 5. Compile durable knowledge with downstream-to-upstream `derived_from` provenance and optional `inquiries` links.
 6. Create or update concept notes and durable inquiries only when the question genuinely recurs; do not invent an inquiry to satisfy a template.

@@ -19,7 +19,7 @@ Knowledge management and task execution are different jobs.
 
 Task agents may answer questions, generate outputs, or execute project work. A knowledge-processing workflow maintains the vault's structure: ingest, compile, link, index, lint, and archive.
 
-The foundational design philosophy: the human curates what enters; agents compile raw material into a linked Markdown wiki; the compiled wiki is the source of truth; Bases and views are read-only lenses over it. Every raw input should eventually compile into a concept, thesis, decision, or open question.
+The foundational design philosophy: the human curates what enters; agents compile raw material into a linked Markdown wiki; the compiled wiki is the source of truth; Bases and views are read-only lenses over it. Every raw input should be compiled into durable knowledge or intentionally marked `source-only` when compilation would add no durable value.
 
 Research is an opt-in capability inside a selected scope. A schema-v1 pipeline has one canonical `type: research-boundary` descriptor. Its stable `boundary_id`, vault-relative `scope_path`, hub links, `view_mode`, and explicit `rollup_boundaries` define the boundary independently of folder layout.
 
