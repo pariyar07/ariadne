@@ -1,0 +1,26 @@
+{
+  "name": "retired_research_skill_names",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "content": "# Agent Instructions\n\nKeep this user-authored text outside Ariadne markers unchanged.\n\n<!-- ariadne:workspace-vault-link:start -->\nUse `ariadne:research-intake` for intake and `ariadne:synthesis` for synthesis.\n<!-- ariadne:workspace-vault-link:end -->\n"
+    }
+  ],
+  "expected": {
+    "git": {
+      "insideWorkTree": false,
+      "isLinkedWorktree": false
+    },
+    "arrays": {
+      "retiredResearchSkillNameFiles": ["AGENTS.md"]
+    },
+    "objects": {
+      "retiredResearchSkillNamesByFile": {
+        "AGENTS.md": ["ariadne:research-intake", "ariadne:synthesis"]
+      }
+    },
+    "values": {
+      "retiredResearchSkillRepairGuidance": "Replace retired research skill names only inside Ariadne-managed marker blocks; preserve all text outside those blocks."
+    }
+  }
+}

@@ -15,11 +15,10 @@ Markdown notes remain the source of truth. Bases, canvases, dashboards, and repo
 
 ## Start
 
-1. Read `00 Index.md`.
-2. Read `AGENTS.md` or `CLAUDE.md`.
-3. Read `Agent/00 Agent Navigation.md` if it exists.
-4. Read `Agent/Vault Navigation Standard.md` if it exists.
-5. Read `Agent/Knowledge Processing Architecture.md` before structural changes.
+1. Read root instructions and every applicable ancestor scope instruction through the target.
+2. Read relevant indexes, agent navigation, navigation standards, routing matrices, and knowledge-processing architecture.
+3. In a multi-scope vault, require a current-turn named or confirmed target before writing.
+4. State an explicit `allowed_write_set`. Name every parent hub, routing matrix, root Base formula, or cross-scope file separately; minimal wiring is not implicit authorization.
 
 ## Navigation Layers
 
@@ -147,4 +146,4 @@ Before finishing:
 - Use `ariadne:workstream-tracking` for Kanban work boards and Dataview dashboards.
 - Use `ariadne:maintenance` for health checks.
 - Use `ariadne:research-pipeline` for domain research pipeline setup.
-- Use `ariadne:research-intake`, `ariadne:knowledge-capture`, and `ariadne:synthesis` for content flow.
+- Use `ariadne:research-ingest`, `ariadne:knowledge-capture`, and `ariadne:research-synthesis` for content flow. Research topology inside a confirmed boundary belongs to `ariadne:research-pipeline`; durable cross-scope navigation remains here.

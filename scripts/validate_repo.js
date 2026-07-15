@@ -9,6 +9,7 @@ const { execFileSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "..");
 
 const REQUIRED_REPO_FILES = [
+  "CHANGELOG.md",
   "SECURITY.md",
   "PUBLIC_BOUNDARY.md",
   ".github/CODEOWNERS",
@@ -43,10 +44,48 @@ const REMOVED_SKILL_PATTERNS = [
   new RegExp("ariadne:" + "project-agents", "u"),
   new RegExp("ariadne:" + "discovery", "u"),
   new RegExp("ariadne:" + "ingest", "u"),
-  new RegExp("ariadne:" + "research-ingest", "u"),
   new RegExp("ariadne:" + "workstream-board", "u"),
   new RegExp("ariadne:" + "maintainer", "u"),
 ];
+const RETIRED_RESEARCH_SKILL_PATTERNS = [
+  new RegExp("ariadne:" + "research-intake", "u"),
+  new RegExp("ariadne:" + "synthesis", "u"),
+];
+const RETIRED_RESEARCH_SKILL_PATHS = [
+  "skills/" + "research-intake",
+  "skills/" + "synthesis",
+];
+const RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES = [
+  "docs/migration/",
+  "docs/migrations/",
+  "docs/release/",
+  "docs/releases/",
+  "docs/decision/",
+  "docs/decisions/",
+  "docs/superpowers/plans/",
+  "skills/workspace-instructions/test/fixtures/current_research_skill_names/",
+  "skills/workspace-instructions/test/fixtures/retired_research_skill_names/",
+];
+const RETIRED_RESEARCH_SKILL_ALLOWED_FILES = new Set([
+  "scripts/validate_repo.js",
+  "scripts/test_validate_repo.js",
+  "skills/workspace-instructions/scripts/check_workspace.js",
+]);
+const ACTIVE_RESEARCH_SKILL_REFERENCES = new Map([
+  ["README.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["CONTRIBUTING.md", ["research-ingest/", "research-synthesis/", "research-stewardship/"]],
+  ["AGENTS.md", ["skills/research-ingest/SKILL.md", "skills/research-synthesis/SKILL.md", "skills/research-stewardship/SKILL.md"]],
+  ["docs/guides/quickstart.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["docs/guides/weekly-maintenance-automation.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["skills/validator/SKILL.md", ["ariadne:research-ingest"]],
+  ["skills/vault/assets/templates/AGENTS.md", ["ariadne:research-ingest", "ariadne:research-synthesis", "ariadne:research-stewardship"]],
+  ["skills/vault/assets/templates/Vault Health Check Procedure.md", ["ariadne:research-stewardship"]],
+]);
+const WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER = "ARIADNE_WEEKLY_MAINTENANCE_PROMPT_VERSION: 1";
+const RESEARCH_INGEST_ZERO_WRITE_GUIDANCE =
+  "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material.";
+const RESEARCH_LIFECYCLE_PLAN = "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md";
+const RESEARCH_LIFECYCLE_PLAN_SUPERSESSION = "partially superseded by the direct-breaking v0.2.0 release decision";
 const PREPUBLIC_TERM_PATTERNS = [
   new RegExp("Memory " + "Map", "iu"),
   new RegExp("memory " + "lens(?:es)?", "iu"),
@@ -107,6 +146,13 @@ function isTextFile(file) {
   return TEXT_EXTENSIONS.has(path.extname(file));
 }
 
+function allowsRetiredResearchSkillNames(file) {
+  if (RETIRED_RESEARCH_SKILL_ALLOWED_FILES.has(file)) return true;
+  if (RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES.some((prefix) => file.startsWith(prefix))) return true;
+  return /^(?:CHANGELOG|MIGRATION|MIGRATIONS|RELEASE|RELEASES)\.md$/u.test(file) ||
+    /^docs\/(?:guides\/)?[^/]*(?:migration|release|decision)[^/]*\.md$/iu.test(file);
+}
+
 function fail(errors, message) {
   errors.push(message);
 }
@@ -128,6 +174,10 @@ function validateSkillFolders(errors) {
     .sort();
 
   for (const dir of skillDirs) {
+    if (["skills/research-intake", "skills/synthesis"].includes(dir)) {
+      fail(errors, `retired skill folder must not exist: ${dir}`);
+      continue;
+    }
     const skillFile = `${dir}/SKILL.md`;
     const openaiFile = `${dir}/agents/openai.yaml`;
     if (!fs.existsSync(path.join(ROOT, skillFile))) {
@@ -160,6 +210,16 @@ function validateTextSafety(errors, files) {
     for (const pattern of REMOVED_SKILL_PATTERNS) {
       if (pattern.test(text)) fail(errors, `removed skill reference found in ${file}: ${pattern}`);
     }
+    if (!allowsRetiredResearchSkillNames(file)) {
+      for (const pattern of RETIRED_RESEARCH_SKILL_PATTERNS) {
+        if (pattern.test(text)) fail(errors, `retired research skill reference found outside migration allowlist in ${file}: ${pattern}`);
+      }
+      for (const retiredPath of RETIRED_RESEARCH_SKILL_PATHS) {
+        if (text.includes(retiredPath)) {
+          fail(errors, `retired research skill path found outside migration allowlist in ${file}: ${retiredPath}`);
+        }
+      }
+    }
     for (const pattern of PREPUBLIC_TERM_PATTERNS) {
       if (pattern.test(text)) fail(errors, `pre-public memory architecture term found in ${file}: ${pattern}`);
     }
@@ -167,6 +227,41 @@ function validateTextSafety(errors, files) {
       for (const pattern of PLACEHOLDER_PATTERNS) {
         if (pattern.test(text)) fail(errors, `placeholder skill text found in ${file}: ${pattern}`);
       }
+    }
+  }
+}
+
+function validateResearchLifecycleDocs(errors) {
+  for (const [file, references] of ACTIVE_RESEARCH_SKILL_REFERENCES) {
+    if (!fs.existsSync(path.join(ROOT, file))) {
+      fail(errors, `research lifecycle documentation missing: ${file}`);
+      continue;
+    }
+    const text = read(file);
+    for (const reference of references) {
+      if (!text.includes(reference)) {
+        fail(errors, `${file} must reference the active research lifecycle surface: ${reference}`);
+      }
+    }
+  }
+
+  const weeklyGuide = "docs/guides/weekly-maintenance-automation.md";
+  if (fs.existsSync(path.join(ROOT, weeklyGuide)) && !read(weeklyGuide).includes(WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER)) {
+    fail(errors, `${weeklyGuide} must expose the stable prompt marker: ${WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER}`);
+  }
+
+  const quickstart = "docs/guides/quickstart.md";
+  if (fs.existsSync(path.join(ROOT, quickstart)) && !read(quickstart).includes(RESEARCH_INGEST_ZERO_WRITE_GUIDANCE)) {
+    fail(errors, `${quickstart} must preserve the no-target zero-write gate`);
+  }
+
+  if (fs.existsSync(path.join(ROOT, RESEARCH_LIFECYCLE_PLAN))) {
+    const plan = read(RESEARCH_LIFECYCLE_PLAN);
+    if (!plan.includes(RESEARCH_LIFECYCLE_PLAN_SUPERSESSION)) {
+      fail(errors, `${RESEARCH_LIFECYCLE_PLAN} must preserve the direct-breaking v0.2.0 supersession notice`);
+    }
+    if (plan.includes("Compatibility adapters remain for one migration release")) {
+      fail(errors, `${RESEARCH_LIFECYCLE_PLAN} must not direct workers to restore compatibility adapters`);
     }
   }
 }
@@ -190,6 +285,9 @@ function validateWorkflows(errors) {
     !read(repoWorkflow).includes("node skills/workspace-instructions/test/test_workspace_instructions.js")
   ) {
     fail(errors, `${repoWorkflow} must run workspace-instructions behavior tests`);
+  }
+  if (fs.existsSync(path.join(ROOT, repoWorkflow)) && !read(repoWorkflow).includes("node scripts/test_validate_repo.js")) {
+    fail(errors, `${repoWorkflow} must run repository guardrail mutation tests`);
   }
   if (fs.existsSync(path.join(ROOT, skillWorkflow)) && !read(skillWorkflow).includes("node scripts/validate_repo.js --skills-only")) {
     fail(errors, `${skillWorkflow} must run scripts/validate_repo.js --skills-only`);
@@ -324,6 +422,7 @@ function main() {
   validatePathSafety(errors, files);
   validateSkillFolders(errors);
   validateTextSafety(errors, files);
+  validateResearchLifecycleDocs(errors);
   if (!skillsOnly) {
     validateRepoFiles(errors);
     validateWorkflows(errors);

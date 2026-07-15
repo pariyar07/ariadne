@@ -1,7 +1,14 @@
+# Exact membership only. For a rollup view, add explicit research_boundary
+# alternatives for descriptors listed in this boundary's rollup_boundaries.
+# Never substitute folder ancestry for descriptor membership.
 filters:
-  or:
-    - 'type == "raw-source"'
-    - 'type == "research"'
+  and:
+    - 'research_boundary == link("{{research_boundary}}")'
+    - or:
+        - 'type == "raw-source"'
+        - 'type == "research"'
+        - 'type == "research-inquiry"'
+        - 'type == "research-synthesis"'
 views:
   - type: table
     name: "Research Pipeline"
@@ -9,8 +16,10 @@ views:
       - file.name
       - type
       - status
+      - research_boundary
       - source_type
-      - author
+      - evidence_role
+      - compilation_status
+      - inquiries
+      - derived_from
       - created
-      - accessed
-      - file.folder

@@ -12,8 +12,9 @@ skills/
   scope/     ← scope creation and wiring (`ariadne:scope`)
   navigation/ ← hub and routing design (`ariadne:navigation`)
   knowledge-capture/ ← raw input → durable notes (`ariadne:knowledge-capture`)
-  research-intake/   ← cold-start research source routing (`ariadne:research-intake`)
-  synthesis/ ← multi-source synthesis (`ariadne:synthesis`)
+  research-ingest/   ← research input routing and handoff (`ariadne:research-ingest`)
+  research-synthesis/ ← synthesis disposition and promotion candidates (`ariadne:research-synthesis`)
+  research-stewardship/ ← scoped research audit and repair (`ariadne:research-stewardship`)
   research-pipeline/ ← domain research pipeline setup (`ariadne:research-pipeline`)
   workstream-tracking/  ← Kanban boards and Dataview dashboards (`ariadne:workstream-tracking`)
   global-discovery/ ← existing vault discovery registration (`ariadne:global-discovery`)
@@ -95,6 +96,7 @@ Run these before opening a pull request:
 ```bash
 node scripts/validate_repo.js
 node scripts/validate_repo.js --skills-only
+node scripts/test_validate_repo.js
 node skills/workspace-instructions/test/test_workspace_instructions.js
 node skills/validator/test/test_recursive_scopes.js
 node skills/vault/test/test_register_vault.js

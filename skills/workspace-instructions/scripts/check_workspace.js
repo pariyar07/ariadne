@@ -17,6 +17,12 @@ const LARGE_INSTRUCTION_LINE_THRESHOLD = 180;
 const STANDARD_LINE_THRESHOLD = 150;
 const COMMAND_SECTION_PATTERN = /^#{1,6}\s+.*\b(commands?|build|test(?:ing)?|setup|install|run|lint|scripts?|usage|develop(?:ment)?|deploy(?:ment)?)\b/imu;
 const CHILD_DIRECTORY_SCAN_DEPTH = 2;
+const RETIRED_RESEARCH_SKILL_REPLACEMENTS = new Map([
+  ["ariadne:research-intake", "ariadne:research-ingest"],
+  ["ariadne:synthesis", "ariadne:research-synthesis"],
+]);
+const RETIRED_RESEARCH_SKILL_REPAIR_GUIDANCE =
+  "Replace retired research skill names only inside Ariadne-managed marker blocks; preserve all text outside those blocks.";
 
 function toPosix(file) {
   return file.split(path.sep).join("/");
@@ -65,6 +71,26 @@ function read(root, file) {
 
 function countOccurrences(text, needle) {
   return text.split(needle).length - 1;
+}
+
+function markerManagedText(text) {
+  const blocks = [];
+  for (const [startMarker, endMarker] of [
+    [CURRENT_MARKER_START, CURRENT_MARKER_END],
+    [GLOBAL_DISCOVERY_START, GLOBAL_DISCOVERY_END],
+  ]) {
+    let offset = 0;
+    while (offset < text.length) {
+      const start = text.indexOf(startMarker, offset);
+      if (start === -1) break;
+      const contentStart = start + startMarker.length;
+      const end = text.indexOf(endMarker, contentStart);
+      if (end === -1) break;
+      blocks.push(text.slice(contentStart, end));
+      offset = end + endMarker.length;
+    }
+  }
+  return blocks.join("\n");
 }
 
 function isTextFile(file) {
@@ -259,6 +285,30 @@ function detectMarkers(root, files) {
   };
 }
 
+function detectRetiredResearchSkillNames(root, files) {
+  const retiredResearchSkillNamesByFile = {};
+
+  for (const file of allInstructionFiles(files).filter(isTextFile)) {
+    const managedText = markerManagedText(read(root, file));
+    retiredResearchSkillNamesByFile[file] = [...RETIRED_RESEARCH_SKILL_REPLACEMENTS.keys()]
+      .filter((name) => managedText.includes(name))
+      .sort();
+  }
+
+  const retiredResearchSkillNameFiles = Object.entries(retiredResearchSkillNamesByFile)
+    .filter(([, names]) => names.length > 0)
+    .map(([file]) => file)
+    .sort();
+
+  return {
+    retiredResearchSkillNameFiles,
+    retiredResearchSkillNamesByFile,
+    retiredResearchSkillNameReplacements: Object.fromEntries(RETIRED_RESEARCH_SKILL_REPLACEMENTS),
+    retiredResearchSkillRepairGuidance:
+      retiredResearchSkillNameFiles.length > 0 ? RETIRED_RESEARCH_SKILL_REPAIR_GUIDANCE : null,
+  };
+}
+
 function detectAdapters(root, files) {
   const adapterDuplicateFiles = [];
   const adapterLocalImports = [];
@@ -414,6 +464,7 @@ function checkWorkspace(root) {
     ...detectWorkspaceContract(workspaceRoot, files, childDirs),
     ...detectContentSignals(workspaceRoot, files, git),
     ...detectMarkers(workspaceRoot, files),
+    ...detectRetiredResearchSkillNames(workspaceRoot, files),
     ...detectAdapters(workspaceRoot, files),
     ...detectHermes(workspaceRoot, files),
     ...detectNestedInstructions(workspaceRoot, files),
@@ -427,6 +478,9 @@ function printHuman(report) {
   console.log(`linked-worktree: ${report.git.isLinkedWorktree ? "yes" : "no"}`);
   for (const key of Object.keys(report).filter((name) => Array.isArray(report[name]))) {
     console.log(`${key}: ${report[key].length ? report[key].join(", ") : "0"}`);
+  }
+  if (report.retiredResearchSkillRepairGuidance) {
+    console.log(`retiredResearchSkillRepairGuidance: ${report.retiredResearchSkillRepairGuidance}`);
   }
 }
 

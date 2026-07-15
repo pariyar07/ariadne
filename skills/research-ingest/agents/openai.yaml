@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ariadne Research Ingest"
+  short_description: "Route research into a confirmed vault boundary"
+  default_prompt: "Use $ariadne:research-ingest to route and process this source within an explicit write set."

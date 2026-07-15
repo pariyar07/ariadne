@@ -36,7 +36,7 @@ flowchart TD
 
   end
 
-  Human -->|"ariadne:research-intake\nariadne:knowledge-capture\nariadne:synthesis"| KG
+  Human -->|"ariadne:research-ingest\nariadne:knowledge-capture\nariadne:research-synthesis"| KG
   Agent -->|enters via| OG
   OG -->|"routes to smallest\nrelevant context"| Scopes
   Scopes --> KG
@@ -144,6 +144,8 @@ node skills/validator/scripts/validate_vault.js "/path/to/vault"
 node skills/vault/scripts/register_vault.js --agents codex,claude,gemini --doctor
 ```
 
+The research lifecycle skill names changed atomically. Existing copied skills, generated vault instructions, saved prompts, and external schedulers need an explicit migration pass; see [Research Lifecycle Migration](docs/guides/research-lifecycle-migration.md).
+
 ## Skills
 
 Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate on an existing vault; `ariadne:workspace-instructions` operates on a workspace that may link back to registered Ariadne context.
@@ -156,8 +158,9 @@ Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate o
 | `ariadne:scope` | Create, promote, import, and nest durable knowledge scopes |
 | `ariadne:navigation` | Design hubs, routing, workstream graphs, templates, and view layers |
 | `ariadne:knowledge-capture` | Turn links, documents, and brain dumps into durable wiki notes |
-| `ariadne:research-intake` | Cold-start research source intake into the right scope |
-| `ariadne:synthesis` | Synthesize multi-source research threads and debate hubs |
+| `ariadne:research-ingest` | Route research inputs into an explicitly selected boundary and hand compilation to knowledge capture |
+| `ariadne:research-synthesis` | Record synthesis disposition, update inquiries, and prepare supportable promotion candidates |
+| `ariadne:research-stewardship` | Audit and safely repair provenance, compilation coverage, stale synthesis, and legacy research drift |
 | `ariadne:research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
 | `ariadne:workstream-tracking` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
 | `ariadne:closeout` | Checkpoint completed work, update durable vault memory, and decide whether a chat can safely close |
@@ -166,7 +169,7 @@ Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate o
 
 ## Weekly Maintenance Automation
 
-Recurring maintenance is best handled as an automation prompt that invokes the existing skills, not as a separate skill. Start with `ariadne:validator`, follow with `ariadne:maintenance`, and only call navigation, knowledge capture, synthesis, Bases, or global discovery skills when the weekly run finds drift in those areas.
+Recurring maintenance is best handled as an automation prompt that invokes the existing skills, not as a separate skill. Start with `ariadne:validator`, follow with `ariadne:maintenance`, route research-semantic drift to `ariadne:research-stewardship`, and call `ariadne:research-synthesis` only when an authorized synthesis pass needs a disposition.
 
 See `docs/guides/weekly-maintenance-automation.md` for a Codex-ready prompt, Claude Code adaptation notes, subagent boundaries, and the optional durable report variant.
 
@@ -239,6 +242,8 @@ Run the validator from a vault root:
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
 
+Use `--scope "Domains/Product"` for a vault-relative subtree, and add `--profile research` for schema-v1 research and nearest-routing obligations. Scoped runs inventory the whole vault before filtering results; in-scope fatal defects still fail a research-profile run while sibling defects do not.
+
 A healthy vault reports all zeros:
 
 ```text
@@ -253,6 +258,11 @@ ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
 base-scope-formula-warnings: 0
+research-boundary-warnings: 0
+research-provenance-warnings: 0
+provenance-cycle-warnings: 0
+uncompiled-raw-source-warnings: 0
+research-hub-warnings: 0
 ```
 
 See `docs/guides/validator.md` for the full counter reference.

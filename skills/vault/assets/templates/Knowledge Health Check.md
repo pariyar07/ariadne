@@ -17,9 +17,6 @@ tags:
 ## Unprocessed Inbox Items
 
 
-## Raw Sources Not Compiled
-
-
 ## Processing Queue Issues
 
 
@@ -41,8 +38,9 @@ tags:
 ## Duplicate Concepts
 
 
-## Missing Source Links
+## Research Stewardship Handoffs
 
+List named research boundaries that need provenance, compilation, evidence-role, contradiction, synthesis, or inquiry-history review. Do not make those semantic judgments in this whole-vault report.
 
 ## Stale Indexes
 

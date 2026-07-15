@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ariadne Research Synthesis"
+  short_description: "Record dispositions across compiled research"
+  default_prompt: "Use $ariadne:research-synthesis to update this inquiry from compiled evidence and record one disposition."
