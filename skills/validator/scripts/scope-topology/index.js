@@ -4,4 +4,5 @@ module.exports = {
   ...require("./schema"),
   ...require("./inventory"),
   ...require("./model"),
+  ...require("./findings"),
 };

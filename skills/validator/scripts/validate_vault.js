@@ -4,6 +4,14 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const {
+  buildTopology,
+  filterFindingsByScope,
+  findingCounter,
+  inventoryVault,
+  normalizeScopePath,
+  scopeFindings,
+} = require("./scope-topology");
 
 const GLOBAL_POLICY_FINGERPRINTS = [
   "Keep notes as plain Markdown",
@@ -373,7 +381,8 @@ function valuesAsList(value) {
 }
 
 function findingText(finding) {
-  return typeof finding === "string" ? finding : finding.message;
+  if (typeof finding === "string") return finding;
+  return finding.finding_id ? `[${finding.code} ${finding.finding_id}] ${finding.message}` : finding.message;
 }
 
 function structuredFinding(message, origin, obligations = []) {
@@ -956,6 +965,10 @@ function printResults(result) {
     ["research-hub-warnings", result.researchHubWarnings],
   ];
 
+  if (result.scopeAdoptionWarnings) counters.push(["scope-adoption-warnings", result.scopeAdoptionWarnings]);
+  if (result.scopeContractWarnings) counters.push(["scope-contract-warnings", result.scopeContractWarnings]);
+  if (result.scopeMapWarnings) counters.push(["scope-map-warnings", result.scopeMapWarnings]);
+
   for (const [name, values] of counters) {
     console.log(`${name}: ${values.length}`);
     values.slice().map(findingText).sort().forEach((line) => console.log(line));
@@ -981,13 +994,13 @@ function parseArguments(argv) {
     if (flag === "--profile") profile = value;
     index += 2;
   }
-  if (profile && profile !== "research") throw new Error(`unsupported profile: ${profile}`);
-  if (profile && !scope) throw new Error("--profile requires --scope");
+  if (profile && !["research", "scope"].includes(profile)) throw new Error(`unsupported profile: ${profile}`);
+  if (profile === "research" && !scope) throw new Error("--profile research requires --scope");
   if (scope) {
     if (path.isAbsolute(scope) || /^[A-Za-z]:[\\/]/u.test(scope)) throw new Error("--scope must be vault-relative");
     if (scope.split(/[\\/]/u).includes("..")) throw new Error("--scope must not contain traversal");
-    const normalized = toPosix(path.posix.normalize(scope));
-    if (normalized === ".." || normalized.startsWith("../") || normalized === "." || normalized === "") {
+    const normalized = profile === "scope" ? normalizeScopePath(scope) : toPosix(path.posix.normalize(scope));
+    if (normalized === ".." || normalized.startsWith("../") || normalized === "" || normalized === "." && profile !== "scope") {
       throw new Error("--scope must name a contained vault directory");
     }
     const vaultRoot = path.resolve(vault);
@@ -1045,7 +1058,26 @@ function filterResults(result, options) {
 
 try {
   const options = parseArguments(process.argv.slice(2));
+  let targetScopeId = null;
+  let topologyFindings = null;
+  if (options.profile === "scope") {
+    const inventory = inventoryVault(options.vault);
+    const topology = buildTopology(inventory);
+    topologyFindings = scopeFindings(topology, inventory);
+    if (options.scope) {
+      const matches = [...topology.descriptorsById.values()].filter((descriptor) => descriptor.scopePath === options.scope);
+      if (matches.length !== 1) throw new Error(`--scope must resolve to one canonical adopted scope: ${options.scope}`);
+      targetScopeId = matches[0].scopeId;
+      topologyFindings = filterFindingsByScope(topologyFindings, targetScopeId);
+    }
+  }
   const result = filterResults(validate(options.vault, options), options);
+  if (topologyFindings) {
+    result.scopeAdoptionWarnings = [];
+    result.scopeContractWarnings = [];
+    result.scopeMapWarnings = [];
+    for (const item of topologyFindings) result[findingCounter(item)].push(item);
+  }
   printResults(result);
   const ok = result.errors.length === 0 &&
     result.broken.length === 0 &&

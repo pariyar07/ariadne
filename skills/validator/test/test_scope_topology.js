@@ -5,14 +5,22 @@ const assert = require("assert");
 const path = require("path");
 const {
   buildTopology,
+  filterFindingsByScope,
+  finding,
   inventoryVault,
   normalizeNfc,
   normalizeScopePath,
   parseScopeDescriptor,
+  scopeFindings,
 } = require("../scripts/scope-topology");
+const { spawnSync } = require("child_process");
 
 function fixture(name) {
   return path.join(__dirname, "fixtures", "scope_topology", name);
+}
+
+function bySortKey(left, right) {
+  return Buffer.from(left.sort_key).compare(Buffer.from(right.sort_key));
 }
 
 assert.strictEqual(normalizeNfc("Cafe\u0301"), "Café");
@@ -75,5 +83,59 @@ assert.strictEqual(rejectedAncestor.active, true);
 assert.deepStrictEqual([...rejectedAncestor.descriptorsById.keys()], ["root", "child"]);
 assert.deepStrictEqual(rejectedAncestor.childrenById.get("root").map((item) => item.scopeId), ["child"]);
 assert.strictEqual(rejectedAncestor.descriptorsById.get("child").transparentPath, "Wrapper/Child");
+
+const structural = finding({
+  code: "scope-contract-test",
+  origin: "A/00 Index.md",
+  obligations: ["A/AGENTS.md"],
+  scopeIds: ["a"],
+  message: "wording one",
+  discriminator: "missing-agents",
+});
+const reworded = finding({
+  code: "scope-contract-test",
+  origin: "A/00 Index.md",
+  obligations: ["A/AGENTS.md"],
+  scopeIds: ["a"],
+  message: "wording two",
+  discriminator: "missing-agents",
+});
+assert.strictEqual(structural.finding_id, reworded.finding_id);
+assert.match(structural.finding_id, /^[a-f0-9]{64}$/u);
+
+const contractInventory = inventoryVault(fixture("contract_failures"));
+const contractModel = buildTopology(contractInventory);
+const contractFindings = scopeFindings(contractModel, contractInventory);
+for (const code of [
+  "invalid-schema", "duplicate-scope-id", "colliding-scope-path", "skipped-ancestor",
+  "missing-checkpoint", "lifecycle-violation", "malformed-redirect", "reserved-former-path",
+  "marker-drift", "pending-adoption", "unsupported-root", "dismissed-candidate",
+]) assert.ok(contractFindings.some((item) => item.code === code), `missing finding code ${code}`);
+assert.deepStrictEqual(contractFindings, [...contractFindings].sort(bySortKey));
+
+const isolationInventory = inventoryVault(fixture("scoped_sibling_isolation"));
+const isolationModel = buildTopology(isolationInventory);
+const whole = scopeFindings(isolationModel, isolationInventory);
+const scoped = filterFindingsByScope(whole, "healthy-child");
+assert.ok(scoped.every((item) => whole.some((candidate) => candidate.finding_id === item.finding_id)));
+assert.deepStrictEqual(scoped.map((item) => item.finding_id), [...scoped].sort(bySortKey).map((item) => item.finding_id));
+assert.ok(whole.some((item) => item.scope_ids.includes("broken-sibling")));
+assert.ok(scoped.every((item) => !item.scope_ids.includes("broken-sibling")));
+
+const validator = path.join(__dirname, "..", "scripts", "validate_vault.js");
+const wholeCli = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--profile", "scope"], { encoding: "utf8" });
+assert.strictEqual(wholeCli.status, 0, wholeCli.stderr);
+assert.match(wholeCli.stdout, /scope-adoption-warnings: \d+/u);
+assert.match(wholeCli.stdout, /scope-contract-warnings: \d+/u);
+assert.match(wholeCli.stdout, /scope-map-warnings: \d+/u);
+const scopedCli = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--scope", "Healthy", "--profile", "scope"], { encoding: "utf8" });
+assert.strictEqual(scopedCli.status, 0, scopedCli.stderr);
+assert.doesNotMatch(scopedCli.stdout, /Broken\/AGENTS\.md/u);
+const cliFindingIds = (text) => [...text.matchAll(/\[(?:[^\s]+) ([a-f0-9]{64})\]/gu)].map((match) => match[1]);
+const wholeIds = new Set(cliFindingIds(wholeCli.stdout));
+assert.ok(cliFindingIds(scopedCli.stdout).every((id) => wholeIds.has(id)));
+const rootCli = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--scope", ".", "--profile", "scope"], { encoding: "utf8" });
+assert.strictEqual(rootCli.status, 0, rootCli.stderr);
+assert.ok(cliFindingIds(rootCli.stdout).every((id) => wholeIds.has(id)));
 
 console.log("scope topology tests passed");
