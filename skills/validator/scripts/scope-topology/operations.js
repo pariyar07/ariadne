@@ -95,6 +95,33 @@ function virtualModel(descriptors) {
   return { active: byId.has("root"), descriptors: new Set(ordered), descriptorsById: byId, childrenById: children, candidates: [], pendingDescriptors: [], unsupportedRoot: false };
 }
 
+function hasSupportedRootBaseFormula(text) {
+  const lines = String(text).split(/\r?\n/u);
+  const roots = lines.map((line, index) => /^formulas:\s*$/u.test(line) ? index : -1).filter((index) => index >= 0);
+  if (roots.length !== 1) return false;
+  const root = roots[0];
+  let end = lines.length;
+  for (let index = root + 1; index < lines.length; index += 1) {
+    if (/^[^\s#][^:]*:/u.test(lines[index])) { end = index; break; }
+  }
+  const entries = lines.slice(root + 1, end).filter((line) => line.trim() !== "" && !/^\s*#/u.test(line));
+  if (entries.length !== 1 || !/^  scope:\s*\S.*$/u.test(entries[0])) return false;
+  let supportedCall = false;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (!/file\.inFolder/u.test(line)) continue;
+    if (index <= root || index >= end) return false;
+    const entry = line.match(/^  scope:\s*(\S.*)$/u);
+    if (!entry || /\s+#/u.test(entry[1])) return false;
+    const calls = [...entry[1].matchAll(/(?:^|[^\w.])file\.inFolder\(\s*(["'])[^"']+\1\s*\)/gu)];
+    if (calls.length === 0) return false;
+    const residue = entry[1].replace(/(?:^|[^\w.])file\.inFolder\(\s*(["'])[^"']+\1\s*\)/gu, "");
+    if (/file\.inFolder/u.test(residue)) return false;
+    supportedCall = true;
+  }
+  return supportedCall;
+}
+
 function planOperation(inventory, model, requestValue) {
   const request = parseOperationRequest(requestValue);
   const current = model.descriptorsById.get(request.target_scope_id) || model.pendingDescriptors.find((item) => item.scopeId === request.target_scope_id);
@@ -174,7 +201,7 @@ function planOperation(inventory, model, requestValue) {
     if (activation >= 0) replacements.push(...replacements.splice(activation, 1));
   }
   const baseMentions = inventory.files.filter((item) => item.relativePath.startsWith("Bases/") && item.relativePath.endsWith(".base") && item.rawBytes && /file\.inFolder/u.test(item.rawBytes.toString("utf8")))
-    .map((item) => ({ path: item.relativePath, recognized: /file\.inFolder\(\s*["'][^"']+["']\s*\)/u.test(item.rawBytes.toString("utf8")) }));
+    .map((item) => ({ path: item.relativePath, recognized: hasSupportedRootBaseFormula(item.rawBytes.toString("utf8")) }));
   const base_formula_proposals = baseMentions.filter((item) => item.recognized)
     .map((item) => ({ path: item.path, recognized: true, authorized: request.allowed_write_paths.includes(item.path), action: "add child-before-parent scope branches" }));
   const base_formula_reports = baseMentions.filter((item) => !item.recognized)

@@ -131,15 +131,23 @@ fs.rmSync(createVault, { recursive: true, force: true });
 const baseVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-base-"));
 fs.cpSync(fixture("root_only"), baseVault, { recursive: true });
 fs.mkdirSync(path.join(baseVault, "Bases"), { recursive: true });
-fs.writeFileSync(path.join(baseVault, "Bases", "Recognized.base"), 'formulas:\n  scope: file.inFolder("Domains/Alpha")\n');
+fs.writeFileSync(path.join(baseVault, "Bases", "Recognized.base"), 'formulas:\n  scope: \'if(file.inFolder("Domains/Alpha"), "Alpha", "Global")\'\n');
 fs.writeFileSync(path.join(baseVault, "Bases", "Unsupported.base"), "formulas:\n  scope: file.inFolder(dynamicPath)\n");
+fs.writeFileSync(path.join(baseVault, "Bases", "Comment.base"), '# example: file.inFolder("Domains/Alpha")\nviews: []\n');
+fs.writeFileSync(path.join(baseVault, "Bases", "Nested.base"), 'views:\n  formulas:\n    scope: file.inFolder("Domains/Alpha")\n');
+fs.writeFileSync(path.join(baseVault, "Bases", "NestedRoot.base"), 'formulas:\n  scope:\n    nested: file.inFolder("Domains/Alpha")\n');
+fs.writeFileSync(path.join(baseVault, "Bases", "Filter.base"), 'views:\n  - filters: file.inFolder("Domains/Alpha")\n');
+fs.writeFileSync(path.join(baseVault, "Bases", "Ambiguous.base"), 'formulas:\n  scope: file.inFolder("Domains/Alpha")\nviews:\n  - filters: file.inFolder("Elsewhere")\n');
+fs.writeFileSync(path.join(baseVault, "Bases", "Additional.base"), 'formulas:\n  scope: file.inFolder("Domains/Alpha")\n  other: file.inFolder("Elsewhere")\n');
+fs.writeFileSync(path.join(baseVault, "Bases", "Substring.base"), 'formulas:\n  scope: prefixfile.inFolder("Domains/Alpha")\n');
 const baseInventory = inventoryVault(baseVault);
 const basePlan = planWithDisclosedWrites(baseInventory, buildTopology(baseInventory), { ...operationFixture("repair"), allowed_write_paths: [] });
 assert.deepStrictEqual(basePlan.base_formula_proposals.map(({ path: itemPath, recognized, authorized }) => ({ path: itemPath, recognized, authorized })), [
   { path: "Bases/Recognized.base", recognized: true, authorized: true },
 ]);
-assert.deepStrictEqual(basePlan.base_formula_reports, [{ path: "Bases/Unsupported.base", code: "unsupported-base-formula", rewrite_proposed: false }]);
+assert.deepStrictEqual(basePlan.base_formula_reports, ["Additional", "Ambiguous", "Comment", "Filter", "Nested", "NestedRoot", "Substring", "Unsupported"].map((name) => ({ path: `Bases/${name}.base`, code: "unsupported-base-formula", rewrite_proposed: false })));
 assert.ok(!basePlan.content_write_paths.includes("Bases/Unsupported.base"));
+for (const name of ["Additional", "Ambiguous", "Comment", "Filter", "Nested", "NestedRoot", "Substring", "Unsupported"]) assert.ok(!basePlan.content_write_paths.includes(`Bases/${name}.base`));
 const unsupportedAuthorization = planOperation(baseInventory, buildTopology(baseInventory), parseOperationRequest({
   ...operationFixture("repair"), allowed_write_paths: [...basePlan.content_write_paths, "Bases/Unsupported.base"],
 }));
