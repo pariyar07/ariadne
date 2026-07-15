@@ -32,7 +32,7 @@ If a research envelope is missing, ambiguous, or requests paths outside the set,
 
 ## Capture And Compile
 
-1. Capture one canonical raw artifact when the source must remain inspectable. Preserve title, origin or locator, source type, dates, evidence role, `derived_from`, and the confirmed research boundary when applicable.
+1. Capture one canonical raw artifact when the source must remain inspectable. For research, preserve `source_type`, `evidence_role`, `derived_from`, and `research_boundary` exactly from the handoff. Map handoff `inquiry_links` to artifact field `inquiries`; use an empty flat list when no inquiry is known.
 2. Separate observed or source claims from interpretation.
 3. Compile the smallest durable note or notes supported by the material.
 4. For research, link compiled artifacts downstream to upstream with `derived_from`; preserve `inquiry_links` without inventing an inquiry.
@@ -41,6 +41,25 @@ If a research envelope is missing, ambiguous, or requests paths outside the set,
 7. If compiled research may affect current understanding, hand it to `ariadne:research-synthesis`. This skill does not judge synthesis disposition.
 
 Generated analysis and derivative copies retain upstream provenance and do not count as independent corroboration. Capture cross-scope material once; do not duplicate raw evidence.
+
+### Minimum Research Raw Schema
+
+Write research raw artifacts with at least this flat schema, plus local title, origin, locator, and date fields required by ancestor instructions:
+
+```yaml
+type: raw-source
+research_boundary: "[[Domains/Example/Research/00 Example Research Boundary]]"
+source_type: meeting
+evidence_role: first-party-evidence
+origin: Product interview
+locator: not-applicable
+captured: 2026-07-15
+compilation_status: pending
+derived_from: []
+inquiries: []
+```
+
+Allowed compilation states are `pending`, `compiled`, `source-only`, or `needs-review`. Use `compiled` only when at least one derived note links back to the raw artifact. Do not change the handoff classification merely to satisfy a local template.
 
 ## Promotion Writes
 

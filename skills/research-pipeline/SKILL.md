@@ -37,11 +37,11 @@ rollup_boundaries: []
 ---
 ```
 
-Use vault-relative paths and path-qualified links. `view_mode: exact` includes only artifacts whose `research_boundary` points to this descriptor. Use `rollup` only with explicitly listed descendant descriptors. Folder ancestry never establishes membership. A thread hub may be omitted when the local workflow does not use one.
+Use vault-relative paths and path-qualified links. `inquiry_hub` and `synthesis_hub` are required canonical entry points, even when the minimum pipeline is otherwise small. Only `thread_hub` is optional when the local workflow does not use one. `view_mode: exact` includes only artifacts whose `research_boundary` points to this descriptor. Use `rollup` only with explicitly listed descendant descriptors. Folder ancestry never establishes membership.
 
 ## Minimum Shape
 
-Adopt existing structure before creating parallel folders. A small pipeline may need only the descriptor, source index, compiled research index, synthesis or inquiry hub, local ingest workflow, and routing. Add Questions, Relationships, Concepts, Entities, Processing Queue, templates, or Bases only when recurring work justifies them.
+Adopt existing structure before creating parallel folders. A small pipeline still needs the descriptor, source index, compiled research index, inquiry hub, synthesis hub, local ingest workflow, and routing. Add a thread hub, Relationships, Concepts, Entities, Processing Queue, templates, or Bases only when recurring work justifies them.
 
 Compiled notes separate source claims, interpretation, relevance, implications, and provenance. Inquiry objects use stable IDs, boundary links, status, criteria, evidence, current synthesis, open questions, and append-only history. Bases are optional view layers and must filter to the scope path and declared artifact types.
 

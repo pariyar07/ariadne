@@ -49,7 +49,7 @@ Always defer evidence-role classification, provenance-root merging or deletion, 
 
 ## Nested Children And Legacy Adoption
 
-Read a nested child boundary for context when needed, but do not repair it under the parent's contract. Before any child edit, read the child's ancestor and local instructions, descriptor, and exact write set. Parent conventions never overwrite a child's explicit contract. A parent `rollup` includes only the child descriptors listed in `rollup_boundaries`.
+Read a nested child boundary for context when needed, but do not repair it under the parent's contract. Before any child edit, read the child's descriptor plus all applicable ancestor and local instructions, then construct and declare a child-specific exact `allowed_write_set`. Do not inherit or reuse the parent's set. Parent conventions never overwrite a child's explicit contract. A parent `rollup` includes only the child descriptors listed in `rollup_boundaries`.
 
 Treat older pipelines without a supported `research_schema` as legacy. Audit may inventory them, but adoption is opt-in and scope-local. In `legacy-adoption` mode map existing structure first, preserve stable paths, adopt before creating parallels, and add a descriptor only after mapping is unambiguous or confirmed. Apply only allowlisted repairs automatically; propose moves, renames, template changes, and synthesis changes for review.
 
