@@ -5,10 +5,12 @@ Ariadne is an open-source skill package for Obsidian vault structure and navigat
 ## In Scope
 
 - Obsidian vault bootstrap templates
-- recursive scope structure
+- recursive scope structure, explicit target confirmation, and bounded write sets
 - vault navigation, hubs, routing matrices, and local `AGENTS.md` inheritance
 - Bases, Kanban boards, and Dataview dashboards as optional Obsidian view layers
-- source ingest, research synthesis, maintenance, and deterministic validation
+- general knowledge capture and closeout as vault-specific durable-memory workflows
+- versioned research boundaries, ingest handoffs, synthesis dispositions, provenance, promotion, and audit-first stewardship
+- maintenance and deterministic structural, scope, and schema-gated research validation
 - marker-managed vault discovery adapters that point to user-owned local registries
 - marker-managed workspace instruction links that connect workspaces to registered vault context
 

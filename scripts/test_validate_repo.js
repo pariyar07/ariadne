@@ -55,6 +55,29 @@ try {
   assert(migrationText.includes("v0.2.0"), "migration guide must name the breaking v0.2.0 release");
   assert(!migrationText.includes("one compatibility release"), "v0.2.0 must not promise a compatibility release");
 
+  const readmeText = fs.readFileSync(path.join(tempRoot, "README.md"), "utf8");
+  assert(!readmeText.includes("11 structural checks"), "README must not preserve the pre-v0.2.0 validator count");
+  assert(!readmeText.includes("11 checks"), "README skill table must not preserve the pre-v0.2.0 validator count");
+
+  const quickstartText = fs.readFileSync(path.join(tempRoot, "docs/guides/quickstart.md"), "utf8");
+  assert(!quickstartText.includes("11 counters"), "quickstart must not preserve the pre-v0.2.0 validator count");
+  assert(!quickstartText.includes("all 11 counters"), "quickstart target must defer to the canonical validator output");
+
+  const scopeText = fs.readFileSync(path.join(tempRoot, "skills/scope/SKILL.md"), "utf8");
+  assert(scopeText.includes("most-specific child branch before its parent branch"), "scope skill must require child-before-parent Base formula ordering");
+  assert(scopeText.includes("Run scoped validation first, then whole-vault validation"), "scope skill must require scoped-then-whole validation");
+  assert(scopeText.includes("explicit inheritance from both the nearest parent scope and the vault root"), "scope skill must require explicit root and parent inheritance");
+  assert(scopeText.includes("Preserve unrelated modified and untracked files"), "scope skill must preserve unrelated dirty work");
+
+  const contributingText = fs.readFileSync(path.join(tempRoot, "CONTRIBUTING.md"), "utf8");
+  assert(contributingText.includes("closeout/"), "contributor structure must include the closeout skill");
+  assert(contributingText.includes("`agents/openai.yaml` is required"), "contributor guidance must require skill display metadata");
+
+  const releaseText = fs.readFileSync(path.join(tempRoot, "docs/releases/v0.2.0.md"), "utf8");
+  assert(releaseText.includes("https://github.com/pariyar07/ariadne/releases/tag/v0.2.0"), "release note must link the published GitHub Release");
+  assert(releaseText.includes("Published 2026-07-15"), "release note must record its published state");
+  assert(!releaseText.includes("ariadne-eval-lab"), "public release note must not link private eval-lab evidence");
+
   const implementationPlan = fs.readFileSync(path.join(tempRoot, "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md"), "utf8");
   assert(implementationPlan.includes("partially superseded by the direct-breaking v0.2.0 release decision"), "implementation plan must identify the direct-breaking supersession");
   assert(!implementationPlan.includes("Compatibility adapters remain for one migration release"), "implementation plan must not direct workers to restore compatibility adapters");

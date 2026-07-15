@@ -306,11 +306,11 @@ In a multi-scope vault, if the current prompt does not name the target scope/dom
 - hubs missing links, Bases missing scope filters
 - local AGENTS.md files repeating parent policy
 
-`ariadne:validator` — deterministic CLI check (11 counters):
+`ariadne:validator` — deterministic CLI check for structure, recursive scopes, and schema-gated research contracts:
 ```bash
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
-Target: all 11 counters at 0.
+Target: every counter in the healthy output is `0`. See the validator guide for the canonical counter list.
 
 See `docs/guides/validator.md` for the full counter reference.
 
@@ -383,6 +383,22 @@ ariadne:validator   → confirms structure is wired
 ```
 
 ### Research sprint → synthesis
+
+```mermaid
+flowchart LR
+  Pipeline["research-pipeline\nboundary descriptor + topology"]
+  Ingest["research-ingest\nconfirmed target + allowed write set"]
+  Capture["knowledge-capture\nraw evidence + compiled notes"]
+  Synthesis["research-synthesis\ndisposition + inquiry history"]
+  Promotion["Authorized destination\nresearch_basis"]
+  Stewardship["research-stewardship\naudit · repair · defer"]
+
+  Pipeline --> Ingest --> Capture --> Synthesis
+  Synthesis -->|"supportable promotion"| Promotion
+  Stewardship -.->|"audits one named boundary"| Pipeline
+  Stewardship -.->|"checks provenance and coverage"| Capture
+  Capture -.->|"evidence remains canonical"| Promotion
+```
 
 ```
 ariadne:research-ingest    (×N sources, with a named or confirmed boundary)

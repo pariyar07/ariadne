@@ -196,19 +196,43 @@ flowchart TB
 
 Agents should not read the whole vault by default. They should route by task, open the smallest useful hub, then follow relevant links.
 
-## Ingestion Flow
+## General Capture Flow
 
 ```mermaid
 flowchart LR
-  A[Raw Sources / Inbox] --> B[Processing Queue]
-  B --> C[Extraction]
-  C --> D[Compiled Notes]
-  D --> E[Concepts / Entities / Relationships]
-  E --> F[Indexes / Hubs / Bases]
-  F --> G[Health Checks]
+  Input["Raw source · Inbox · durable output"]
+  Target["Confirmed target scope"]
+  Capture["knowledge-capture\ntriage · extract · compile"]
+  Notes["Durable notes\nconcepts · entities · relationships"]
+  Visibility["Indexes · hubs · Bases"]
+  Health["maintenance + validator"]
+
+  Input --> Target --> Capture --> Notes --> Visibility --> Health
 ```
 
 The human curates what enters. Agents compile raw material into a linked Markdown wiki. Obsidian is the readable frontend.
+
+A Processing Queue is useful when material needs deferred follow-up, but it is not a mandatory hop for every capture.
+
+## Research Lifecycle Flow
+
+Research is boundary-aware and uses a closed write set rather than folder-name assumptions.
+
+```mermaid
+flowchart LR
+  Boundary["research-pipeline\ndescriptor + declared hubs"]
+  Ingest["research-ingest\ntarget + allowed write set"]
+  Compile["knowledge-capture\nevidence + provenance"]
+  Disposition["research-synthesis\ninquiry disposition"]
+  Destination["Authorized downstream note\nresearch_basis"]
+  Steward["research-stewardship\naudit · allowlisted repair · defer"]
+
+  Boundary --> Ingest --> Compile --> Disposition
+  Disposition -->|"optional promotion"| Destination
+  Steward -.-> Boundary
+  Steward -.-> Compile
+  Compile -.->|"canonical evidence stays upstream"| Destination
+```
 
 ## Scale Levels
 

@@ -8,41 +8,27 @@ An agent skill package for building Obsidian vaults that AI agents can navigate,
 The core pattern: humans choose what enters, agents compile raw material into a linked wiki, Obsidian is the readable frontend, and Bases are live query views over the Markdown source of truth.
 
 ```mermaid
-flowchart TD
-  Human(["👤 Human\nRaw · Inbox · Brain dumps"])
-  Agent(["🤖 AI Agent\nClaude Code · Codex CLI"])
+flowchart LR
+  Human(["Human\nSources · notes · requests"])
+  Agent(["AI agent"])
 
-  subgraph Vault["Vault"]
-
-    subgraph OG["Operating Graph"]
-      OP["AGENTS.md · Agent Navigation\nTask Routing Matrix · Workflows"]
-    end
-
-    subgraph Scopes["Recursive Scope Tree"]
-      ROOT["Root — global policy"]
-      D1["Domain A\n└ local AGENTS.md (delta only)"]
-      D2["Domain B\n└ local AGENTS.md (delta only)"]
-      ROOT --> D1 & D2
-    end
-
-    subgraph KG["Knowledge Graph (per scope)"]
-      K["Research · Concepts · Entities\nRelationships · Decisions · Questions"]
-    end
-
-    subgraph VL["View Layer"]
-      B["Bases — live .base queries"]
-      V["Validator — 11 structural checks"]
-    end
-
+  subgraph Vault["Obsidian vault"]
+    Operating["Operating graph\nAGENTS · navigation · routing"]
+    Scopes["Recursive scope tree\nroot policy → local deltas"]
+    Knowledge["Knowledge graph\nresearch · concepts · decisions"]
+    Views["View layer\nBases · indexes · dashboards"]
+    Validator["Deterministic validator\nstructure · scope · research schema"]
   end
 
-  Human -->|"ariadne:research-ingest\nariadne:knowledge-capture\nariadne:research-synthesis"| KG
-  Agent -->|enters via| OG
-  OG -->|"routes to smallest\nrelevant context"| Scopes
-  Scopes --> KG
-  KG --> B
-  V -.->|structural guarantee| Vault
-  B -.->|surfaces gaps| Human
+  Human --> Agent
+  Agent -->|"enters through"| Operating
+  Operating -->|"selects the smallest context"| Scopes
+  Scopes --> Knowledge
+  Knowledge --> Views
+  Validator -.->|"checks"| Operating
+  Validator -.->|"checks"| Scopes
+  Validator -.->|"checks"| Knowledge
+  Views -.->|"surfaces state and gaps"| Human
 ```
 
 ## Requirements
@@ -146,6 +132,8 @@ node skills/vault/scripts/register_vault.js --agents codex,claude,gemini --docto
 
 The research lifecycle skill names changed atomically. Existing copied skills, generated vault instructions, saved prompts, and external schedulers need an explicit migration pass; see [Research Lifecycle Migration](docs/guides/research-lifecycle-migration.md).
 
+Latest release: [Ariadne v0.2.0 — Research Lifecycle](https://github.com/pariyar07/ariadne/releases/tag/v0.2.0).
+
 ## Skills
 
 Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate on an existing vault; `ariadne:workspace-instructions` operates on a workspace that may link back to registered Ariadne context.
@@ -161,11 +149,11 @@ Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate o
 | `ariadne:research-ingest` | Route research inputs into an explicitly selected boundary and hand compilation to knowledge capture |
 | `ariadne:research-synthesis` | Record synthesis disposition, update inquiries, and prepare supportable promotion candidates |
 | `ariadne:research-stewardship` | Audit and safely repair provenance, compilation coverage, stale synthesis, and legacy research drift |
-| `ariadne:research-pipeline` | Add research intake and synthesis infrastructure inside an existing scope |
+| `ariadne:research-pipeline` | Create a versioned research boundary descriptor and its declared topology inside an existing scope |
 | `ariadne:workstream-tracking` | Create and improve Obsidian Kanban boards and Dataview dashboards for durable workstream tracking |
 | `ariadne:closeout` | Checkpoint completed work, update durable vault memory, and decide whether a chat can safely close |
 | `ariadne:maintenance` | Run health checks and repair navigability drift |
-| `ariadne:validator` | Deterministic structural validation — 11 checks, zero-warnings target |
+| `ariadne:validator` | Deterministic structural, scope, and schema-gated research validation with a zero-warnings target |
 
 ## Weekly Maintenance Automation
 
@@ -275,6 +263,8 @@ See `docs/guides/validator.md` for the full counter reference.
 | `docs/guides/global-discovery.md` | Optional machine-level vault registration so cold agents can find local vaults from any folder |
 | `docs/guides/weekly-maintenance-automation.md` | Weekly maintenance prompt, Codex setup notes, Claude Code adaptation, and subagent boundaries |
 | `docs/guides/validator.md` | Validator counter reference |
+| `docs/guides/research-lifecycle-migration.md` | Breaking v0.2.0 skill-name and generated-vault migration guidance |
+| `docs/releases/v0.2.0.md` | Published v0.2.0 release notes and verification pointers |
 
 ## Global Discovery
 

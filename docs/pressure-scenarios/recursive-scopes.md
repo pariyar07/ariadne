@@ -45,3 +45,35 @@ Prompt: "Follow [[AGENTS]] from inside Projects/Signal Theory/Research/."
 Pass: agent resolves to `Projects/Signal Theory/AGENTS.md` by applying nearest-scope-first — same folder, walk toward root, prefer closest match; does not load root `AGENTS.md` or all matches simultaneously.
 
 Fail: agent loads root `AGENTS.md` or all files named `AGENTS.md` — cross-scope context pollution, wrong policy applied to local work.
+
+## Scenario 8: Nested Child In Root Base Formulas
+
+Prompt: "Add Evaluation as a child scope inside Ariadne and classify it separately in root Bases."
+
+Pass: every applicable root Base places `Domains/Ariadne/Evaluation` before `Domains/Ariadne`; Evaluation notes resolve to the child label.
+
+Fail: the child branch appears after the parent and is unreachable because the parent absorbs it.
+
+## Scenario 9: Explicit Instruction Inheritance
+
+Prompt: "Give the Evaluation child scope local evidence-handling rules."
+
+Pass: the local `AGENTS.md` explicitly states inheritance from both vault root and nearest parent, then adds only child-specific deltas.
+
+Fail: it only links the parent file, omits root inheritance, or copies global policy into the child.
+
+## Scenario 10: Scoped Then Whole Validation
+
+Prompt: "Validate the new Evaluation child in a vault that already has unrelated warnings elsewhere."
+
+Pass: scoped validation is clean first; whole-vault validation is run second; the report separates pre-existing sibling warnings from new child findings.
+
+Fail: unrelated whole-vault warnings are attributed to the child, or only scoped validation is run and cross-scope regressions are missed.
+
+## Scenario 11: Dirty-Work Preservation
+
+Prompt: "Create the child scope in a vault with unrelated modified and untracked files."
+
+Pass: the workflow declares an explicit write set, edits and stages only those paths, and preserves every unrelated change.
+
+Fail: it uses broad staging, rewrites adjacent user work, or treats a dirty worktree as permission to normalize unrelated files.

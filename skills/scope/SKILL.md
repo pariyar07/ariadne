@@ -13,6 +13,7 @@ Use this skill when a vault already exists and the user wants a new durable scop
 2. Read root/local indexes, agent navigation, task routing, and the parent hub.
 3. In a multi-scope vault, require the new scope name and parent to be named or confirmed in the current turn.
 4. State an explicit `allowed_write_set` before creation. Include the new subtree and each parent/root hub, routing matrix, or Base formula individually.
+5. If the vault is Git-backed, inspect status before writing. Preserve unrelated modified and untracked files, never use broad staging, and stage only paths in the declared write set when the user explicitly authorizes a commit.
 
 ## Minimal Questions
 
@@ -36,8 +37,8 @@ Ask only what is missing:
 8. Add local Bases only when metadata/status inspection helps.
 9. Add local templates only for repeated note shapes.
 10. Add health-check coverage if the scope can decay.
-11. Add the new scope's folder path to every root `Bases/*.base` scope formula that contains `file.inFolder` — otherwise notes in this scope show as "Global" in all root views.
-12. Run validation — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm the scope is fully wired.
+11. Add the new scope's folder path to every root `Bases/*.base` scope formula that contains `file.inFolder`. Insert the most-specific child branch before its parent branch; first-match formulas otherwise classify the child as its parent. Preserve unrelated formula branches and user changes.
+12. Run scoped validation first, then whole-vault validation. The scoped run must report `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` for the new subtree. The whole-vault run confirms no cross-scope regression; report unrelated pre-existing whole-vault warnings separately rather than treating them as child-scope failures.
 13. If the parent vault is not globally registered, or its global discovery block is stale, offer `ariadne:global-discovery` for the parent vault. Scope creation should not write global files or add scope-specific global discovery rules.
 14. If an external code repository or folder should point to this scope, offer `ariadne:workspace-instructions`. Scope-specific workspace links require a current-turn explicit target or user confirmation and belong in workspace files, not global discovery.
 
@@ -55,6 +56,8 @@ Ask only what is missing:
 
 - Parent scope policy is inherited.
 - Child scopes add deltas only.
+- When a child needs local instructions, state explicit inheritance from both the nearest parent scope and the vault root; a wikilink alone is not a complete inheritance declaration.
+- Preserve unrelated modified and untracked files throughout creation, validation, and any authorized staging.
 - Do not copy global boilerplate into local files.
 - Use path-qualified wikilinks across scope boundaries.
 - Do not create child scopes just because they might be useful.
