@@ -1,6 +1,6 @@
 # Ariadne — Agent Instructions
 
-Ariadne is a skill package for building Obsidian vaults that AI agents can navigate, maintain, and operate reliably.
+Ariadne is a skill package for building Markdown knowledge vaults that AI agents can navigate, maintain, and operate reliably. Obsidian is an optional, recommended frontend.
 
 ## What This Repo Contains
 
@@ -41,7 +41,7 @@ docs/
 
 Each skill is a folder with:
 - `SKILL.md` — the agent instructions (this is what Claude Code, Gemini CLI, and others read)
-- `agents/openai.yaml` — display metadata for Codex CLI UI
+- `agents/openai.yaml` — display metadata for Codex
 - `assets/templates/` — files the skill copies into the target vault (`ariadne:vault` only)
 - `references/` — supporting documentation the agent can read for deeper context
 
@@ -87,16 +87,16 @@ Each skill is a folder with:
 - Workspace instruction-file updates must be bounded and marker-managed where possible. Preserve user instructions outside Ariadne workspace-vault-link markers.
 - New validator warnings must be non-fatal unless they represent a structural impossibility.
 - Every new validator counter needs: logic in JS + return object entry + counters array entry + `docs/guides/validator.md` update + `SKILL.md` healthy output update + `README.md` healthy output update + test fixture.
-- `agents/openai.yaml` is required for each skill for Codex CLI display metadata.
+- `agents/openai.yaml` is required for each skill's Codex display metadata.
 - Do not add placeholder skill folders; planned skills stay in docs until they are complete.
 - Public docs must not include private vault content, maintainer-local absolute paths, secrets, client data, or personal workflow defaults.
-- Ariadne behavior must stay Obsidian/vault-specific. Generic runtime-adaptive coordination belongs outside this repo.
+- Ariadne behavior must stay Markdown-knowledge-vault-specific. Obsidian-compatible view features belong here; generic runtime-adaptive coordination belongs outside this repo.
 - Do not commit `CLAUDE.local.md`, `GEMINI.local.md`, or `AGENTS.override.md` — these are machine-local.
 
 ## Local Setup (gitignored files)
 
-To connect this repo to a local Obsidian vault, create these files (all gitignored):
+To connect this repo to a local Markdown knowledge vault, create these files (all gitignored):
 
 - `CLAUDE.local.md` — optional Claude local memory/context; do not import it from tracked `CLAUDE.md` by default
 - `GEMINI.local.md` — optional Ariadne local context convention for Gemini workflows; only use it when your local Gemini setup loads it or you explicitly add a local import
-- `AGENTS.override.md` — replaces `AGENTS.md` for Codex CLI. Codex reads only one file per directory and prefers the override, so it does **not** merge with `AGENTS.md` — it fully replaces it. Copy `AGENTS.md` verbatim, then add your local vault section at the bottom inside the `ariadne:workspace-vault-link` marker block. Re-sync the copied body whenever `AGENTS.md` changes, or Codex will read stale repo guidance.
+- `AGENTS.override.md` — replaces `AGENTS.md` for Codex. Codex reads only one file per directory and prefers the override, so it does **not** merge with `AGENTS.md` — it fully replaces it. Copy `AGENTS.md` verbatim, then add your local vault section at the bottom inside the `ariadne:workspace-vault-link` marker block. Re-sync the copied body whenever `AGENTS.md` changes, or Codex will read stale repo guidance.

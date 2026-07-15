@@ -23,7 +23,7 @@ Security-sensitive areas include:
 - GitHub Actions workflows and repository automation
 - public templates that could encourage users to paste private vault content, secrets, client data, or production logs
 
-Ariadne is an Obsidian vault skill package. It should not contain generic runtime-adaptive coordination behavior, production credentials, private vault snapshots, customer data, or maintainer-local paths.
+Ariadne is a Markdown knowledge-vault skill package with optional Obsidian-compatible view features. It should not contain generic runtime-adaptive coordination behavior, production credentials, private vault snapshots, customer data, or maintainer-local paths.
 
 ## Supported Versions
 

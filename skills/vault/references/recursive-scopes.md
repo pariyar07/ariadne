@@ -1,6 +1,6 @@
 # Recursive Scopes
 
-An agentic Obsidian vault is a recursive scope tree.
+An agentic Markdown knowledge vault is a recursive scope tree. Obsidian-compatible wikilink behavior is part of the file contract even when the app is not installed.
 
 ## Terms
 

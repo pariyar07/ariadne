@@ -1,6 +1,6 @@
 ---
 name: ariadne:scope
-description: Use when creating, promoting, importing, nesting, or reorganizing scopes inside an existing Obsidian vault with inherited parent and child scope rules.
+description: Use when creating, promoting, importing, nesting, or reorganizing scopes inside an existing Markdown knowledge vault with inherited parent and child scope rules.
 ---
 
 # Ariadne Scope

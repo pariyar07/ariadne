@@ -1,6 +1,6 @@
 ---
 name: ariadne:closeout
-description: Close or checkpoint meaningful completed work in an agent-maintained Obsidian vault. Use when the user asks to run Ariadne closeout, make work durable, close the loop, checkpoint this work, capture the outcome, decide whether a chat can close, draft a handoff, or update vault memory after incidents, releases, evaluations, feature work, architecture/product decisions, research sprints, or substantial planning sessions.
+description: Close or checkpoint meaningful completed work in an agent-maintained Markdown knowledge vault. Use when the user asks to run Ariadne closeout, make work durable, close the loop, checkpoint this work, capture the outcome, decide whether a chat can close, draft a handoff, or update vault memory after incidents, releases, evaluations, feature work, architecture/product decisions, research sprints, or substantial planning sessions.
 ---
 
 # Ariadne Closeout

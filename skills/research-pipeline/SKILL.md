@@ -1,6 +1,6 @@
 ---
 name: ariadne:research-pipeline
-description: Use when recurring research inside an existing Obsidian vault scope needs a boundary descriptor, raw and compiled routes, inquiry and synthesis hubs, local templates, Bases, or routing.
+description: Use when recurring research inside an existing Markdown knowledge-vault scope needs a boundary descriptor, raw and compiled routes, inquiry and synthesis hubs, local templates, optional Bases, or routing.
 ---
 
 # Ariadne Research Pipeline

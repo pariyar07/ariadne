@@ -1,6 +1,6 @@
 ---
 name: ariadne:knowledge-capture
-description: Use when links, documents, PDFs, transcripts, screenshots, meeting notes, observations, brain dumps, or other material must be compiled into an explicitly selected Obsidian vault destination.
+description: Use when links, documents, PDFs, transcripts, screenshots, meeting notes, observations, brain dumps, or other material must be compiled into an explicitly selected Markdown knowledge-vault destination.
 ---
 
 # Ariadne Knowledge Capture

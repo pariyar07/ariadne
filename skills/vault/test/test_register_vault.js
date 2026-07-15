@@ -52,6 +52,12 @@ function assertIncludesScopeConfirmationRule(text) {
   assert.match(text, /prior conversation, current working directory, and active skills are not confirmation/i);
 }
 
+function assertFrontendNeutralDiscovery(text) {
+  assert.match(text, /Markdown knowledge vaults?/);
+  assert.doesNotMatch(text, /Registered Obsidian Vaults/);
+  assert.doesNotMatch(text, /one or more Obsidian vaults registered/);
+}
+
 function tempHome() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-register-"));
 }
@@ -107,7 +113,8 @@ const tests = [
     ]);
 
     const registryMarkdown = read(registryMd);
-    assert.match(registryMarkdown, /# Registered Obsidian Vaults/);
+    assert.match(registryMarkdown, /# Registered Knowledge Vaults/);
+    assertFrontendNeutralDiscovery(registryMarkdown);
     assert.match(registryMarkdown, /Primary vault: /);
     assert.match(registryMarkdown, /## Work Vault/);
     assert.match(registryMarkdown, new RegExp(`Path: ${vault.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
@@ -130,8 +137,12 @@ const tests = [
       assertIncludesActionPromptRule(text);
       assertIncludesMultipleMatchConfirmationRule(text);
       assertIncludesScopeConfirmationRule(text);
+      assertFrontendNeutralDiscovery(text);
       assert.doesNotMatch(text, /This machine has one or more Ariadne/);
     }
+
+    assertFrontendNeutralDiscovery(read(path.resolve(__dirname, "../assets/templates/Global Vault Registry.md")));
+    assertFrontendNeutralDiscovery(read(path.resolve(__dirname, "../assets/templates/Global Agent Discovery Snippet.md")));
   },
 
   function detectsStandardRootIndexWhenPresent() {

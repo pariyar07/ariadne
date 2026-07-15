@@ -1,11 +1,11 @@
 ---
 name: ariadne:global-discovery
-description: Register existing Obsidian vaults for machine-level discovery so cold agents can find long-term knowledge from any workspace. Use when checking, adding, updating, repairing, or removing global vault discovery.
+description: Register existing Markdown knowledge vaults for machine-level discovery so cold agents can find long-term knowledge from any workspace. Use when checking, adding, updating, repairing, or removing global vault discovery.
 ---
 
 # Ariadne Global Discovery
 
-Use this skill when a user already has an Obsidian vault created or maintained with Ariadne and wants future cold agents to find it from outside the vault. Also use it to inspect, update, or repair existing global registry files and marker-managed adapter blocks when Ariadne ships newer discovery rules.
+Use this skill when a user already has a Markdown knowledge vault created or maintained with Ariadne and wants future cold agents to find it from outside the vault. The vault may use Obsidian as a frontend, but discovery operates on filesystem paths and agent-readable entrypoints. Also use this skill to inspect, update, or repair existing global registry files and marker-managed adapter blocks when Ariadne ships newer discovery rules.
 
 Typical requests:
 
@@ -49,7 +49,7 @@ Workspace instruction files are also signposts when they connect to Ariadne. The
 ## Start Workflow
 
 1. Determine the vault path.
-2. Confirm the path looks like an agent-readable Obsidian vault by checking for `00 Global Index.md`, `00 Index.md`, another root `00 *Index.md`, `AGENTS.md`, or `Agent/00 Agent Navigation.md`.
+2. Confirm the path looks like an agent-readable Markdown knowledge vault by checking for `00 Global Index.md`, `00 Index.md`, another root `00 *Index.md`, `AGENTS.md`, or `Agent/00 Agent Navigation.md`.
 3. Determine the vault name and short purpose. Infer from the detected root index when obvious; otherwise ask.
 4. Ask which adapters to update, or use the default `codex,claude,gemini` when the user does not care.
 5. Offer `--dry-run` when the user wants to preview changes.

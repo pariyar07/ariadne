@@ -4,6 +4,12 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+### Changed
+
+- Position Ariadne around filesystem-backed Markdown knowledge vaults; Obsidian remains an optional, recommended frontend and compatibility target.
+- Use frontend-neutral global discovery wording while preserving Obsidian-compatible wikilinks and optional Bases, Canvas, Kanban, Dataview, and CLI integrations.
+- Add the canonical GitHub social-preview asset.
+
 ## [0.2.0] - 2026-07-15
 
 ### Added

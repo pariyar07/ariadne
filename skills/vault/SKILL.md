@@ -1,11 +1,11 @@
 ---
 name: ariadne:vault
-description: Bootstrap an agentic Obsidian vault for projects, research, learning, life systems, and other long-running knowledge work. Use when creating a new vault, installing the base folder structure, templates, AGENTS.md, CLAUDE.md, Agent navigation files, and default Bases.
+description: Bootstrap an agentic Markdown knowledge vault for projects, research, learning, life systems, and other long-running knowledge work. Use when creating a new vault, installing the base folder structure, templates, AGENTS.md, CLAUDE.md, Agent navigation files, and optional Obsidian-compatible Bases.
 ---
 
 # Ariadne Vault
 
-Use this skill to create or refresh the foundation of an Obsidian vault as a durable, agent-maintained Markdown knowledge system.
+Use this skill to create or refresh a durable, agent-maintained Markdown knowledge vault. Obsidian is an optional, recommended frontend rather than a runtime requirement.
 
 This skill complements Obsidian mechanics skills:
 
@@ -33,8 +33,9 @@ It also has workflow companion skills:
 
 Before bootstrapping or refreshing a vault, confirm the user has:
 
-- Obsidian installed and a target vault folder available on disk.
-- Obsidian Bases enabled when the vault should use `.base` dashboards.
+- A target vault folder available on disk.
+- Optional: Obsidian installed when the user wants its native frontend.
+- Optional: Obsidian Bases enabled when the vault should render `.base` dashboards.
 - Node.js available for the validator and `scripts/register_vault.js`.
 - A skills-capable agent runtime.
 
@@ -44,7 +45,7 @@ For full Obsidian mechanics coverage, recommend installing `https://github.com/k
 
 The vault is the memory. The skill is the setup and maintenance procedure.
 
-The human curates direction. Agents compile raw material into a linked Markdown wiki. Obsidian is the readable frontend. Bases, canvases, and reports are view layers over the Markdown source of truth — they never replace it.
+The human curates direction. Agents compile raw material into a linked Markdown wiki. Any filesystem-capable agent can operate the source directly. Obsidian is a recommended readable frontend; Bases and canvases are optional view layers over the Markdown source of truth and never replace it.
 
 For multi-area vaults, model the vault as a recursive scope tree. The root scope owns global policy and shared view layers. Each child scope inherits parent rules and adds only local deltas — it never repeats the parent and never ignores it.
 

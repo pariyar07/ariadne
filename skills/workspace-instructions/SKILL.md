@@ -216,6 +216,6 @@ When called from outside a clear workspace:
 ## Related Skills
 
 - Use `ariadne:global-discovery` for `~/.ariadne` registry files and global adapter blocks.
-- Use `ariadne:vault` to bootstrap an Obsidian vault.
+- Use `ariadne:vault` to bootstrap a Markdown knowledge vault with an optional Obsidian-compatible view layer.
 - Use `ariadne:scope` to create or wire a vault scope before linking a project to it.
 - Use `ariadne:navigation` when the vault needs new hubs or routing for the project.

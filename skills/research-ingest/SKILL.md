@@ -1,6 +1,6 @@
 ---
 name: ariadne:research-ingest
-description: Use when routing a new article, paper, repository, dataset, transcript, chat, observation, generated analysis, or other research input into a named Obsidian vault scope, especially when pipeline readiness or conditional synthesis must be decided.
+description: Use when routing a new article, paper, repository, dataset, transcript, chat, observation, generated analysis, or other research input into a named Markdown knowledge-vault scope, especially when pipeline readiness or conditional synthesis must be decided.
 ---
 
 # Ariadne Research Ingest

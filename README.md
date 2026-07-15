@@ -3,20 +3,20 @@
 > In Greek myth, Ariadne gives Theseus the thread that lets him navigate the labyrinth.
 > Ariadne gives AI agents a thread through a complex knowledge labyrinth.
 
-An agent skill package for building Obsidian vaults that AI agents can navigate, maintain, and operate reliably. Works with Claude Code, Codex CLI, and any agent runtime that supports the skills protocol.
+An agent skill package for building Markdown knowledge vaults that AI agents can navigate, maintain, and operate reliably. Works with ChatGPT/Codex, Claude Code, and any agent runtime that supports the skills protocol.
 
-The core pattern: humans choose what enters, agents compile raw material into a linked wiki, Obsidian is the readable frontend, and Bases are live query views over the Markdown source of truth.
+The core pattern: humans choose what enters, agents compile raw material into a linked wiki, and plain Markdown remains the source of truth. Obsidian is an optional, recommended frontend; Bases and other Obsidian features are optional view layers.
 
 ```mermaid
 flowchart LR
   Human(["Human\nSources · notes · requests"])
   Agent(["AI agent"])
 
-  subgraph Vault["Obsidian vault"]
+  subgraph Vault["Markdown knowledge vault"]
     Operating["Operating graph\nAGENTS · navigation · routing"]
     Scopes["Recursive scope tree\nroot policy → local deltas"]
     Knowledge["Knowledge graph\nresearch · concepts · decisions"]
-    Views["View layer\nBases · indexes · dashboards"]
+    Views["Optional view layer\nBases · Canvas · dashboards"]
     Validator["Deterministic validator\nstructure · scope · research schema"]
   end
 
@@ -24,7 +24,7 @@ flowchart LR
   Agent -->|"enters through"| Operating
   Operating -->|"selects the smallest context"| Scopes
   Scopes --> Knowledge
-  Knowledge --> Views
+  Knowledge -.-> Views
   Validator -.->|"checks"| Operating
   Validator -.->|"checks"| Scopes
   Validator -.->|"checks"| Knowledge
@@ -33,29 +33,19 @@ flowchart LR
 
 ## Requirements
 
-- Obsidian installed, with filesystem access to the target vault.
-- Obsidian Bases enabled in the vault (Settings -> Core plugins -> Bases) if you want the `.base` view files to render inside Obsidian.
-- Optional: Obsidian Kanban community plugin if you want visual drag-and-drop Kanban boards.
-- Optional: Obsidian Dataview community plugin if you want dynamic Markdown dashboards to render query results.
+- A filesystem-accessible folder for the Markdown knowledge vault.
 - Node.js with `npm`/`npx` available for installing skills and running the bundled validator and vault-registration scripts.
-- A skills-capable agent runtime, such as Claude Code, Codex CLI, or another runtime that supports the skills protocol.
-- Recommended companion pack: [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills), which provides Obsidian mechanics skills such as Markdown, Bases, JSON Canvas, clean Markdown extraction, and Obsidian CLI interaction.
+- A skills-capable agent runtime, such as ChatGPT/Codex, Claude Code, or another runtime that supports the skills protocol.
 
-Install the companion Obsidian skills first when your agent does not already have equivalent Obsidian mechanics skills:
+## Optional Obsidian Frontend
 
-```bash
-npx skills add https://github.com/kepano/obsidian-skills \
-  --global \
-  --agent '*' \
-  --copy \
-  --yes
-```
+Obsidian is not required for agent workflows. Use it when you want its native reading, editing, backlinks, graph, Canvas, Bases, Kanban, or Dataview experience. Obsidian users may optionally install [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for companion Markdown, Bases, Canvas, extraction, and CLI mechanics.
 
-Ariadne itself has no package install step and no external npm dependencies. Its scripts use only built-in Node.js modules.
+Ariadne has no project dependency installation or build step. Its scripts use only built-in Node.js modules; `npx skills` copies the skill package into supported agent runtimes.
 
 ## Install
 
-Install for all supported agents (Claude Code, Codex CLI, and others):
+Install for all supported agents (ChatGPT/Codex, Claude Code, and others):
 
 ```bash
 npx skills add https://github.com/pariyar07/ariadne \
@@ -75,7 +65,7 @@ npx skills add https://github.com/pariyar07/ariadne \
   --copy \
   --yes
 
-# Codex CLI
+# ChatGPT/Codex
 npx skills add https://github.com/pariyar07/ariadne \
   --global \
   --agent openai \
@@ -141,7 +131,7 @@ Start with `ariadne:vault` to bootstrap a new vault. Most other skills operate o
 | Skill | Purpose |
 | --- | --- |
 | `ariadne:vault` | **Start here** — Bootstrap a new agent-ready vault with folders, navigation, templates, and Bases |
-| `ariadne:global-discovery` | Register existing Obsidian vaults so cold agents can find them from any workspace |
+| `ariadne:global-discovery` | Register existing Markdown knowledge vaults so cold agents can find them from any workspace |
 | `ariadne:workspace-instructions` | Create or update workspace instruction files and connect workspaces to Ariadne context |
 | `ariadne:scope` | Create, promote, import, and nest durable knowledge scopes |
 | `ariadne:navigation` | Design hubs, routing, workstream graphs, templates, and view layers |
