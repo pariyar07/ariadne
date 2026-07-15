@@ -50,11 +50,11 @@ function buildTopology(inventory) {
   const byPath = [...adopted].sort((left, right) => left.directory.split("/").length - right.directory.split("/").length);
   const descriptorsById = new Map();
   for (let descriptor of byPath) {
-    if (descriptorsById.has(descriptor.scopeId)) continue;
     const actualPath = descriptor.directory;
     if (descriptor.scopePath !== actualPath) continue;
+    if (descriptorsById.has(descriptor.scopeId)) continue;
     if (descriptor.scopeId !== "root") {
-      const ancestors = byPath.filter((candidate) => candidate !== descriptor && isPhysicalAncestor(candidate.directory, actualPath));
+      const ancestors = [...descriptorsById.values()].filter((candidate) => isPhysicalAncestor(candidate.directory, actualPath));
       ancestors.sort((left, right) => right.directory.length - left.directory.length);
       const nearest = ancestors[0];
       if (!nearest || descriptor.parentScopeId !== nearest.scopeId) continue;

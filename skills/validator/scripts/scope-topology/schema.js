@@ -19,7 +19,7 @@ function normalizeScopePath(value) {
   const source = normalizeNfc(value);
   rejectUnsafeText(source, "scope path");
   if (source === ".") return ".";
-  if (source === "" || source.startsWith("/") || /^[A-Za-z]:[\\/]/u.test(source) || source.startsWith("\\\\")) {
+  if (source === "" || source.startsWith("/") || source.startsWith("\\") || /^[A-Za-z]:[\\/]/u.test(source)) {
     throw new Error("scope path must be vault-relative");
   }
   const segments = source.replace(/\\/gu, "/").split("/");
@@ -27,6 +27,9 @@ function normalizeScopePath(value) {
   for (const segment of segments) {
     if (segment === "" || segment === ".") continue;
     if (segment === "..") throw new Error("scope path must not contain traversal");
+    if (/[<>:"|?*]/u.test(segment)) {
+      throw new Error(`scope path contains Windows-illegal character in segment: ${segment}`);
+    }
     if (WINDOWS_RESERVED.test(segment) || /[. ]$/u.test(segment)) {
       throw new Error(`scope path contains reserved segment: ${segment}`);
     }

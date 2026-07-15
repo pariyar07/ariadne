@@ -19,7 +19,12 @@ assert.strictEqual(normalizeNfc("Cafe\u0301"), "Café");
 assert.strictEqual(normalizeScopePath("Domains\\Cafe\u0301/./Research"), "Domains/Café/Research");
 assert.throws(() => normalizeScopePath("../escape"), /traversal/u);
 assert.throws(() => normalizeScopePath("/absolute"), /vault-relative/u);
+assert.throws(() => normalizeScopePath("\\rooted"), /vault-relative/u);
+assert.throws(() => normalizeScopePath("C:\\rooted"), /vault-relative/u);
 assert.throws(() => normalizeScopePath("CON/Notes"), /reserved/u);
+for (const character of ["<", ">", ":", "\"", "|", "?", "*"]) {
+  assert.throws(() => normalizeScopePath(`Bad${character}Name/Notes`), /illegal/u);
+}
 assert.throws(() => normalizeScopePath("Bad\u0000Path"), /control/u);
 
 assert.throws(
@@ -64,5 +69,11 @@ assert.strictEqual(deep.descriptorsById.get("alpha").parentScopeId, "product");
 assert.strictEqual(deep.descriptorsById.get("alpha").transparentPath, "Workstreams/Alpha");
 assert.strictEqual(deep.candidates.length, 1);
 assert.strictEqual(deep.candidates[0].relativePath, "Ideas/00 Index.md");
+
+const rejectedAncestor = buildTopology(inventoryVault(fixture("rejected_ancestor_is_transparent")));
+assert.strictEqual(rejectedAncestor.active, true);
+assert.deepStrictEqual([...rejectedAncestor.descriptorsById.keys()], ["root", "child"]);
+assert.deepStrictEqual(rejectedAncestor.childrenById.get("root").map((item) => item.scopeId), ["child"]);
+assert.strictEqual(rejectedAncestor.descriptorsById.get("child").transparentPath, "Wrapper/Child");
 
 console.log("scope topology tests passed");
