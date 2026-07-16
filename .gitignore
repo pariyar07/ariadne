@@ -5,3 +5,4 @@ node_modules/
 CLAUDE.local.md
 GEMINI.local.md
 AGENTS.override.md
+.superpowers/
