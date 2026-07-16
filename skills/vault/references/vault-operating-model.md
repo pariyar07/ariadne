@@ -1,6 +1,6 @@
 # Vault Operating Model
 
-Use this reference when explaining or designing an agent-maintained Obsidian vault.
+Use this reference when explaining or designing an agent-maintained Markdown knowledge vault. Obsidian is an optional frontend and view layer.
 
 The goal is not a visually dense graph. The goal is a vault that stays traversable as raw sources, notes, decisions, projects, and outputs grow over time.
 
@@ -12,7 +12,7 @@ The vault has three layers:
 flowchart TB
   K[Knowledge Graph] --> V[Markdown Vault]
   O[Operating Graph] --> V
-  W[View Layer] --> V
+  W[Optional View Layer] -.-> V
 
   K --> K1[Research]
   K --> K2[Concepts]
@@ -62,9 +62,9 @@ The operating graph keeps the vault usable:
 
 It answers: how should humans and agents operate the vault?
 
-### View Layer
+### Optional View Layer
 
-The view layer inspects the Markdown source of truth:
+The optional view layer inspects the Markdown source of truth:
 
 - `Bases/`
 - `Bases/00 Bases Index.md`
@@ -210,7 +210,7 @@ flowchart LR
   Input --> Target --> Capture --> Notes --> Visibility --> Health
 ```
 
-The human curates what enters. Agents compile raw material into a linked Markdown wiki. Obsidian is the readable frontend.
+The human curates what enters. Agents compile raw material into a linked Markdown wiki. Obsidian is an optional, recommended readable frontend.
 
 A Processing Queue is useful when material needs deferred follow-up, but it is not a mandatory hop for every capture.
 

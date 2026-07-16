@@ -35,7 +35,7 @@ docs/
 
 ## How to Contribute
 
-Read `PUBLIC_BOUNDARY.md` before proposing new behavior. Ariadne owns Obsidian vault structure, scopes, navigation, Bases, validation, maintenance, ingest, and vault-specific adapters. Generic runtime-adaptive coordination belongs outside this repository.
+Read `PUBLIC_BOUNDARY.md` before proposing new behavior. Ariadne owns Markdown knowledge-vault structure, scopes, navigation, validation, maintenance, ingest, and optional Obsidian-compatible view layers such as Bases. Generic runtime-adaptive coordination belongs outside this repository.
 
 Read `SECURITY.md` before reporting a vulnerability. Do not paste private vault content, secrets, client data, production logs, or maintainer-local paths into public issues or pull requests.
 

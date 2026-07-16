@@ -1,6 +1,6 @@
 ---
 name: ariadne:validator
-description: "Validate the structure of an agent-maintained Obsidian vault with deterministic CLI checks for YAML/frontmatter, broken wikilinks, Markdown orphans, and unlinked Base files."
+description: "Validate the structure of an agent-maintained Markdown knowledge vault with deterministic CLI checks for YAML/frontmatter, broken wikilinks, Markdown orphans, scope wiring, and optional Obsidian-compatible view files."
 metadata:
   required_tools:
     - node
@@ -29,7 +29,7 @@ metadata:
 
 # Ariadne Validator
 
-Use this skill when the user asks whether an Obsidian vault is structurally valid, navigable, connected, or ready for ongoing agent use.
+Use this skill when the user asks whether a Markdown knowledge vault is structurally valid, navigable, connected, or ready for ongoing agent use.
 
 ## Tool
 

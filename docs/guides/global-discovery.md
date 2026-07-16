@@ -2,7 +2,7 @@
 
 Vaults created or maintained with Ariadne are easy for agents to navigate once the agent knows where the vault is. Global discovery registers that entry point on the user's local machine so future cold agents can find the vault without scanning chat history, unrelated folders, or the whole filesystem.
 
-Global discovery is optional. It is useful when a user wants agents launched from any folder to treat an Obsidian vault as a long-term knowledge source. It is also the repair/update path for existing global marker blocks when Ariadne ships newer discovery rules.
+Global discovery is optional. It is useful when a user wants agents launched from any folder to treat a Markdown knowledge vault as a long-term knowledge source. Obsidian may be used as its frontend, but discovery only requires a filesystem path and agent-readable entrypoints. This guide is also the repair/update path for existing global marker blocks when Ariadne ships newer discovery rules.
 
 Global discovery is not the same as workspace-level instruction files. Use `ariadne:workspace-instructions` when a repository or ordinary folder needs `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or a small Ariadne vault-link block. Workspace files may point toward registered vault context, but global discovery continues to register vaults rather than individual project scopes.
 

@@ -9,6 +9,7 @@ const { execFileSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "..");
 
 const REQUIRED_REPO_FILES = [
+  ".github/ariadne-social-preview.png",
   "CHANGELOG.md",
   "SECURITY.md",
   "PUBLIC_BOUNDARY.md",
@@ -315,6 +316,10 @@ function validateResearchLifecycleDocs(errors) {
   }
 
   const requiredDocumentationContracts = new Map([
+    ["README.md", ["Markdown knowledge vaults", "Obsidian is not required"]],
+    ["docs/guides/quickstart.md", ["Obsidian is not required"]],
+    ["PUBLIC_BOUNDARY.md", ["Markdown knowledge vaults"]],
+    ["AGENTS.md", ["Markdown knowledge vaults"]],
     ["skills/scope/SKILL.md", ["most-specific child branch before its parent branch", "Run scoped validation first, then whole-vault validation", "explicit inheritance from both the nearest parent scope and the vault root", "Preserve unrelated modified and untracked files"]],
     ["CONTRIBUTING.md", ["closeout/", "`agents/openai.yaml` is required"]],
     ["docs/releases/v0.2.0.md", ["Published 2026-07-15", "https://github.com/pariyar07/ariadne/releases/tag/v0.2.0"]],

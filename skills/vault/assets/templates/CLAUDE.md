@@ -1,6 +1,6 @@
 # {{vault_name}} - Claude Code Memory
 
-This is an Obsidian vault and agent-maintained Markdown knowledge base.
+This is an agent-maintained Markdown knowledge vault with optional Obsidian compatibility.
 
 Read first:
 
@@ -15,7 +15,7 @@ Purpose:
 
 Conventions:
 
-- Use Obsidian wikilinks for internal notes.
+- Use Obsidian-compatible wikilinks for internal notes.
 - Use frontmatter properties for metadata.
 - Capture raw source material in `Raw/Sources/`.
 - Compile durable knowledge into the appropriate folder.

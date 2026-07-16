@@ -1,6 +1,6 @@
 ---
 name: ariadne:research-stewardship
-description: Use when auditing or repairing provenance, compilation coverage, stale synthesis, unresolved questions, circular corroboration, nested-boundary isolation, or legacy research drift within one named Obsidian research boundary.
+description: Use when auditing or repairing provenance, compilation coverage, stale synthesis, unresolved questions, circular corroboration, nested-boundary isolation, or legacy research drift within one named Markdown knowledge-vault research boundary.
 ---
 
 # Ariadne Research Stewardship

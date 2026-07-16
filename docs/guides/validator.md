@@ -1,6 +1,6 @@
 # Vault Validator Guide
 
-The validator is a deterministic health check for an Obsidian vault. Use the shell wrapper and pass the vault root path:
+The validator is a deterministic health check for a Markdown knowledge vault. It operates directly on filesystem content; Obsidian does not need to be installed or running. Use the shell wrapper and pass the vault root path:
 
 ```bash
 /path/to/skills/validator/scripts/validate_vault.sh "/path/to/vault"

@@ -7,7 +7,7 @@ Read and obey this root-to-current instruction chain:
 - [[AGENTS.md|{{vault_name}} instructions]] (`root`)
 <!-- ariadne:scope-inheritance:end -->
 
-This is an Obsidian vault maintained as a durable, agent-readable Markdown knowledge base.
+This is a durable, agent-readable Markdown knowledge vault. It is compatible with Obsidian, but agents operate the filesystem source directly.
 
 Read first:
 
@@ -21,7 +21,7 @@ Read first:
 
 Rules:
 
-- Keep notes as plain Markdown with Obsidian wikilinks.
+- Keep notes as plain Markdown with Obsidian-compatible wikilinks.
 - Use YAML frontmatter with `title`, `type`, `status`, `created`, and `tags` where useful.
 - Keep raw source captures separate from compiled notes.
 - Treat a `type: research-boundary` note with `research_schema: 1` as the canonical research descriptor. Boundary membership comes from `research_boundary`, never folder ancestry; rollup includes only descriptors explicitly listed in `rollup_boundaries`.

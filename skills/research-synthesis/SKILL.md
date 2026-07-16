@@ -1,6 +1,6 @@
 ---
 name: ariadne:research-synthesis
-description: Use when multiple compiled research sources may change, confirm, contradict, supersede, or leave unchanged an inquiry, synthesis, evidence map, thread hub, or promotion candidate inside an Obsidian vault.
+description: Use when multiple compiled research sources may change, confirm, contradict, supersede, or leave unchanged an inquiry, synthesis, evidence map, thread hub, or promotion candidate inside a Markdown knowledge vault.
 ---
 
 # Ariadne Research Synthesis

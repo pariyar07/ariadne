@@ -1,11 +1,11 @@
 ---
 name: ariadne:navigation
-description: "Design or modify Obsidian vault navigation: folder hubs, agent navigation, routing matrices, workstream graphs, Bases/view layers, templates, health-check rules, and long-term traversability."
+description: "Design or modify Markdown knowledge-vault navigation: folder hubs, agent navigation, routing matrices, workstream graphs, optional Bases/view layers, templates, health-check rules, and long-term traversability."
 ---
 
 # Ariadne Navigation
 
-Use this skill when changing the durable structure of an Obsidian vault.
+Use this skill when changing the durable structure of a Markdown knowledge vault.
 
 ## Core Principle
 

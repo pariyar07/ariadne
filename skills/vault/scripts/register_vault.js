@@ -190,9 +190,9 @@ function removeVault(registry, vaultPath, now) {
 
 function registryMarkdown(registry) {
   const lines = [
-    "# Registered Obsidian Vaults",
+    "# Registered Knowledge Vaults",
     "",
-    "These are local Obsidian vaults registered as long-term knowledge sources for AI-agent navigation.",
+    "These are local Markdown knowledge vaults registered as long-term sources for AI-agent navigation. They may use Obsidian or another Markdown-compatible frontend.",
     "",
   ];
 
@@ -225,7 +225,7 @@ function discoveryBlock(registryPathDisplay) {
     MARKER_START,
     "## Registered Vault Discovery",
     "",
-    "This machine has one or more Obsidian vaults registered as long-term knowledge sources.",
+    "This machine has one or more Markdown knowledge vaults registered as long-term knowledge sources.",
     "",
     "Registry:",
     `- ${registryPathDisplay}`,
