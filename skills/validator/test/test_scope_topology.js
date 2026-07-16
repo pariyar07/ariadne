@@ -678,6 +678,20 @@ for (const result of renders) {
   else assert.strictEqual(result.bytes.toString("utf8"), fs.readFileSync(golden, "utf8"), result.path);
 }
 assert.strictEqual(renderCheckpointBlocks(deep).length, 16);
+const productBoundary = renderCheckpointBlocks(deep).find((item) => item.path === "Domains/Product/00 Index.md").bytes.toString("utf8");
+assert.match(productBoundary, /\[\[\.\.\/\.\.\/00 Index\|Vault\]\]/u);
+assert.doesNotMatch(productBoundary, /\[\[00 Index\|Vault\]\]/u);
+const productInstructions = renderCheckpointBlocks(deep).find((item) => item.path === "Domains/Product/AGENTS.md").bytes.toString("utf8");
+assert.match(productInstructions, /\[\[\.\.\/\.\.\/AGENTS\.md\|Vault instructions\]\]/u);
+assert.doesNotMatch(productInstructions, /\[\[AGENTS\.md\|Vault instructions\]\]/u);
+const rootInstructions = renderCheckpointBlocks(deep).find((item) => item.path === "AGENTS.md").bytes.toString("utf8");
+assert.match(rootInstructions, /Vault instructions \(this file; `root`\)/u);
+assert.doesNotMatch(rootInstructions, /\[\[AGENTS\.md/u);
+for (const output of [...renderCheckpointBlocks(deep), renderScopeMapMarkdown(deep), renderScopeMapCanvas(deep)]) {
+  for (const match of output.bytes.toString("utf8").matchAll(/\[\[([^\]|#]+)/gu)) {
+    assert.ok(match[1].includes("/"), `${output.path} must not emit an ambiguous bare wikilink: ${match[1]}`);
+  }
+}
 const registry = renderScopeRegistry(deep).bytes.toString("utf8");
 assert.strictEqual((registry.match(/^  - name:/gmu) || []).length, 2);
 assert.match(registry, /name: Scope Topology/u);
@@ -685,22 +699,19 @@ assert.match(registry, /name: Lifecycle/u);
 assert.doesNotMatch(registry, /^filters:/u);
 assert.strictEqual((registry.match(/^    filters:/gmu) || []).length, 2);
 const canvas = JSON.parse(renderScopeMapCanvas(deep).bytes);
-assert.strictEqual(canvas.nodes.length, 8);
+assert.strictEqual(canvas.nodes.length, 4);
 assert.strictEqual(canvas.edges.length, 3);
 assert.deepStrictEqual(canvas.nodes.map(({ x, y, width, height, color, type }) => ({ x, y, width, height, color, type })), [
-  { x: 0, y: 0, width: 320, height: 60, color: "4", type: "text" },
-  { x: 0, y: 80, width: 320, height: 120, color: "4", type: "file" },
-  { x: 480, y: 240, width: 320, height: 60, color: "4", type: "text" },
-  { x: 480, y: 320, width: 320, height: 120, color: "4", type: "file" },
-  { x: 960, y: 480, width: 320, height: 60, color: "4", type: "text" },
-  { x: 960, y: 560, width: 320, height: 120, color: "4", type: "file" },
-  { x: 960, y: 720, width: 320, height: 60, color: "6", type: "text" },
-  { x: 960, y: 800, width: 320, height: 120, color: "6", type: "file" },
+  { x: 0, y: 0, width: 320, height: 120, color: "4", type: "text" },
+  { x: 480, y: 180, width: 320, height: 120, color: "4", type: "text" },
+  { x: 960, y: 360, width: 320, height: 120, color: "4", type: "text" },
+  { x: 960, y: 540, width: 320, height: 120, color: "6", type: "text" },
 ]);
 for (const item of [...canvas.nodes, ...canvas.edges]) assert.match(item.id, /^[a-f0-9]{16}$/u);
-assert.strictEqual(new Set([...canvas.nodes, ...canvas.edges].map((item) => item.id)).size, 11);
+assert.strictEqual(new Set([...canvas.nodes, ...canvas.edges].map((item) => item.id)).size, 7);
 assert.deepStrictEqual(JSON.parse(renderScopeMapCanvas(deep).bytes), canvas);
-assert.ok(canvas.nodes.filter((item) => item.type === "text").every((item, index) => item.text.includes(["Vault", "Product", "Alpha", "Zulu"][index])), "each label node must carry a distinct scope title");
+assert.ok(canvas.nodes.every((item, index) => item.text.includes(["Vault", "Product", "Alpha", "Zulu"][index])), "each scope node must carry a distinct scope title");
+assert.ok(canvas.nodes.every((item) => item.text.includes("[[")), "each scope node must remain clickable through its wikilink");
 
 const semanticVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-render-"));
 fs.cpSync(fixture("deep_transparent_ancestry"), semanticVault, { recursive: true });

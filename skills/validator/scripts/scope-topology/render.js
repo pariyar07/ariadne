@@ -1,56 +1,71 @@
 "use strict";
 
 const crypto = require("crypto");
+const path = require("path");
 
 const STATUS_COLORS = Object.freeze({ active: "4", archived: "6", retired: "1" });
 const WIDTH = 320;
 const HEIGHT = 120;
-const LABEL_HEIGHT = 60;
-const LABEL_GAP = 20;
 const X_STEP = 480;
-const Y_STEP = HEIGHT + LABEL_HEIGHT + LABEL_GAP + 40;
+const Y_STEP = 180;
 
 function result(path, text, reason, owner) {
   return Object.freeze({ path, bytes: Buffer.from(text, "utf8"), reason, owner });
 }
 
 function basePath(descriptor) { return descriptor.scopePath === "." ? "" : `${descriptor.scopePath}/`; }
-function link(descriptor) { return descriptor.scopePath === "." ? "00 Index" : `${descriptor.scopePath}/00 Index`; }
+function withoutMarkdownExtension(value) { return value.replace(/\.md$/u, ""); }
+function descriptorFile(descriptor) { return `${basePath(descriptor)}00 Index.md`; }
+function instructionFile(descriptor) { return `${basePath(descriptor)}AGENTS.md`; }
+function qualifiedLink(sourceFile, targetFile, keepExtension = false) {
+  if (targetFile.includes("/")) return keepExtension ? targetFile : withoutMarkdownExtension(targetFile);
+  const relative = path.posix.relative(path.posix.dirname(sourceFile), targetFile);
+  const target = relative || targetFile;
+  return keepExtension ? target : withoutMarkdownExtension(target);
+}
+function descriptorLink(sourceFile, descriptor) { return qualifiedLink(sourceFile, descriptorFile(descriptor)); }
 function parent(model, descriptor) { return descriptor.parentScopeId ? model.descriptorsById.get(descriptor.parentScopeId) : null; }
 function children(model, descriptor) { return model.childrenById.get(descriptor.scopeId) || []; }
 function marker(name, body) { return `<!-- ariadne:${name}:start -->\n${body}\n<!-- ariadne:${name}:end -->\n`; }
 
 function boundaryBody(model, descriptor) {
+  const sourceFile = descriptorFile(descriptor);
   const lines = ["## Scope Boundary", "", `- Scope: ${descriptor.title} (\`${descriptor.scopeId}\`)`, `- Path: \`${descriptor.scopePath}\``, `- Status: ${descriptor.status}`];
   const up = parent(model, descriptor);
-  if (up) lines.push(`- Parent: [[${link(up)}|${up.title}]] (\`${up.scopeId}\`)`);
+  if (up) lines.push(`- Parent: [[${descriptorLink(sourceFile, up)}|${up.title}]] (\`${up.scopeId}\`)`);
   const below = children(model, descriptor);
-  if (below.length) lines.push("- Direct children:", ...below.map((child) => `  - [[${link(child)}|${child.title}]] (\`${child.scopeId}\`, ${child.status})`));
+  if (below.length) lines.push("- Direct children:", ...below.map((child) => `  - [[${descriptorLink(sourceFile, child)}|${child.title}]] (\`${child.scopeId}\`, ${child.status})`));
   else lines.push("- Direct children: none");
   return lines.join("\n");
 }
 
 function inheritanceBody(model, descriptor) {
+  const sourceFile = instructionFile(descriptor);
   const chain = [];
   let current = descriptor;
   while (current) { chain.unshift(current); current = parent(model, current); }
-  return ["## Scope Inheritance", "", "Read and obey this root-to-current instruction chain:", ...chain.map((item) => `- [[${basePath(item)}AGENTS.md|${item.title} instructions]] (\`${item.scopeId}\`)`)].join("\n");
+  return ["## Scope Inheritance", "", "Read and obey this root-to-current instruction chain:", ...chain.map((item) => {
+    if (instructionFile(item) === sourceFile) return `- ${item.title} instructions (this file; \`${item.scopeId}\`)`;
+    return `- [[${qualifiedLink(sourceFile, instructionFile(item), true)}|${item.title} instructions]] (\`${item.scopeId}\`)`;
+  })].join("\n");
 }
 
 function navigationBody(model, descriptor) {
-  const lines = ["## Scope Navigation", "", `- Boundary: [[${link(descriptor)}|${descriptor.title}]]`];
+  const sourceFile = `${basePath(descriptor)}Agent/00 Agent Navigation.md`;
+  const lines = ["## Scope Navigation", "", `- Boundary: [[${descriptorLink(sourceFile, descriptor)}|${descriptor.title}]]`];
   const up = parent(model, descriptor);
-  if (up) lines.push(`- Parent: [[${link(up)}|${up.title}]]`);
-  lines.push(...children(model, descriptor).map((child) => `- Child: [[${link(child)}|${child.title}]]`));
+  if (up) lines.push(`- Parent: [[${descriptorLink(sourceFile, up)}|${up.title}]]`);
+  lines.push(...children(model, descriptor).map((child) => `- Child: [[${descriptorLink(sourceFile, child)}|${child.title}]]`));
   return lines.join("\n");
 }
 
 function routingBody(model, descriptor) {
+  const sourceFile = `${basePath(descriptor)}Agent/Task Routing Matrix.md`;
   const lines = ["## Scope Routing", "", "| Destination | Scope ID | Status |", "| --- | --- | --- |"];
   const up = parent(model, descriptor);
-  if (up) lines.push(`| [[${link(up)}|Parent: ${up.title}]] | \`${up.scopeId}\` | ${up.status} |`);
-  lines.push(`| [[${link(descriptor)}|Current: ${descriptor.title}]] | \`${descriptor.scopeId}\` | ${descriptor.status} |`);
-  for (const child of children(model, descriptor)) lines.push(`| [[${link(child)}|Child: ${child.title}]] | \`${child.scopeId}\` | ${child.status} |`);
+  if (up) lines.push(`| [[${descriptorLink(sourceFile, up)}|Parent: ${up.title}]] | \`${up.scopeId}\` | ${up.status} |`);
+  lines.push(`| [[${descriptorLink(sourceFile, descriptor)}|Current: ${descriptor.title}]] | \`${descriptor.scopeId}\` | ${descriptor.status} |`);
+  for (const child of children(model, descriptor)) lines.push(`| [[${descriptorLink(sourceFile, child)}|Child: ${child.title}]] | \`${child.scopeId}\` | ${child.status} |`);
   return lines.join("\n");
 }
 
@@ -139,28 +154,27 @@ function normalizeScopeCanvas(value) {
   return normalized;
 }
 
-function treeLines(model, descriptor, prefix = "") {
-  const lines = [`${prefix}- [[${link(descriptor)}|${descriptor.title}]] — \`${descriptor.scopeId}\` — \`${descriptor.scopePath}\` — ${descriptor.status}`];
-  for (const child of children(model, descriptor)) lines.push(...treeLines(model, child, `${prefix}  `));
+function treeLines(model, descriptor, sourceFile, prefix = "") {
+  const lines = [`${prefix}- [[${descriptorLink(sourceFile, descriptor)}|${descriptor.title}]] — \`${descriptor.scopeId}\` — \`${descriptor.scopePath}\` — ${descriptor.status}`];
+  for (const child of children(model, descriptor)) lines.push(...treeLines(model, child, sourceFile, `${prefix}  `));
   return lines;
 }
 
 function renderScopeMapMarkdown(model) {
   const root = model.descriptorsById.get("root");
-  const body = ["## Scope Map", "", ...(root ? treeLines(model, root) : [])].join("\n");
+  const sourceFile = "Agent/Scope Map.md";
+  const body = ["## Scope Map", "", ...(root ? treeLines(model, root, sourceFile) : [])].join("\n");
   return result("Agent/Scope Map.md", marker("scope-map", body), "regenerate scope map", "marker:scope-map");
 }
 
 function stableId(kind, value) { return crypto.createHash("sha256").update(`${kind}\0${value}`).digest("hex").slice(0, 16); }
 
 function labelText(descriptor) {
-  return `[[${link(descriptor)}|${descriptor.title}]]\n\`${descriptor.scopeId}\`\n${descriptor.scopePath}`;
+  return `[[${descriptorLink("Agent/Scope Map.canvas", descriptor)}|${descriptor.title}]]\n\`${descriptor.scopeId}\`\n${descriptor.scopePath}`;
 }
 
-// Every Canvas file node points at a "00 Index.md" (or root's "00 Index.md"), and Obsidian
-// shows the filename as the node's identifying label, so with more than one scope every file
-// node reads as the identical "00 Index" regardless of which scope it represents. A paired
-// text node carrying the title, scope_id, and scope_path makes each scope distinguishable.
+// A text node can carry a clickable wikilink and a meaningful scope label. Using a separate file
+// node would add a second box named "00 Index" for every scope without adding information.
 function renderScopeMapCanvas(model, options = {}) {
   const idFor = options.idFactory || stableId;
   const depths = new Map();
@@ -171,13 +185,9 @@ function renderScopeMapCanvas(model, options = {}) {
   const nodeByScope = new Map();
   [...model.descriptors].forEach((descriptor, index) => {
     const x = depths.get(descriptor.scopeId) * X_STEP;
-    const labelY = index * Y_STEP;
-    const fileY = labelY + LABEL_HEIGHT + LABEL_GAP;
-    const labelId = claim(idFor("scope-label", descriptor.scopeId));
-    const fileId = claim(idFor("scope-node", descriptor.scopeId));
-    nodes.push({ id: labelId, type: "text", text: labelText(descriptor), x, y: labelY, width: WIDTH, height: LABEL_HEIGHT, color: STATUS_COLORS[descriptor.status] });
-    nodes.push({ id: fileId, type: "file", file: `${link(descriptor)}.md`, x, y: fileY, width: WIDTH, height: HEIGHT, color: STATUS_COLORS[descriptor.status] });
-    nodeByScope.set(descriptor.scopeId, fileId);
+    const nodeId = claim(idFor("scope-node", descriptor.scopeId));
+    nodes.push({ id: nodeId, type: "text", text: labelText(descriptor), x, y: index * Y_STEP, width: WIDTH, height: HEIGHT, color: STATUS_COLORS[descriptor.status] });
+    nodeByScope.set(descriptor.scopeId, nodeId);
   });
   const edges = [...model.descriptors].filter((descriptor) => descriptor.parentScopeId).map((descriptor) => ({
     id: claim(idFor("scope-edge", `${descriptor.parentScopeId}\0${descriptor.scopeId}`)),

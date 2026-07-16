@@ -25,7 +25,9 @@ Every adopted scope has `00 Index.md`, `AGENTS.md`, `Agent/00 Agent Navigation.m
 
 Canonical Markdown descriptors and checkpoint blocks own stable scope identity and topology. `Bases/Scope Registry.base` and `Agent/Scope Map.canvas` are fully derived optional views; `Agent/Scope Map.md` has a derived marker block. Obsidian is not required to adopt, synchronize, or validate the contract. Do not repair these views by hand. Other Base formulas are audited for child-before-parent ordering but remain report-only: the synchronizer does not authorize or rewrite them.
 
-Each scope in `Agent/Scope Map.canvas` is two paired Canvas nodes: a text node carrying the scope's title, `scope_id`, and `scope_path`, and a file node pointing at its `00 Index.md`. Obsidian shows a file node's own filename as its label, and every scope's file is named `00 Index.md`, so the file node alone cannot distinguish scopes at a glance; the paired text node is what makes each node in the Canvas identifiable.
+Each scope in `Agent/Scope Map.canvas` is one text node carrying a clickable, qualified link to its canonical `00 Index.md`, plus its title, `scope_id`, and `scope_path`. A separate file node is intentionally omitted because Obsidian labels every canonical scope file as the indistinguishable filename `00 Index`.
+
+Generated checkpoint and map links are qualified across scope boundaries. Root targets use explicit relative paths from the generated artifact, while non-root targets use vault-relative paths, so a child scope never mistakes its own `00 Index.md` or `AGENTS.md` for the root file with the same basename.
 
 ## Interrupted Operations
 
