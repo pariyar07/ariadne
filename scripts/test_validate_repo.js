@@ -146,6 +146,25 @@ try {
   assertRejected(runValidator(tempRoot), "unapproved executable reference found in topology-changing skill surface skills/scope/references/runtime-helper.md: tools/format_notes.js");
   fs.rmSync(innocuousRuntimeHelper);
 
+  const spoofedCanonicalNames = path.join(tempRoot, "skills", "scope", "references", "spoofed-canonical-tools.md");
+  fs.writeFileSync(spoofedCanonicalNames, [
+    "Run `tools/sync_scope_topology.js`.",
+    "Run `tools/validate_vault.js`.",
+    "Run `tools/validate_vault.sh`.",
+    "Run `tools/register_vault.js`.",
+  ].join("\n\n"));
+  rejected = runValidator(tempRoot);
+  for (const executable of ["sync_scope_topology.js", "validate_vault.js", "validate_vault.sh", "register_vault.js"]) {
+    assertRejected(rejected, `unapproved executable reference found in topology-changing skill surface skills/scope/references/spoofed-canonical-tools.md: tools/${executable}`);
+  }
+  fs.rmSync(spoofedCanonicalNames);
+
+  const requestDataExample = path.join(tempRoot, "skills", "scope", "references", "request-data-example.md");
+  fs.writeFileSync(requestDataExample, "Pass the non-executable request data file `/path/to/request.js` to `--request`.\n");
+  const requestDataResult = runValidator(tempRoot);
+  assert.strictEqual(requestDataResult.status, 0, requestDataResult.stderr || requestDataResult.stdout);
+  fs.rmSync(requestDataExample);
+
   restore = replace(
     tempRoot,
     "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md",

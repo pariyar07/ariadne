@@ -100,13 +100,13 @@ const TOPOLOGY_ORCHESTRATION_PATHS = [
   "skills/validator/SKILL.md",
   "skills/vault/references/recursive-scopes.md",
 ];
-const TOPOLOGY_EXECUTABLE_ALLOWLIST = new Set([
-  "sync_scope_topology.js",
-  "validate_vault.js",
-  "validate_vault.sh",
-  "register_vault.js",
+const TOPOLOGY_EXECUTABLE_ALLOWLIST = new Map([
+  ["sync_scope_topology.js", ["scripts/sync_scope_topology.js", "skills/validator/scripts/sync_scope_topology.js"]],
+  ["validate_vault.js", ["scripts/validate_vault.js", "skills/validator/scripts/validate_vault.js"]],
+  ["validate_vault.sh", ["scripts/validate_vault.sh", "skills/validator/scripts/validate_vault.sh"]],
+  ["register_vault.js", ["scripts/register_vault.js", "skills/vault/scripts/register_vault.js"]],
 ]);
-const TOPOLOGY_NON_EXECUTABLE_REFERENCES = new Set(["node.js"]);
+const TOPOLOGY_NON_EXECUTABLE_REFERENCES = new Set(["Node.js", "/path/to/request.js"]);
 const RESEARCH_LIFECYCLE_PLAN = "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md";
 const RESEARCH_LIFECYCLE_PLAN_SUPERSESSION = "partially superseded by the direct-breaking v0.2.0 release decision";
 const PREPUBLIC_TERM_PATTERNS = [
@@ -342,8 +342,10 @@ function validateTopologyAuthority(errors, files) {
         const executable = match[0];
         const name = path.posix.basename(executable).toLowerCase();
         const context = paragraph.toLowerCase();
-        if (TOPOLOGY_NON_EXECUTABLE_REFERENCES.has(name)) continue;
-        if (TOPOLOGY_EXECUTABLE_ALLOWLIST.has(name)) continue;
+        if (TOPOLOGY_NON_EXECUTABLE_REFERENCES.has(executable)) continue;
+        const canonicalForms = TOPOLOGY_EXECUTABLE_ALLOWLIST.get(name) || [];
+        const canonicalRuntime = canonicalForms.length > 0 && (executable === name || canonicalForms.some((form) => executable === form || executable.endsWith(`/${form}`)));
+        if (canonicalRuntime) continue;
         const segments = executable.toLowerCase().split("/");
         const testOnly = segments.includes("test") || name.startsWith("test_");
         const testContext = /(?:validat|fixture)/u.test(context);
