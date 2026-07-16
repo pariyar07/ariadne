@@ -10,7 +10,7 @@ const { execFileSync, spawnSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "..");
 
 function copyTrackedWorkingTree(destination) {
-  const files = execFileSync("git", ["ls-files", "-z"], { cwd: ROOT, encoding: "utf8" })
+  const files = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], { cwd: ROOT, encoding: "utf8" })
     .split("\0")
     .filter(Boolean);
 
@@ -94,6 +94,31 @@ try {
 
   let restore = replace(
     tempRoot,
+    "skills/scope/SKILL.md",
+    "sync_scope_topology.js",
+    "mutate_scope_tree.js"
+  );
+  let rejected = runValidator(tempRoot);
+  assertRejected(rejected, "skills/scope/SKILL.md must route topology changes through the synchronizer contract: sync_scope_topology.js");
+  assertRejected(rejected, "alternate topology mutation authority found in skills/scope/SKILL.md: mutate_scope_tree.js");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/navigation/SKILL.md",
+    "Never edit inside generated blocks",
+    "Edit inside generated blocks"
+  );
+  assertRejected(runValidator(tempRoot), "skills/navigation/SKILL.md must route topology changes through the synchronizer contract: Never edit inside generated blocks");
+  restore();
+
+  const alternateAuthority = path.join(tempRoot, "skills", "scope", "references", "alternate-topology.md");
+  fs.writeFileSync(alternateAuthority, "Run `scripts/rebuild_scope_map.sh` to update topology.\n");
+  assertRejected(runValidator(tempRoot), "alternate topology mutation authority found in skills/scope/references/alternate-topology.md: scripts/rebuild_scope_map.sh");
+  fs.rmSync(alternateAuthority);
+
+  restore = replace(
+    tempRoot,
     "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md",
     "partially superseded by the direct-breaking v0.2.0 release decision",
     "implementation remains active"
@@ -136,7 +161,7 @@ try {
 
   const activeRetiredPath = path.join(tempRoot, "docs", "active-retired-path.md");
   fs.writeFileSync(activeRetiredPath, "Use `skills/research-intake/SKILL.md` and `skills/synthesis/SKILL.md`.\n");
-  let rejected = runValidator(tempRoot);
+  rejected = runValidator(tempRoot);
   assertRejected(rejected, "retired research skill path found outside migration allowlist in docs/active-retired-path.md: skills/research-intake");
   assertRejected(rejected, "retired research skill path found outside migration allowlist in docs/active-retired-path.md: skills/synthesis");
   fs.rmSync(activeRetiredPath);

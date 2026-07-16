@@ -84,6 +84,15 @@ const ACTIVE_RESEARCH_SKILL_REFERENCES = new Map([
 const WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER = "ARIADNE_WEEKLY_MAINTENANCE_PROMPT_VERSION: 1";
 const RESEARCH_INGEST_ZERO_WRITE_GUIDANCE =
   "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material.";
+const TOPOLOGY_SYNCHRONIZER = "sync_scope_topology.js";
+const TOPOLOGY_ORCHESTRATION_CONTRACTS = new Map([
+  ["skills/scope/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "scope-operation-request.md", "allowed_write_paths", "second check", "Never directly edit"]],
+  ["skills/navigation/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "user extension areas", "generated blocks", "Never edit inside generated blocks"]],
+  ["skills/maintenance/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "ariadne_scope_adoption: dismissed", "ancestor-chain", "whole-vault", "never directly edit"]],
+  ["skills/validator/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "--check", "--write --request", "--resume", "--abort", "Engine control paths"]],
+  ["skills/vault/references/recursive-scopes.md", [TOPOLOGY_SYNCHRONIZER, "scope-operation-request.md"]],
+  ["skills/scope/references/scope-operation-request.md", ["operation_schema", "allowed_write_paths", "content_write_paths", "Engine control paths"]],
+]);
 const RESEARCH_LIFECYCLE_PLAN = "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md";
 const RESEARCH_LIFECYCLE_PLAN_SUPERSESSION = "partially superseded by the direct-breaking v0.2.0 release decision";
 const PREPUBLIC_TERM_PATTERNS = [
@@ -298,6 +307,29 @@ function validateResearchLifecycleDocs(errors) {
   }
 }
 
+function validateTopologyAuthority(errors, files) {
+  for (const [file, phrases] of TOPOLOGY_ORCHESTRATION_CONTRACTS) {
+    if (!fs.existsSync(path.join(ROOT, file))) {
+      fail(errors, `topology orchestration contract missing: ${file}`);
+      continue;
+    }
+    const text = read(file);
+    for (const phrase of phrases) {
+      if (!text.includes(phrase)) fail(errors, `${file} must route topology changes through the synchronizer contract: ${phrase}`);
+    }
+  }
+
+  for (const file of files.filter((item) => item.startsWith("skills/") && /\.(?:md|js|sh)$/u.test(item))) {
+    if (file.startsWith("skills/validator/scripts/") || file.startsWith("skills/validator/test/")) continue;
+    const text = read(file);
+    for (const match of text.matchAll(/(?:[A-Za-z0-9_./-]*scope[A-Za-z0-9_./-]*\.(?:js|sh))(?![A-Za-z])/giu)) {
+      if (!match[0].endsWith(TOPOLOGY_SYNCHRONIZER)) {
+        fail(errors, `alternate topology mutation authority found in ${file}: ${match[0]}`);
+      }
+    }
+  }
+}
+
 function validatePathSafety(errors, files) {
   for (const file of files) {
     const basename = path.posix.basename(file);
@@ -455,6 +487,7 @@ function main() {
   validateSkillFolders(errors);
   validateTextSafety(errors, files);
   validateResearchLifecycleDocs(errors);
+  validateTopologyAuthority(errors, files);
   if (!skillsOnly) {
     validateRepoFiles(errors);
     validateWorkflows(errors);

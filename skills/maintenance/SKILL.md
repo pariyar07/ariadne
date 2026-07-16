@@ -12,7 +12,7 @@ Use this skill when auditing, repairing, or maintaining an Obsidian vault over t
 1. Read root instructions and every applicable ancestor scope instruction through the target.
 2. Read relevant indexes, agent navigation, health-check procedure, and navigation standard.
 3. Discover findings read-only. In a multi-scope vault, require a current-turn named or confirmed target before scoped repairs.
-4. Construct an explicit `allowed_write_set` before mutation. Parent/root files and sibling scopes are excluded unless named individually.
+4. Run `sync_scope_topology.js --check` for topology findings. Audit/check behavior is always zero-write.
 
 ## Health Checks
 
@@ -62,6 +62,15 @@ Use this routing:
 Whole-vault maintenance discovers and routes research-semantic drift; it does not reproduce the research stewardship procedure or make synthesis dispositions.
 
 Keep the repair scoped to the nearest responsible folder or domain. Ask before restructuring navigation, modifying global agent files, or installing/updating skills.
+
+## Scope Candidate And Repair Ownership
+
+- Inventory evidence before recommending promotion: recurring routing need, durable local lifecycle, local policy, repeated local views, and current parent route.
+- Respect `ariadne_scope_adoption: dismissed`; do not repeatedly propose or silently adopt a dismissed candidate.
+- For an approved adoption, offer `ancestor-chain` (the target and required ancestors) versus `whole-vault` (all supported pending descriptors), explain the difference, and require a current-turn choice.
+- Cleanup recommendations must cite findings and paths. Never infer deletion, retirement, relocation, or normalization from an unused-looking folder alone.
+- Topology repairs require a confirmed target and disclosed `allowed_write_paths`. Route them through the validator-owned `sync_scope_topology.js`; never directly edit descriptors, generated blocks/files, root scope formulas, redirects, or scope moves.
+- After an approved repair, run scoped and whole-vault validation and a second zero-change check. Use `--resume` or `--abort` for interrupted operations and reconcile reported paths.
 
 ## Report
 

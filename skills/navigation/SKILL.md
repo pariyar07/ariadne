@@ -53,16 +53,19 @@ When promoting a workstream:
 
 A navigation scope can exist at any depth: the vault root, a top-level workstream, a child workflow, or a deep child project. Promote a child scope only when a recurring durable route needs local traversal; otherwise keep it as a normal folder under the parent scope.
 
-When creating or updating a child scope:
+Topology ownership is strict: `sync_scope_topology.js` owns descriptors, generated files, generated blocks, scope maps/registry, routing checkpoints, root Base scope branches, redirects, and parent/child topology. Use `ariadne:scope` for any lifecycle or topology change.
+
+Navigation may edit only user extension areas outside generated blocks: prose around marker-managed checkpoints, user-authored hub sections, semantic links, and other explicitly confirmed content. Never edit inside generated blocks or reproduce generated wiring elsewhere.
+
+When improving a child scope's user-authored navigation:
 
 1. Identify the parent scope and its hub.
 2. Create or update the child hub, usually `00 ... Index.md`.
-3. Link the child from the parent hub or nearest navigation route.
-4. Link the parent from the child hub.
-5. Add routing coverage at the nearest useful `Agent/Task Routing Matrix.md`.
-6. Add a local `AGENTS.md` only for local deltas.
-7. Add local templates or local Bases only when the repeated workflow justifies them.
-8. Add health checks for hub links, scope queues, raw-source compilation, and Base coverage.
+3. Preserve engine-owned parent/child links and routing checkpoints.
+4. Add only semantic user-authored links outside generated regions.
+5. Add a local `AGENTS.md` only for local deltas.
+6. Add local templates or local Bases only when the repeated workflow justifies them.
+7. Add health checks for hub links, scope queues, raw-source compilation, and Base coverage.
 
 Warn when you see:
 
@@ -86,6 +89,8 @@ When navigating or restructuring a vault, proactively call out:
 - repeated need for user guidance because global instructions are too generic for a folder
 
 If the current task is structural, fix the issue directly when safe. Otherwise, tell the user briefly and propose a focused maintenance pass.
+
+If a proposed fix changes scope topology, do not fix it directly: route it through `sync_scope_topology.js` via `ariadne:scope`.
 
 ## Folder Index Rules
 
