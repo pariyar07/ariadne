@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 const path = require("path");
 const { normalizeNfc, normalizeScopePath } = require("./schema");
+const { orderDescriptors } = require("./model");
 const { renderCheckpointBlocks, renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry } = require("./render");
 
 const OPERATIONS = new Set(["create", "adopt", "move", "set-status", "repair"]);
@@ -109,11 +110,10 @@ function descriptorBytes(descriptor, existingBytes = null) {
 }
 
 function virtualModel(descriptors) {
-  const ordered = [...descriptors].sort((a, b) => Buffer.from(a.scopePath).compare(Buffer.from(b.scopePath)));
-  const byId = new Map(ordered.map((item) => [item.scopeId, item]));
-  const children = new Map(ordered.map((item) => [item.scopeId, []]));
-  for (const item of ordered) if (item.parentScopeId && children.has(item.parentScopeId)) children.get(item.parentScopeId).push(item);
-  return { active: byId.has("root"), descriptors: new Set(ordered), descriptorsById: byId, childrenById: children, candidates: [], pendingDescriptors: [], unsupportedRoot: false };
+  const byPath = [...descriptors].sort((a, b) => Buffer.from(a.scopePath).compare(Buffer.from(b.scopePath)));
+  const byId = new Map(byPath.map((item) => [item.scopeId, item]));
+  const { descriptors: ordered, descriptorsById, childrenById } = orderDescriptors(byId);
+  return { active: descriptorsById.has("root"), descriptors: ordered, descriptorsById, childrenById, candidates: [], pendingDescriptors: [], unsupportedRoot: false };
 }
 
 function hasSupportedRootBaseFormula(text) {

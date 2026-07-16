@@ -66,6 +66,24 @@ function buildTopology(inventory) {
     descriptorsById.set(descriptor.scopeId, descriptor);
   }
 
+  const { descriptors, descriptorsById: orderedDescriptorsById, childrenById } = orderDescriptors(descriptorsById);
+
+  return Object.freeze({
+    active,
+    descriptors,
+    descriptorsById: orderedDescriptorsById,
+    childrenById,
+    candidates: Object.freeze(candidates),
+    pendingDescriptors,
+    unsupportedRoot,
+  });
+}
+
+// Shared sibling-ordering and preorder traversal for a scopeId -> descriptor map. Both
+// buildTopology (post-write, from disk) and virtualModel (write-time planning, in-memory)
+// must use this so a value like a Scope Map or Canvas never drifts between what a write
+// produces and what a later validation/check run considers canonical.
+function orderDescriptors(descriptorsById) {
   const childrenById = new Map([...descriptorsById.keys()].map((id) => [id, []]));
   for (const descriptor of descriptorsById.values()) {
     if (descriptor.parentScopeId && childrenById.has(descriptor.parentScopeId)) {
@@ -83,16 +101,7 @@ function buildTopology(inventory) {
   visit(descriptorsById.get("root"));
   for (const descriptor of [...descriptorsById.values()].sort(compareDescriptors)) visit(descriptor);
   const descriptors = new Set(orderedDescriptorsById.values());
-
-  return Object.freeze({
-    active,
-    descriptors,
-    descriptorsById: orderedDescriptorsById,
-    childrenById,
-    candidates: Object.freeze(candidates),
-    pendingDescriptors,
-    unsupportedRoot,
-  });
+  return { descriptors, descriptorsById: orderedDescriptorsById, childrenById };
 }
 
-module.exports = { buildTopology };
+module.exports = { buildTopology, compareDescriptors, orderDescriptors };

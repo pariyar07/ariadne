@@ -7,6 +7,12 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 ### Fixed
 
 - `ariadne:scope`'s `adopt` operation now discovers legacy candidates (local `AGENTS.md` presence, per the scope topology LLD) so whole-vault and ancestor-chain adoption work on vaults with zero pre-existing `type: scope-index` descriptors. Previously `create`, `adopt`, and `repair` all required a scope to already be tagged or already adopted, so a genuinely unmigrated vault (root included) could never take its first `sync_scope_topology.js --write` step, contradicting the documented "whole-vault adoption adopts every approved scope candidate" behavior. Root titles now also come from an existing legacy hub when present instead of a hardcoded `"Vault"`.
+- `validate_vault.js`'s YAML syntax check no longer misreports a possessive or contraction inside an unquoted scalar (for example `title: Satyam's Vault`) as an unterminated quote.
+- The write-time model builder (`virtualModel`) now shares the same sibling-ordering and preorder traversal as the post-write model builder (`buildTopology`, via a new shared `orderDescriptors`). Previously a scope whose folder name sorted differently than its title (a likely outcome of any real legacy adoption) produced a `Bases/Scope Registry.base`/`Agent/Scope Map.md`/`Agent/Scope Map.canvas` that matched what was written but permanently disagreed with what `scopeFindings` considered canonical, so `scope-map-drift` could never be repaired away.
+
+### Known limitation
+
+- `adopt`'s candidate selection (`descriptors = selected`) only includes scopes being adopted in the current operation, not previously-active scopes. A whole-vault or ancestor-chain `adopt` that runs against an already-active root to add more scopes later can therefore omit already-active siblings (including root itself) from the write-time model, producing incomplete generated checkpoint/map content for that operation. Not triggered by a vault's first (root-inclusive) whole-vault or ancestor-chain adoption. Needs a follow-up fix before recommending incremental post-activation `adopt` calls.
 
 ## [0.3.0] - 2026-07-16
 

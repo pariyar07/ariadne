@@ -244,6 +244,32 @@ assert.deepStrictEqual(collisionIds, ["engineering", "product", "product-enginee
 assert.strictEqual(new Set(collisionIds).size, 3);
 fs.rmSync(collisionVault, { recursive: true, force: true });
 
+// virtualModel (write-time planning) and buildTopology (post-write reads) must order
+// siblings identically. A folder whose basename sorts differently than its title (e.g.
+// "Engineering" the folder vs "Company Operating Context Graph" the title) previously
+// produced a Scope Map/Canvas that matched what was written but disagreed with what a
+// later scopeFindings pass considered canonical, permanently reporting scope-map-drift.
+// This targets a fresh whole-vault adoption (root included in the same operation),
+// matching how legacy vaults are actually first adopted.
+const orderingVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-ordering-"));
+fs.mkdirSync(path.join(orderingVault, "Zeta"), { recursive: true });
+fs.writeFileSync(path.join(orderingVault, "AGENTS.md"), "# Root\n");
+fs.writeFileSync(path.join(orderingVault, "Zeta", "AGENTS.md"), "# Zeta\n");
+fs.writeFileSync(path.join(orderingVault, "Zeta", "00 Index.md"), "---\ntitle: Alpha Priority\ntype: index\nstatus: active\n---\n# Alpha Priority\n");
+fs.mkdirSync(path.join(orderingVault, "Alpha"), { recursive: true });
+fs.writeFileSync(path.join(orderingVault, "Alpha", "AGENTS.md"), "# Alpha\n");
+fs.writeFileSync(path.join(orderingVault, "Alpha", "00 Index.md"), "---\ntitle: Zeta Priority\ntype: index\nstatus: active\n---\n# Zeta Priority\n");
+const orderingInventory = inventoryVault(orderingVault);
+const orderingRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const orderingPlan = planWithDisclosedWrites(orderingInventory, buildTopology(orderingInventory), orderingRequest);
+applyOperation(orderingVault, { ...orderingRequest, allowed_write_paths: orderingPlan.content_write_paths });
+const onDiskMap = fs.readFileSync(path.join(orderingVault, "Agent/Scope Map.md"), "utf8");
+const freshExpectedMap = renderScopeMapMarkdown(buildTopology(inventoryVault(orderingVault))).bytes.toString("utf8");
+assert.strictEqual(onDiskMap, freshExpectedMap);
+assert.ok(onDiskMap.indexOf("Alpha Priority") < onDiskMap.indexOf("Zeta Priority"));
+assert.deepStrictEqual(checkTopology(orderingVault).changes, []);
+fs.rmSync(orderingVault, { recursive: true, force: true });
+
 const createVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-create-"));
 fs.cpSync(fixture("root_only"), createVault, { recursive: true });
 fs.mkdirSync(path.join(createVault, "New Scope"));
