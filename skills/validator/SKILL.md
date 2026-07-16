@@ -22,6 +22,9 @@ metadata:
     - provenance-cycle-warnings
     - uncompiled-raw-source-warnings
     - research-hub-warnings
+    - scope-adoption-warnings
+    - scope-contract-warnings
+    - scope-map-warnings
 ---
 
 # Ariadne Validator
@@ -126,6 +129,9 @@ ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
 base-scope-formula-warnings: 0
+scope-adoption-warnings: 0
+scope-contract-warnings: 0
+scope-map-warnings: 0
 research-boundary-warnings: 0
 research-provenance-warnings: 0
 provenance-cycle-warnings: 0

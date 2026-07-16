@@ -85,6 +85,24 @@ const WEEKLY_MAINTENANCE_PROMPT_VERSION_MARKER = "ARIADNE_WEEKLY_MAINTENANCE_PRO
 const RESEARCH_INGEST_ZERO_WRITE_GUIDANCE =
   "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material.";
 const TOPOLOGY_SYNCHRONIZER = "sync_scope_topology.js";
+const SCOPE_TOPOLOGY_COUNTERS = ["scope-adoption-warnings", "scope-contract-warnings", "scope-map-warnings"];
+const SCOPE_TOPOLOGY_COUNTER_SURFACES = [
+  "skills/validator/scripts/validate_vault.js",
+  "skills/validator/SKILL.md",
+  "docs/guides/validator.md",
+  "README.md",
+];
+const SCOPE_TOPOLOGY_MIGRATION = "docs/guides/scope-topology-migration.md";
+const SCOPE_TOPOLOGY_MIGRATION_CONTRACTS = [
+  "whole-vault", "ancestor-chain", "root activation last", "ariadne_scope_adoption: dismissed",
+  "--resume", "--abort", "installed skills", "rollback", "reconciliation",
+];
+const SCOPE_TOPOLOGY_FIXTURE_TOKENS = [
+  "flexible-layout", "transparent-folder", "deep-ancestry", "marker-preservation", "lifecycle", "move",
+  "redirect", "former-path", "generated-artifact", "unsupported-activation", "dismissed-candidate",
+  "unicode-collision", "case-collision", "control-path", "reserved-path", "hardlink", "symlink-swap",
+  "canvas-id-collision", "base-formula-order", "scoped-isolation",
+];
 const TOPOLOGY_ORCHESTRATION_CONTRACTS = new Map([
   ["skills/scope/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "scope-operation-request.md", "allowed_write_paths", "second check", "Never directly edit"]],
   ["skills/navigation/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "user extension areas", "generated blocks", "Never edit inside generated blocks"]],
@@ -356,6 +374,36 @@ function validateTopologyAuthority(errors, files) {
   }
 }
 
+function validateScopeTopologyPublication(errors, files) {
+  for (const file of SCOPE_TOPOLOGY_COUNTER_SURFACES) {
+    if (!fs.existsSync(path.join(ROOT, file))) {
+      fail(errors, `scope topology counter surface missing: ${file}`);
+      continue;
+    }
+    const text = read(file);
+    for (const counter of SCOPE_TOPOLOGY_COUNTERS) {
+      if (!text.includes(counter)) fail(errors, `${file} must document scope topology counter: ${counter}`);
+    }
+  }
+
+  if (!fs.existsSync(path.join(ROOT, SCOPE_TOPOLOGY_MIGRATION))) {
+    fail(errors, `scope topology migration documentation missing: ${SCOPE_TOPOLOGY_MIGRATION}`);
+  } else {
+    const migration = read(SCOPE_TOPOLOGY_MIGRATION);
+    for (const phrase of SCOPE_TOPOLOGY_MIGRATION_CONTRACTS) {
+      if (!migration.includes(phrase)) fail(errors, `${SCOPE_TOPOLOGY_MIGRATION} must document migration contract: ${phrase}`);
+    }
+  }
+
+  const fixtureText = files
+    .filter((file) => file.startsWith("skills/validator/test/fixtures/scope_topology/") && isTextFile(file))
+    .map(read)
+    .join("\n");
+  for (const token of SCOPE_TOPOLOGY_FIXTURE_TOKENS) {
+    if (!fixtureText.includes(token)) fail(errors, `scope topology fixture matrix missing token: ${token}`);
+  }
+}
+
 function validatePathSafety(errors, files) {
   for (const file of files) {
     const basename = path.posix.basename(file);
@@ -485,11 +533,13 @@ function validateWorkspaceInstructions(errors) {
   }
 
   const sourceSkillDir = path.join(ROOT, "skills/workspace-instructions");
+  const sourceValidatorDir = path.join(ROOT, "skills/validator");
   if (requiredFiles.every((file) => fs.existsSync(path.join(ROOT, file)))) {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-workspace-skill-copy-"));
     const copiedSkillDir = path.join(tmpRoot, "ariadne-workspace-instructions");
     try {
       fs.cpSync(sourceSkillDir, copiedSkillDir, { recursive: true });
+      fs.cpSync(sourceValidatorDir, path.join(tmpRoot, "validator"), { recursive: true });
       execFileSync(process.execPath, ["test/test_workspace_instructions.js"], {
         cwd: copiedSkillDir,
         encoding: "utf8",
@@ -514,6 +564,7 @@ function main() {
   validateTextSafety(errors, files);
   validateResearchLifecycleDocs(errors);
   validateTopologyAuthority(errors, files);
+  validateScopeTopologyPublication(errors, files);
   if (!skillsOnly) {
     validateRepoFiles(errors);
     validateWorkflows(errors);

@@ -23,6 +23,8 @@ Scope and research-profile forms are also supported:
 ```bash
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --scope "Domains/Product"
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --scope "Domains/Product" --profile research
+node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --profile scope
+node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --scope "Domains/Product" --profile scope
 ```
 
 Scopes are vault-relative directories. Absolute paths, traversal, missing paths, and files are rejected. The validator always inventories the complete vault for YAML parsing, canonical link resolution, and graph construction, then filters diagnostics and exit status to the selected subtree. A research profile requires a scope and reports research obligations, the nearest routing-matrix obligation, the reused local-Base scope check, and all in-scope fatal structural findings. Findings are filtered by structured origin and governing-obligation paths, so a sibling artifact is not included merely because its message names an in-scope target. Fatal sibling defects remain excluded.
@@ -44,6 +46,7 @@ The shell wrapper provides a stable entry point plus a clearer missing-Node erro
 - Basename-only wikilinks that resolve to multiple targets are flagged as ambiguous.
 - Parent and child scope hubs link to each other bidirectionally.
 - Every promoted scope hub is linked from its nearest local or inherited `Agent/Task Routing Matrix.md`.
+- Schema-v1 scope descriptors, parentage, lifecycle, redirects, required checkpoints, and generated topology artifacts agree.
 - Schema-v1 research descriptors, exact or explicit-rollup hub membership, provenance, cycles, and raw-source compilation coverage are structurally consistent.
 
 Schema-v1 research frontmatter supports top-level scalar values and flat lists of scalar values. Flat lists may be `[]`, inline lists, or indented block lists. Inline list parsing preserves quoted strings and wikilinks containing commas. Descriptor scalar fields reject list values, and nested objects or lists on supported descriptors or artifacts produce non-fatal research warnings; only syntactically invalid YAML is a YAML failure. Every supported descriptor has a vault-unique stable `boundary_id`, and each canonical `scope_path` has exactly one supported descriptor. Scope identity uses its normalized, real, contained vault-relative directory, so equivalent dot segments, repeated separators, and in-vault symlink aliases cannot create parallel canonical descriptors. Supported artifacts require a path-qualified scalar `research_boundary`, type-specific required fields, and structurally inspectable inquiry sections. Research membership is established by the descriptor link, not folder ancestry. Provenance accepts only canonical research artifacts in the same exact boundary or explicitly declared rollup descriptors, so hubs, routing notes, Bases, and out-of-boundary artifacts cannot provide compilation coverage.
@@ -66,6 +69,9 @@ ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
 base-scope-formula-warnings: 0
+scope-adoption-warnings: 0
+scope-contract-warnings: 0
+scope-map-warnings: 0
 research-boundary-warnings: 0
 research-provenance-warnings: 0
 provenance-cycle-warnings: 0
@@ -88,6 +94,9 @@ research-hub-warnings: 0
 | `scope-navigation-warnings` | No | A scope hub is not bidirectionally linked with its parent hub |
 | `routing-matrix-warnings` | No | A scope hub is missing from its nearest local or inherited routing matrix |
 | `base-scope-formula-warnings` | No | A root Base with a `file.inFolder` scope formula is missing a branch for a known scope path |
+| `scope-adoption-warnings` | No | Legacy scope candidates remain unadopted, unless explicitly dismissed |
+| `scope-contract-warnings` | No | A schema-v1 descriptor, checkpoint, lifecycle relation, redirect, ID, path, or marker violates the scope contract |
+| `scope-map-warnings` | No | The generated registry, Markdown tree, Canvas, or Base ordering has drifted from canonical descriptors |
 | `research-boundary-warnings` | No | A supported descriptor is incomplete, structurally invalid, duplicates a `boundary_id`, or shares its canonical `scope_path` with another descriptor |
 | `research-provenance-warnings` | No | A schema-v1 artifact has invalid provenance or generated/derivative evidence-family structure |
 | `provenance-cycle-warnings` | No | An artifact participates in a downstream-to-upstream `derived_from` cycle |
@@ -95,5 +104,7 @@ research-hub-warnings: 0
 | `research-hub-warnings` | No | A required descriptor hub is missing, unqualified, or inconsistent with exact/declared-rollup membership |
 
 Fatal counters cause a non-zero exit code. Warning counters are non-fatal — they surface drift before it compounds.
+
+Strict topology activates only when the root has a supported schema-v1 scope descriptor. An unsupported root warns and disables topology claims; descendant descriptors without an active root remain adoption candidates. The registry Base and Canvas are derived and should be regenerated by `sync_scope_topology.js`, never hand-edited.
 
 Research counters are schema-gated: legacy research boundaries without `research_schema: 1` receive none of these new warnings. The validator does not claim semantic staleness, credibility, or contradiction resolution.

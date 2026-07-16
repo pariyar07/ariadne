@@ -48,6 +48,9 @@ const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-repo-guardrail-t
 try {
   copyTrackedWorkingTree(tempRoot);
 
+  fs.rmSync(path.join(tempRoot, "docs/guides/scope-topology-migration.md"));
+  fs.rmSync(path.join(tempRoot, "skills/validator/test/fixtures/scope_topology/fixture-matrix.txt"));
+
   assert(!fs.existsSync(path.join(tempRoot, "skills/research-intake")), "v0.2.0 must remove the research-intake adapter");
   assert(!fs.existsSync(path.join(tempRoot, "skills/synthesis")), "v0.2.0 must remove the synthesis adapter");
 
@@ -90,7 +93,42 @@ try {
   );
 
   const baseline = runValidator(tempRoot);
-  assert.strictEqual(baseline.status, 0, baseline.stderr || baseline.stdout);
+  assertRejected(baseline, "scope topology migration documentation missing: docs/guides/scope-topology-migration.md");
+
+  fs.writeFileSync(path.join(tempRoot, "docs/guides/scope-topology-migration.md"), [
+    "# Scope topology migration",
+    "whole-vault",
+    "ancestor-chain",
+    "root activation last",
+    "ariadne_scope_adoption: dismissed",
+    "--resume",
+    "--abort",
+    "installed skills",
+    "rollback",
+    "reconciliation",
+  ].join("\n"));
+  for (const file of ["README.md", "docs/guides/validator.md", "skills/validator/SKILL.md"]) {
+    const target = path.join(tempRoot, file);
+    fs.writeFileSync(target, fs.readFileSync(target, "utf8").replaceAll("scope-adoption-warnings", "removed-adoption-counter"));
+  }
+  const incompleteTopologyDocs = runValidator(tempRoot);
+  assertRejected(incompleteTopologyDocs, "README.md must document scope topology counter: scope-adoption-warnings");
+
+  for (const file of ["README.md", "docs/guides/validator.md", "skills/validator/SKILL.md"]) {
+    const target = path.join(tempRoot, file);
+    fs.writeFileSync(target, fs.readFileSync(target, "utf8").replaceAll("removed-adoption-counter", "scope-adoption-warnings"));
+  }
+  const incompleteFixtures = runValidator(tempRoot);
+  assertRejected(incompleteFixtures, "scope topology fixture matrix missing token: canvas-id-collision");
+
+  fs.writeFileSync(path.join(tempRoot, "skills/validator/test/fixtures/scope_topology/fixture-matrix.txt"), [
+    "flexible-layout transparent-folder deep-ancestry marker-preservation lifecycle move redirect former-path",
+    "generated-artifact unsupported-activation dismissed-candidate unicode-collision case-collision",
+    "control-path reserved-path hardlink symlink-swap canvas-id-collision base-formula-order scoped-isolation",
+  ].join("\n"));
+
+  const topologyBaseline = runValidator(tempRoot);
+  assert.strictEqual(topologyBaseline.status, 0, topologyBaseline.stderr || topologyBaseline.stdout);
 
   let restore = replace(
     tempRoot,

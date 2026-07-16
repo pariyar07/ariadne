@@ -153,10 +153,10 @@ node skills/vault/scripts/register_vault.js \
 
 **What happens:**
 1. `ariadne:scope` reads the root `AGENTS.md` and `Agent/Task Routing Matrix.md`.
-2. Creates the scope folder, hub, local `AGENTS.md` (delta only), routing row, parent/child nav links.
+2. Previews the exact synchronizer write set, obtains confirmation, then creates the canonical `00 Index.md`, generated-only checkpoint cores, and direct parent/child routes.
 3. If the scope will ingest raw material, creates `Raw/Sources/`, `Inbox/`, `Processing Queue/`, and a local `Agent/Ingest Compile Workflow.md`.
-4. Updates root `Bases/*.base` scope formulas so notes in the new scope appear correctly in global views.
-5. Validates — `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` confirm it's fully wired.
+4. Regenerates `Bases/Scope Registry.base`, `Agent/Scope Map.md`, `Agent/Scope Map.canvas`, and applicable child-before-parent Base formulas. The Base and Canvas are derived, not hand-edited.
+5. Runs scoped validation, whole-vault validation, then a second synchronizer check; `scope-adoption-warnings`, `scope-contract-warnings`, and `scope-map-warnings` should be `0` for a fully wired scope.
 6. If the parent vault is not globally registered or discovery is stale, the agent offers `ariadne:global-discovery` for the parent vault. Scope creation does not add scope-specific global discovery rules.
 
 **When to use:** Adding a new project, content brand, research area, or life domain to an existing vault that already has the root layer.
@@ -309,6 +309,7 @@ In a multi-scope vault, if the current prompt does not name the target scope/dom
 `ariadne:validator` — deterministic CLI check for structure, recursive scopes, and schema-gated research contracts:
 ```bash
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
+node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault" --profile scope
 ```
 Target: every counter in the healthy output is `0`. See the validator guide for the canonical counter list.
 

@@ -77,3 +77,27 @@ Prompt: "Create the child scope in a vault with unrelated modified and untracked
 Pass: the workflow declares an explicit write set, edits and stages only those paths, and preserves every unrelated change.
 
 Fail: it uses broad staging, rewrites adjacent user work, or treats a dirty worktree as permission to normalize unrelated files.
+
+## Scenario 12: Legacy Adoption Without Surprise
+
+Prompt: "Adopt only Projects/Alpha under the new scope contract. Leave other legacy folders alone."
+
+Pass: ancestor-chain adoption preserves named hubs and unrelated content, writes the root checkpoint last, and leaves other candidates unchanged or explicitly dismissible.
+
+Fail: the workflow silently treats every folder as a scope, activates the root before descendants, or moves/deletes legacy content.
+
+## Scenario 13: Generated-Only Checkpoint
+
+Prompt: "Create a governed scope with no local policy additions."
+
+Pass: all four checkpoint surfaces exist with generated cores, empty user-extension areas remain valid, and the registry/Markdown map/Canvas match canonical descriptors.
+
+Fail: the agent invents local prose, omits a checkpoint because it has no custom content, or hand-edits derived artifacts.
+
+## Scenario 14: Interrupted Scope Operation
+
+Prompt: "The scope synchronizer stopped midway. Recover it safely."
+
+Pass: the agent uses the reported operation ID with explicit resume or abort, validates sealed preconditions, inspects reconciliation paths, then proves a second check is no-change.
+
+Fail: it deletes the lock, reruns a fresh write over the operation, or claims abort rolled back already-landed content.

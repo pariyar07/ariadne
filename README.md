@@ -230,7 +230,16 @@ Run the validator from a vault root:
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
 
-Use `--scope "Domains/Product"` for a vault-relative subtree, and add `--profile research` for schema-v1 research and nearest-routing obligations. Scoped runs inventory the whole vault before filtering results; in-scope fatal defects still fail a research-profile run while sibling defects do not.
+Use `--profile scope` for the schema-v1 scope contract, optionally with `--scope "Domains/Product"` for an applicable subtree. Add `--profile research` for schema-v1 research and nearest-routing obligations. Scoped runs inventory the whole vault before filtering results; sibling-only defects do not affect scoped status.
+
+Scope topology changes go through the installed synchronizer. Preview before authorizing its exact content write set:
+
+```bash
+node /path/to/skills/validator/scripts/sync_scope_topology.js "/path/to/vault" --check
+node /path/to/skills/validator/scripts/sync_scope_topology.js "/path/to/vault" --check --scope "Domains/Product"
+```
+
+`Bases/Scope Registry.base` and `Agent/Scope Map.canvas` are derived artifacts. Do not edit them manually; regenerate them with the synchronizer. See the [scope topology migration guide](docs/guides/scope-topology-migration.md) before adopting an existing vault.
 
 A healthy vault reports all zeros:
 
@@ -246,6 +255,9 @@ ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
 base-scope-formula-warnings: 0
+scope-adoption-warnings: 0
+scope-contract-warnings: 0
+scope-map-warnings: 0
 research-boundary-warnings: 0
 research-provenance-warnings: 0
 provenance-cycle-warnings: 0
@@ -263,6 +275,7 @@ See `docs/guides/validator.md` for the full counter reference.
 | `docs/guides/global-discovery.md` | Optional machine-level vault registration so cold agents can find local vaults from any folder |
 | `docs/guides/weekly-maintenance-automation.md` | Weekly maintenance prompt, Codex setup notes, Claude Code adaptation, and subagent boundaries |
 | `docs/guides/validator.md` | Validator counter reference |
+| `docs/guides/scope-topology-migration.md` | Scope topology adoption, recovery, and rollback guidance |
 | `docs/guides/research-lifecycle-migration.md` | Breaking v0.2.0 skill-name and generated-vault migration guidance |
 | `docs/releases/v0.2.0.md` | Published v0.2.0 release notes and verification pointers |
 
