@@ -520,3 +520,38 @@ Use `superpowers:requesting-code-review`, then rerun focused and full suites aft
 - [ ] **Step 6: Prepare publication without pushing or merging**
 
 Stage explicit public paths, create coherent commits if directed, and report exact test evidence, remaining risks and private-gate status. Wait for explicit push/PR/merge direction.
+
+### Task 11: Prepare the v0.3.0 release surface
+
+**Files:**
+- Modify: `.gitignore`
+- Delete: `.superpowers/**`
+- Modify: `README.md`
+- Modify: `CHANGELOG.md`
+- Create: `docs/releases/v0.3.0.md`
+- Modify: applicable topology, migration, validator, and quickstart guides only where release wording is missing or stale
+
+**Interfaces:**
+- Produces a public v0.3.0 release narrative aligned with the frontend-neutral Markdown knowledge-vault positioning from v0.2.1.
+- Keeps `docs/superpowers/specs/` and `docs/superpowers/plans/` as intentional public design history while permanently excluding root `.superpowers/` scratch state.
+- Defers the Git tag and GitHub Release until PR #37 is merged to `main`.
+
+- [x] **Step 1: Remove scratch artifacts and prevent recurrence**
+
+Delete the tracked root `.superpowers/` directory, add `.superpowers/` to `.gitignore`, and assert `git ls-files '.superpowers/**'` is empty while `docs/superpowers/**` remains tracked.
+
+- [x] **Step 2: Add v0.3.0 release documentation**
+
+Add `docs/releases/v0.3.0.md` and a matching `CHANGELOG.md` section covering deterministic scope identity, generated topology, scoped validation, recoverable synchronization, explicit legacy adoption, migration boundaries, and verification evidence. Use `/path/to/vault` placeholders and link public PR #37 without exposing private eval internals.
+
+- [x] **Step 3: Refresh the README capability map**
+
+Update the main Mermaid diagram and scope/validation prose to show canonical checkpoints, stable identity, the topology synchronizer, and derived maps without making Obsidian mandatory. Update the latest-release and guide/release tables for v0.3.0.
+
+- [x] **Step 4: Reconcile release-facing guides**
+
+Check quickstart, validator, migration, recursive-scope pressure scenarios, and weekly maintenance guidance against the final v0.3.0 behavior. Make only release-facing corrections that are required for consistency.
+
+- [x] **Step 5: Verify and publish the PR update**
+
+Run the full public verification suite, repository/skill guardrails, release-link and private-path audits, and `git diff --check`. Commit and push the PR update. Do not create `v0.3.0` or a GitHub Release until the PR is merged to `main`; after merge, tag the exact merge result and publish the prepared release notes.

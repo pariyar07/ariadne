@@ -17,7 +17,7 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 - Scope creation, adoption, relocation, lifecycle changes, and repair now flow through one canonical topology model shared by validation and synchronization.
 - Existing vaults adopt the contract explicitly through whole-vault or root-to-target ancestor-chain migration; legacy content and named hubs are preserved.
-- Markdown checkpoints and descriptors remain canonical. Bases and Canvas are optional, derived view artifacts and do not require Obsidian.
+- Markdown checkpoints and descriptors remain canonical and do not require Obsidian. Bases and Canvas are optional, derived view artifacts.
 
 ### Migration
 
