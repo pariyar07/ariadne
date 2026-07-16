@@ -100,7 +100,7 @@ try {
   );
   let rejected = runValidator(tempRoot);
   assertRejected(rejected, "skills/scope/SKILL.md must route topology changes through the synchronizer contract: sync_scope_topology.js");
-  assertRejected(rejected, "alternate topology mutation authority found in skills/scope/SKILL.md: mutate_scope_tree.js");
+  assertRejected(rejected, "unapproved executable reference found in topology-changing skill surface skills/scope/SKILL.md: mutate_scope_tree.js");
   restore();
 
   restore = replace(
@@ -114,14 +114,14 @@ try {
 
   const alternateAuthority = path.join(tempRoot, "skills", "scope", "references", "alternate-topology.md");
   fs.writeFileSync(alternateAuthority, "Run `scripts/rebuild_scope_map.sh` to update topology.\n");
-  assertRejected(runValidator(tempRoot), "alternate topology mutation authority found in skills/scope/references/alternate-topology.md: scripts/rebuild_scope_map.sh");
+  assertRejected(runValidator(tempRoot), "unapproved executable reference found in topology-changing skill surface skills/scope/references/alternate-topology.md: scripts/rebuild_scope_map.sh");
   fs.rmSync(alternateAuthority);
 
   const bypassAuthority = path.join(tempRoot, "skills", "scope", "references", "bypass-topology.md");
   fs.writeFileSync(bypassAuthority, "Use `scripts/rebuild_topology.js` to rebuild topology.\n\nRun `tools/topology_manager.sh` to move and retire scopes.\n");
   rejected = runValidator(tempRoot);
-  assertRejected(rejected, "alternate topology mutation authority found in skills/scope/references/bypass-topology.md: scripts/rebuild_topology.js");
-  assertRejected(rejected, "alternate topology mutation authority found in skills/scope/references/bypass-topology.md: tools/topology_manager.sh");
+  assertRejected(rejected, "unapproved executable reference found in topology-changing skill surface skills/scope/references/bypass-topology.md: scripts/rebuild_topology.js");
+  assertRejected(rejected, "unapproved executable reference found in topology-changing skill surface skills/scope/references/bypass-topology.md: tools/topology_manager.sh");
   fs.rmSync(bypassAuthority);
 
   const harmlessUtility = path.join(tempRoot, "skills", "scope", "references", "import-test.md");
@@ -129,6 +129,22 @@ try {
   const harmlessResult = runValidator(tempRoot);
   assert.strictEqual(harmlessResult.status, 0, harmlessResult.stderr || harmlessResult.stdout);
   fs.rmSync(harmlessUtility);
+
+  const reviewerCounterexamples = path.join(tempRoot, "skills", "scope", "references", "reviewer-counterexamples.md");
+  fs.writeFileSync(reviewerCounterexamples, "Run `tools/reparent_tree.js` for this operation.\n\nRun `test/test_scope_move.js` to validate the move fixtures.\n");
+  assertRejected(runValidator(tempRoot), "unapproved executable reference found in topology-changing skill surface skills/scope/references/reviewer-counterexamples.md: tools/reparent_tree.js");
+  fs.rmSync(reviewerCounterexamples);
+
+  const reviewerTestOnly = path.join(tempRoot, "skills", "scope", "references", "scope-move-test.md");
+  fs.writeFileSync(reviewerTestOnly, "Run `test/test_scope_move.js` to validate the move fixtures.\n");
+  const reviewerTestResult = runValidator(tempRoot);
+  assert.strictEqual(reviewerTestResult.status, 0, reviewerTestResult.stderr || reviewerTestResult.stdout);
+  fs.rmSync(reviewerTestOnly);
+
+  const innocuousRuntimeHelper = path.join(tempRoot, "skills", "scope", "references", "runtime-helper.md");
+  fs.writeFileSync(innocuousRuntimeHelper, "Run `tools/format_notes.js` to format notes.\n");
+  assertRejected(runValidator(tempRoot), "unapproved executable reference found in topology-changing skill surface skills/scope/references/runtime-helper.md: tools/format_notes.js");
+  fs.rmSync(innocuousRuntimeHelper);
 
   restore = replace(
     tempRoot,
