@@ -151,18 +151,19 @@ function renderScopeMapMarkdown(model) {
 
 function stableId(kind, value) { return crypto.createHash("sha256").update(`${kind}\0${value}`).digest("hex").slice(0, 16); }
 
-function renderScopeMapCanvas(model) {
+function renderScopeMapCanvas(model, options = {}) {
+  const idFor = options.idFactory || stableId;
   const depths = new Map();
   for (const descriptor of model.descriptors) depths.set(descriptor.scopeId, descriptor.parentScopeId ? (depths.get(descriptor.parentScopeId) || 0) + 1 : 0);
   const ids = new Set();
   const claim = (id) => { if (ids.has(id)) throw new Error(`Canvas ID collision: ${id}`); ids.add(id); return id; };
   const nodes = [...model.descriptors].map((descriptor, index) => ({
-    id: claim(stableId("scope-node", descriptor.scopeId)), type: "file", file: `${link(descriptor)}.md`,
+    id: claim(idFor("scope-node", descriptor.scopeId)), type: "file", file: `${link(descriptor)}.md`,
     x: depths.get(descriptor.scopeId) * X_STEP, y: index * Y_STEP, width: WIDTH, height: HEIGHT, color: STATUS_COLORS[descriptor.status],
   }));
   const nodeByScope = new Map([...model.descriptors].map((descriptor, index) => [descriptor.scopeId, nodes[index].id]));
   const edges = [...model.descriptors].filter((descriptor) => descriptor.parentScopeId).map((descriptor) => ({
-    id: claim(stableId("scope-edge", `${descriptor.parentScopeId}\0${descriptor.scopeId}`)),
+    id: claim(idFor("scope-edge", `${descriptor.parentScopeId}\0${descriptor.scopeId}`)),
     fromNode: nodeByScope.get(descriptor.parentScopeId), fromSide: "right", toNode: nodeByScope.get(descriptor.scopeId), toSide: "left",
   }));
   return result("Agent/Scope Map.canvas", `${JSON.stringify({ nodes, edges }, null, 2)}\n`, "regenerate scope canvas", "generated-file");

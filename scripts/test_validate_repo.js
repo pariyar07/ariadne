@@ -49,7 +49,6 @@ try {
   copyTrackedWorkingTree(tempRoot);
 
   fs.rmSync(path.join(tempRoot, "docs/guides/scope-topology-migration.md"));
-  fs.rmSync(path.join(tempRoot, "skills/validator/test/fixtures/scope_topology/fixture-matrix.txt"));
 
   assert(!fs.existsSync(path.join(tempRoot, "skills/research-intake")), "v0.2.0 must remove the research-intake adapter");
   assert(!fs.existsSync(path.join(tempRoot, "skills/synthesis")), "v0.2.0 must remove the synthesis adapter");
@@ -112,25 +111,52 @@ try {
     fs.writeFileSync(target, fs.readFileSync(target, "utf8").replaceAll("scope-adoption-warnings", "removed-adoption-counter"));
   }
   const incompleteTopologyDocs = runValidator(tempRoot);
-  assertRejected(incompleteTopologyDocs, "README.md must document scope topology counter: scope-adoption-warnings");
+  assertRejected(incompleteTopologyDocs, "README.md healthy output must include scope topology counter: scope-adoption-warnings");
 
   for (const file of ["README.md", "docs/guides/validator.md", "skills/validator/SKILL.md"]) {
     const target = path.join(tempRoot, file);
     fs.writeFileSync(target, fs.readFileSync(target, "utf8").replaceAll("removed-adoption-counter", "scope-adoption-warnings"));
   }
-  const incompleteFixtures = runValidator(tempRoot);
-  assertRejected(incompleteFixtures, "scope topology fixture matrix missing token: canvas-id-collision");
-
-  fs.writeFileSync(path.join(tempRoot, "skills/validator/test/fixtures/scope_topology/fixture-matrix.txt"), [
-    "flexible-layout transparent-folder deep-ancestry marker-preservation lifecycle move redirect former-path",
-    "generated-artifact unsupported-activation dismissed-candidate unicode-collision case-collision",
-    "control-path reserved-path hardlink symlink-swap canvas-id-collision base-formula-order scoped-isolation",
-  ].join("\n"));
-
   const topologyBaseline = runValidator(tempRoot);
   assert.strictEqual(topologyBaseline.status, 0, topologyBaseline.stderr || topologyBaseline.stdout);
 
   let restore = replace(
+    tempRoot,
+    "skills/validator/scripts/validate_vault.js",
+    '["scope-adoption-warnings", result.scopeAdoptionWarnings || [], Boolean(result.scopeAdoptionWarnings)],',
+    '["removed-adoption-counter", result.scopeAdoptionWarnings || [], Boolean(result.scopeAdoptionWarnings)],'
+  );
+  assertRejected(runValidator(tempRoot), "skills/validator/scripts/validate_vault.js must register scope topology counter structurally: scope-adoption-warnings");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/validator/test/fixtures/scope_topology/expected/scope-profile-counters.json",
+    '  "scope-map-warnings"',
+    '  "removed-map-counter"'
+  );
+  assertRejected(runValidator(tempRoot), "scope-profile-counters.json must exactly declare the executable scope counter output contract");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/validator/test/test_scope_topology_adversarial.js",
+    'contract("canvas-id-collision", "deep_transparent_ancestry", () =>',
+    'removedContract("canvas-id-collision", "deep_transparent_ancestry", () =>'
+  );
+  assertRejected(runValidator(tempRoot), "test_scope_topology_adversarial.js missing executable contract: canvas-id-collision");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/validator/test/test_scope_topology_adversarial.js",
+    '  assert.throws(() => renderScopeMapCanvas(model, { idFactory: () => "0000000000000000" }), /Canvas ID collision/u);',
+    '  renderScopeMapCanvas(model, { idFactory: (_kind, value) => value });'
+  );
+  assertRejected(runValidator(tempRoot), "scope topology executable contract suite failed");
+  restore();
+
+  restore = replace(
     tempRoot,
     "skills/scope/SKILL.md",
     "sync_scope_topology.js",

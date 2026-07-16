@@ -1,0 +1,2 @@
+formulas:
+  scope: 'if(file.inFolder("Domains/Product"), "Product", if(file.inFolder("Domains/Product/Workstreams/Alpha"), "Alpha", "Global"))'

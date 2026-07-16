@@ -1025,6 +1025,9 @@ function printResults(result) {
     ["scope-navigation-warnings", result.scopeNavigationWarnings],
     ["routing-matrix-warnings", result.routingMatrixWarnings],
     ["base-scope-formula-warnings", result.baseScopeFormulaWarnings],
+    ["scope-adoption-warnings", result.scopeAdoptionWarnings || [], Boolean(result.scopeAdoptionWarnings)],
+    ["scope-contract-warnings", result.scopeContractWarnings || [], Boolean(result.scopeContractWarnings)],
+    ["scope-map-warnings", result.scopeMapWarnings || [], Boolean(result.scopeMapWarnings)],
     ["research-boundary-warnings", result.researchBoundaryWarnings],
     ["research-provenance-warnings", result.researchProvenanceWarnings],
     ["provenance-cycle-warnings", result.provenanceCycleWarnings],
@@ -1032,11 +1035,8 @@ function printResults(result) {
     ["research-hub-warnings", result.researchHubWarnings],
   ];
 
-  if (result.scopeAdoptionWarnings) counters.push(["scope-adoption-warnings", result.scopeAdoptionWarnings]);
-  if (result.scopeContractWarnings) counters.push(["scope-contract-warnings", result.scopeContractWarnings]);
-  if (result.scopeMapWarnings) counters.push(["scope-map-warnings", result.scopeMapWarnings]);
-
-  for (const [name, values] of counters) {
+  for (const [name, values, enabled = true] of counters) {
+    if (!enabled) continue;
     console.log(`${name}: ${values.length}`);
     values.slice().map(findingText).sort().forEach((line) => console.log(line));
   }

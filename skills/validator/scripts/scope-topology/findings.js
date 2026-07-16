@@ -106,6 +106,23 @@ function scopeFindings(topology, inventory) {
         if (marker(actual) !== marker(expected)) addMap(artifact, "Markdown scope map differs");
       }
     }
+    for (const file of inventory.files.filter((item) => item.relativePath.startsWith("Bases/") && item.relativePath.endsWith(".base") && item.rawBytes)) {
+      const text = file.rawBytes.toString("utf8");
+      for (const child of topology.descriptors) {
+        if (!child.parentScopeId) continue;
+        const parent = topology.descriptorsById.get(child.parentScopeId);
+        if (!parent || parent.scopePath === ".") continue;
+        const position = (scopePath) => {
+          const double = text.indexOf(`file.inFolder("${scopePath}")`);
+          const single = text.indexOf(`file.inFolder('${scopePath}')`);
+          return double < 0 ? single : single < 0 ? double : Math.min(double, single);
+        };
+        const childPosition = position(child.scopePath); const parentPosition = position(parent.scopePath);
+        if (childPosition >= 0 && parentPosition >= 0 && childPosition > parentPosition) {
+          add("scope-map-drift", file.relativePath, `${file.relativePath}: child scope branch ${child.scopePath} must precede parent ${parent.scopePath}`, child.scopeId, [file.relativePath], `base-order:${child.scopePath}:${parent.scopePath}`);
+        }
+      }
+    }
   }
 
   if (topology.unsupportedRoot) {
@@ -118,6 +135,7 @@ function scopeFindings(topology, inventory) {
 
   const ids = new Map();
   const paths = new Map();
+  const caseFoldPaths = new Map();
   for (const item of parsed) {
     if (!item.descriptor.supported) continue;
     const idGroup = ids.get(item.descriptor.scopeId) || [];
@@ -126,6 +144,10 @@ function scopeFindings(topology, inventory) {
     const pathGroup = paths.get(item.descriptor.scopePath) || [];
     pathGroup.push(item);
     paths.set(item.descriptor.scopePath, pathGroup);
+    const foldedPath = item.descriptor.scopePath.toLocaleLowerCase("en-US");
+    const foldedGroup = caseFoldPaths.get(foldedPath) || [];
+    foldedGroup.push(item);
+    caseFoldPaths.set(foldedPath, foldedGroup);
   }
   for (const [id, group] of ids) if (group.length > 1) {
     const participants = sortedUnique(group.map((entry) => entry.file.relativePath));
@@ -134,6 +156,10 @@ function scopeFindings(topology, inventory) {
   for (const [scopePath, group] of paths) if (group.length > 1) {
     const participants = sortedUnique(group.map((entry) => entry.file.relativePath));
     for (const item of group) add("colliding-scope-path", item.file.relativePath, `${item.file.relativePath}: colliding scope_path ${scopePath}`, item.descriptor.scopeId, [item.file.relativePath], `${scopePath}|${participants.join("|")}`);
+  }
+  for (const [foldedPath, group] of caseFoldPaths) if (group.length > 1 && new Set(group.map((item) => item.descriptor.scopePath)).size > 1) {
+    const participants = sortedUnique(group.map((entry) => entry.file.relativePath));
+    for (const item of group) add("colliding-scope-path", item.file.relativePath, `${item.file.relativePath}: case-fold colliding scope_path ${item.descriptor.scopePath}`, item.descriptor.scopeId, [item.file.relativePath], `case-fold:${foldedPath}|${participants.join("|")}`);
   }
 
   const byDirectory = new Map(parsed.filter((item) => item.descriptor.supported).map((item) => [item.directory, item]));

@@ -30,3 +30,11 @@ The full gate exposed that the installed-layout repository check copied only `wo
 ## Concerns
 
 None. Private evaluation evidence and maintainer-local paths remain excluded from public artifacts.
+
+## Review Follow-up
+
+- Replaced the prose token manifest with an executable adversarial suite. Every required class is a named `contract(...)` invocation bound to a real fixture path and an assertion; the repository guardrail rejects a missing invocation or fixture.
+- Added committed NFC-equivalent and case-fold-colliding descriptor inputs, deterministic hardlink and symlink-swap setups, and a Canvas `idFactory` seam that forces a truncated-ID collision without weakening production hashing.
+- Added executable Base child-before-parent validation under `scope-map-warnings` and a deliberately misordered Base fixture.
+- Made the three scope counters unconditional entries in the actual validator output registration array. The guardrail structurally checks registration property names, healthy-output blocks, the validator guide table, and an exact JSON expected-output fixture executed by the topology CLI test.
+- Mutation tests prove removal of a registration, expected-output counter, or executable adversarial contract fails repository validation.

@@ -86,23 +86,29 @@ const RESEARCH_INGEST_ZERO_WRITE_GUIDANCE =
   "If no target is named or confirmed, make zero writes and ask which research boundary should receive the material.";
 const TOPOLOGY_SYNCHRONIZER = "sync_scope_topology.js";
 const SCOPE_TOPOLOGY_COUNTERS = ["scope-adoption-warnings", "scope-contract-warnings", "scope-map-warnings"];
-const SCOPE_TOPOLOGY_COUNTER_SURFACES = [
-  "skills/validator/scripts/validate_vault.js",
-  "skills/validator/SKILL.md",
-  "docs/guides/validator.md",
-  "README.md",
-];
+const SCOPE_TOPOLOGY_COUNTER_PROPERTIES = new Map([
+  ["scope-adoption-warnings", "scopeAdoptionWarnings"],
+  ["scope-contract-warnings", "scopeContractWarnings"],
+  ["scope-map-warnings", "scopeMapWarnings"],
+]);
+const SCOPE_TOPOLOGY_COUNTER_FIXTURE = "skills/validator/test/fixtures/scope_topology/expected/scope-profile-counters.json";
+const SCOPE_TOPOLOGY_TEST = "skills/validator/test/test_scope_topology_adversarial.js";
 const SCOPE_TOPOLOGY_MIGRATION = "docs/guides/scope-topology-migration.md";
 const SCOPE_TOPOLOGY_MIGRATION_CONTRACTS = [
   "whole-vault", "ancestor-chain", "root activation last", "ariadne_scope_adoption: dismissed",
   "--resume", "--abort", "installed skills", "rollback", "reconciliation",
 ];
-const SCOPE_TOPOLOGY_FIXTURE_TOKENS = [
-  "flexible-layout", "transparent-folder", "deep-ancestry", "marker-preservation", "lifecycle", "move",
-  "redirect", "former-path", "generated-artifact", "unsupported-activation", "dismissed-candidate",
-  "unicode-collision", "case-collision", "control-path", "reserved-path", "hardlink", "symlink-swap",
-  "canvas-id-collision", "base-formula-order", "scoped-isolation",
-];
+const SCOPE_TOPOLOGY_TEST_CONTRACTS = new Map([
+  ["flexible-layout", "deep_transparent_ancestry"], ["transparent-folder", "deep_transparent_ancestry"],
+  ["deep-ancestry", "deep_transparent_ancestry"], ["marker-preservation", "marker_preservation/input.json"],
+  ["lifecycle", "contract_failures"], ["move", "operations/move.json"], ["redirect", "contract_failures/Redirect.md"],
+  ["former-path", "contract_failures"], ["generated-only", "deep_transparent_ancestry"],
+  ["unsupported-activation", "unsupported_root"], ["dismissal", "deep_transparent_ancestry/Dismissed/00 Index.md"],
+  ["unicode-nfc-collision", "collision_descriptors"], ["case-fold-collision", "collision_descriptors"],
+  ["reserved-path", "operations/move.json"], ["control-path", "operations/repair.json"],
+  ["hardlink", "root_only"], ["symlink-swap", "root_only"], ["canvas-id-collision", "deep_transparent_ancestry"],
+  ["base-formula-order", "base_ordering/Incorrect.base"], ["scoped-isolation", "scoped_sibling_isolation"],
+]);
 const TOPOLOGY_ORCHESTRATION_CONTRACTS = new Map([
   ["skills/scope/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "scope-operation-request.md", "allowed_write_paths", "second check", "Never directly edit"]],
   ["skills/navigation/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "user extension areas", "generated blocks", "Never edit inside generated blocks"]],
@@ -375,15 +381,31 @@ function validateTopologyAuthority(errors, files) {
 }
 
 function validateScopeTopologyPublication(errors, files) {
-  for (const file of SCOPE_TOPOLOGY_COUNTER_SURFACES) {
-    if (!fs.existsSync(path.join(ROOT, file))) {
-      fail(errors, `scope topology counter surface missing: ${file}`);
-      continue;
-    }
+  const validatorFile = "skills/validator/scripts/validate_vault.js";
+  const validatorText = read(validatorFile);
+  const counterArray = validatorText.match(/const counters = \[([\s\S]*?)\n  \];/u)?.[1] || "";
+  for (const [counter, property] of SCOPE_TOPOLOGY_COUNTER_PROPERTIES) {
+    const registration = new RegExp(`\\["${counter}", result\\.${property} \\|\\| \\[\\], Boolean\\(result\\.${property}\\)\\]`, "u");
+    if (!registration.test(counterArray)) fail(errors, `${validatorFile} must register scope topology counter structurally: ${counter}`);
+  }
+
+  for (const file of ["skills/validator/SKILL.md", "docs/guides/validator.md", "README.md"]) {
     const text = read(file);
+    const healthy = text.match(/A healthy vault[^\n]*\n\n```text\n([\s\S]*?)```/u)?.[1] || "";
     for (const counter of SCOPE_TOPOLOGY_COUNTERS) {
-      if (!text.includes(counter)) fail(errors, `${file} must document scope topology counter: ${counter}`);
+      if (!new RegExp(`^${counter}: 0$`, "mu").test(healthy)) fail(errors, `${file} healthy output must include scope topology counter: ${counter}`);
+      if (file === "docs/guides/validator.md" && !text.includes(`| \`${counter}\` | No |`)) fail(errors, `${file} counter reference must include: ${counter}`);
     }
+  }
+
+  if (!fs.existsSync(path.join(ROOT, SCOPE_TOPOLOGY_COUNTER_FIXTURE))) {
+    fail(errors, `scope topology expected-output fixture missing: ${SCOPE_TOPOLOGY_COUNTER_FIXTURE}`);
+  } else {
+    let expected = null;
+    try { expected = JSON.parse(read(SCOPE_TOPOLOGY_COUNTER_FIXTURE)); } catch { /* reported below */ }
+    if (JSON.stringify(expected) !== JSON.stringify(SCOPE_TOPOLOGY_COUNTERS)) fail(errors, `${SCOPE_TOPOLOGY_COUNTER_FIXTURE} must exactly declare the executable scope counter output contract`);
+    const topologyTest = read("skills/validator/test/test_scope_topology.js");
+    if (!topologyTest.includes("expected/scope-profile-counters.json") || !topologyTest.includes("for (const counter of expectedScopeCounters)")) fail(errors, "scope topology test must execute the expected counter output fixture");
   }
 
   if (!fs.existsSync(path.join(ROOT, SCOPE_TOPOLOGY_MIGRATION))) {
@@ -395,12 +417,17 @@ function validateScopeTopologyPublication(errors, files) {
     }
   }
 
-  const fixtureText = files
-    .filter((file) => file.startsWith("skills/validator/test/fixtures/scope_topology/") && isTextFile(file))
-    .map(read)
-    .join("\n");
-  for (const token of SCOPE_TOPOLOGY_FIXTURE_TOKENS) {
-    if (!fixtureText.includes(token)) fail(errors, `scope topology fixture matrix missing token: ${token}`);
+  const adversarialTest = read(SCOPE_TOPOLOGY_TEST);
+  for (const [name, fixture] of SCOPE_TOPOLOGY_TEST_CONTRACTS) {
+    if (!adversarialTest.includes(`contract("${name}", "${fixture}", () =>`)) fail(errors, `${SCOPE_TOPOLOGY_TEST} missing executable contract: ${name}`);
+    const fixturePath = `skills/validator/test/fixtures/scope_topology/${fixture}`;
+    if (!fs.existsSync(path.join(ROOT, fixturePath))) fail(errors, `scope topology contract fixture missing for ${name}: ${fixturePath}`);
+  }
+  try {
+    execFileSync(process.execPath, [SCOPE_TOPOLOGY_TEST], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (error) {
+    const detail = String(error.stderr || error.message).split("\n").find(Boolean) || "unknown failure";
+    fail(errors, `scope topology executable contract suite failed: ${detail}`);
   }
 }
 

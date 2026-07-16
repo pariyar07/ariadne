@@ -26,6 +26,7 @@ const {
   applyOperation,
 } = require("../scripts/scope-topology");
 const { spawnSync } = require("child_process");
+require("./test_scope_topology_adversarial");
 
 function fixture(name) {
   return path.join(__dirname, "fixtures", "scope_topology", name);
@@ -402,6 +403,8 @@ assert.strictEqual(wholeCli.status, 0, wholeCli.stderr);
 assert.match(wholeCli.stdout, /scope-adoption-warnings: \d+/u);
 assert.match(wholeCli.stdout, /scope-contract-warnings: \d+/u);
 assert.match(wholeCli.stdout, /scope-map-warnings: \d+/u);
+const expectedScopeCounters = JSON.parse(fs.readFileSync(fixture("expected/scope-profile-counters.json"), "utf8"));
+for (const counter of expectedScopeCounters) assert.match(wholeCli.stdout, new RegExp(`^${counter}: \\d+$`, "mu"));
 const scopedCli = spawnSync(process.execPath, [validator, fixture("scoped_sibling_isolation"), "--scope", "Healthy", "--profile", "scope"], { encoding: "utf8" });
 assert.strictEqual(scopedCli.status, 0, scopedCli.stderr);
 assert.doesNotMatch(scopedCli.stdout, /ZBroken\/AGENTS\.md/u);
