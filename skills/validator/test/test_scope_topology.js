@@ -54,6 +54,12 @@ assert.strictEqual(hashPlan({ b: 2, a: 1 }), hashPlan({ a: 1, b: 2 }));
 
 const operationInventory = inventoryVault(fixture("deep_transparent_ancestry"));
 const operationModel = buildTopology(operationInventory);
+const productAgentNavigation = renderCheckpointBlocks(operationModel)
+  .find((item) => item.path === "Domains/Product/Agent/00 Agent Navigation.md");
+assert.ok(
+  productAgentNavigation.bytes.includes(Buffer.from("[[Domains/Product/Agent/Task Routing Matrix|Task Routing Matrix]]")),
+  "each generated Agent Navigation checkpoint must link its local routing matrix",
+);
 assert.ok(checkTopology(fixture("deep_transparent_ancestry")).changes.length > 0);
 function planWithDisclosedWrites(inventory, model, request) {
   const preview = planOperation(inventory, model, parseOperationRequest({ ...request, allowed_write_paths: [] }));
