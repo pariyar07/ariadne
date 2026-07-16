@@ -44,6 +44,10 @@ function requestFileFor(directory, request) {
   const file = path.join(os.tmpdir(), `ariadne-request-${crypto.randomUUID()}.json`); fs.writeFileSync(file, JSON.stringify({ ...request, allowed_write_paths: preview.content_write_paths })); return file;
 }
 function reseal(value) { delete value.checksum; value.checksum = hashPlan(value); return value; }
+function tamperAuthority(directory, mutate) {
+  const lockPath = path.join(directory, ".ariadne/scope-topology.lock"); const manifestPath = path.join(directory, ".ariadne/scope-topology-operation.json"); const lock = JSON.parse(fs.readFileSync(lockPath, "utf8")); const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  mutate(lock); reseal(lock); manifest.authority = structuredClone(lock); manifest.authority_checksum = lock.checksum; reseal(manifest); fs.writeFileSync(lockPath, JSON.stringify(lock)); fs.writeFileSync(manifestPath, JSON.stringify(manifest)); return lock.operation_id;
+}
 function run(args, options = {}) { return spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env: { ...process.env, ...options.env } }); }
 
 // Check mode is byte-for-byte and metadata zero-write.
@@ -114,7 +118,7 @@ for (const point of [
   "before-manifest-create-fsync", "after-manifest-create-fsync", "before-manifest-create-rename", "after-manifest-create-rename", "before-manifest-create-dir-fsync", "after-manifest-create-dir-fsync",
   "after-effect-intent", "before-mkdir", "after-mkdir", "before-temp-open", "after-temp-open", "before-temp-write", "after-temp-write", "before-temp-fsync", "after-temp-fsync",
   "before-target-rename", "after-target-rename", "before-target-rename-dir-fsync", "after-target-rename-dir-fsync", "before-effect-complete-rename", "after-effect-complete-rename",
-  "before-final-check", "after-terminal-complete", "before-lock-remove", "after-lock-remove", "before-lock-dir-fsync", "after-lock-dir-fsync", "after-lock-cleanup", "before-manifest-remove",
+  "before-final-check", "after-terminal-complete", "before-manifest-remove", "after-manifest-remove", "before-manifest-dir-fsync", "after-manifest-dir-fsync", "after-manifest-cleanup", "before-lock-remove",
 ]) {
   const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: point } });
   assert.notStrictEqual(failed.status, 0, point); const lockPath = path.join(directory, ".ariadne/scope-topology.lock"); const manifestPath = path.join(directory, ".ariadne/scope-topology-operation.json");
@@ -123,11 +127,28 @@ for (const point of [
   assert.ok(!fs.existsSync(lockPath) && !fs.existsSync(manifestPath), point); fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
 
-// A crash after final manifest removal has no recovery state because cleanup is complete.
+// A crash after final lock removal has no recovery state because cleanup is complete.
 {
-  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-manifest-remove" } }); assert.notStrictEqual(failed.status, 0);
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-lock-remove" } }); assert.notStrictEqual(failed.status, 0);
   assert.ok(!fs.existsSync(path.join(directory, ".ariadne/scope-topology.lock"))); assert.ok(!fs.existsSync(path.join(directory, ".ariadne/scope-topology-operation.json")));
   const checked = run([directory, "--check"]); assert.strictEqual(checked.status, 0, checked.stderr); assert.deepStrictEqual(JSON.parse(checked.stdout).changes, []);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// Manifest-removed/lock-present remains exclusive and recoverable.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-manifest-cleanup" } }); assert.notStrictEqual(failed.status, 0);
+  const lockPath = path.join(directory, ".ariadne/scope-topology.lock"); const lock = JSON.parse(fs.readFileSync(lockPath, "utf8")); assert.ok(!fs.existsSync(path.join(directory, ".ariadne/scope-topology-operation.json")));
+  const second = run([directory, "--write", "--request", requestFile]); assert.notStrictEqual(second.status, 0); assert.match(second.stderr, /lock exists/u);
+  const resumed = run([directory, "--resume", lock.operation_id]); assert.strictEqual(resumed.status, 0, resumed.stderr); assert.ok(!fs.existsSync(lockPath));
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// A successor lock with identical bytes but a different inode is rejected.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-manifest-cleanup" } }); assert.notStrictEqual(failed.status, 0);
+  const lockPath = path.join(directory, ".ariadne/scope-topology.lock"); const bytes = fs.readFileSync(lockPath); const id = JSON.parse(bytes).operation_id; fs.unlinkSync(lockPath); fs.writeFileSync(lockPath, bytes, { mode: 0o600 });
+  const resumed = run([directory, "--resume", id]); assert.notStrictEqual(resumed.status, 0); assert.match(resumed.stderr, /lock identity mismatch/u);
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
 
@@ -148,6 +169,19 @@ for (const point of [
   const resumed = run([directory, "--resume", manifest.operation_id]); assert.notStrictEqual(resumed.status, 0); assert.match(resumed.stderr, /unsafe directory|identity changed/u);
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
+
+// Resealing cannot turn non-canonical authority fields into valid effects.
+for (const mutate of [
+  (authority) => { authority.preconditions.pop(); },
+  (authority) => { const effect = authority.effects.find((item) => item.type === "replace"); effect.bytes_base64 = Buffer.from("tampered").toString("base64"); effect.sha256 = crypto.createHash("sha256").update("tampered").digest("hex"); },
+  (authority) => { authority.effects.find((item) => item.type === "replace").path = "Unexpected.md"; },
+  (authority) => { const first = authority.effects.findIndex((item) => item.type === "replace"); [authority.effects[first], authority.effects[first + 1]] = [authority.effects[first + 1], authority.effects[first]]; },
+  (authority) => { authority.effects.pop(); },
+]) {
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-manifest-create" } }); assert.notStrictEqual(failed.status, 0); const id = tamperAuthority(directory, mutate);
+  const resumed = run([directory, "--resume", id]); assert.notStrictEqual(resumed.status, 0); assert.match(resumed.stderr, /authority|canonical plan/u);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
 // The control directory itself may not be redirected outside the vault.
 {
   const directory = vault(); const requestFile = disclosedRequest(directory); const outside = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-control-outside-")); fs.symlinkSync(outside, path.join(directory, ".ariadne"));
@@ -162,12 +196,29 @@ for (const point of [
   const aborted = run([directory, "--abort", manifest.operation_id]); assert.notStrictEqual(aborted.status, 0); assert.ok(fs.existsSync(path.join(outside, path.basename(effect.temp_path))));
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
+// Reused temporaries must retain their recorded inode, single-link count, and mode 0600.
+for (const mutateTemp of [
+  (temp) => fs.chmodSync(temp, 0o644),
+  (temp) => fs.linkSync(temp, `${temp}.hardlink`),
+]) {
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-temp-fsync" } }); assert.notStrictEqual(failed.status, 0);
+  const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8")); const index = manifest.effect_states.findIndex((state) => state.temp_identity); const temp = path.join(directory, ...manifest.authority.effects[index].temp_path.split("/")); mutateTemp(temp);
+  const resumed = run([directory, "--resume", manifest.operation_id]); assert.notStrictEqual(resumed.status, 0); assert.match(resumed.stderr, /operation temporary changed/u);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
 
 // A move crash after rename is reconciled; a source-parent symlink swap is refused.
 {
   const move = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/scope_topology/operations/move.json"), "utf8")); const directory = vault(); const requestFile = requestFileFor(directory, move);
   const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-move-rename" } }); assert.notStrictEqual(failed.status, 0); const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8"));
   const resumed = run([directory, "--resume", manifest.operation_id]); assert.strictEqual(resumed.status, 0, resumed.stderr); assert.deepStrictEqual(JSON.parse(resumed.stdout).changes, []);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+// A cloned destination with matching bytes but a different root inode is not a completed move.
+{
+  const move = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/scope_topology/operations/move.json"), "utf8")); const directory = vault(); const requestFile = requestFileFor(directory, move);
+  const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-move-rename" } }); assert.notStrictEqual(failed.status, 0); const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8")); const destination = path.join(directory, move.destination_path); const clone = `${destination}.clone`; fs.cpSync(destination, clone, { recursive: true }); fs.rmSync(destination, { recursive: true }); fs.renameSync(clone, destination);
+  const resumed = run([directory, "--resume", manifest.operation_id]); assert.notStrictEqual(resumed.status, 0); assert.match(resumed.stderr, /moved destination changed/u);
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
 {
