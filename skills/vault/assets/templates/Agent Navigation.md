@@ -11,6 +11,12 @@ tags:
 
 # Agent Navigation
 
+<!-- ariadne:scope-navigation:start -->
+## Scope Navigation
+
+- Boundary: [[00 Index|{{vault_name}}]]
+<!-- ariadne:scope-navigation:end -->
+
 This is the navigation hub for agents working in this vault.
 
 ## Read First
@@ -47,6 +53,7 @@ This is the navigation hub for agents working in this vault.
 ## View Layer
 
 - [[Bases/00 Bases Index]]
+- [[Agent/Scope Map]]
 
 Bases inspect the Markdown wiki through metadata. They are not a replacement for durable notes, folder hubs, or meaningful wikilinks.
 

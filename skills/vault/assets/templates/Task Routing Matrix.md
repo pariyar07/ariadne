@@ -11,6 +11,14 @@ tags:
 
 # Task Routing Matrix
 
+<!-- ariadne:scope-routing:start -->
+## Scope Routing
+
+| Destination | Scope ID | Status |
+| --- | --- | --- |
+| [[00 Index|Current: {{vault_name}}]] | `root` | active |
+<!-- ariadne:scope-routing:end -->
+
 Use this matrix to choose the smallest useful context set for a task.
 
 ## Routing Rules

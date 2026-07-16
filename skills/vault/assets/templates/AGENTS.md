@@ -1,5 +1,12 @@
 # {{vault_name}} - Agent Instructions
 
+<!-- ariadne:scope-inheritance:start -->
+## Scope Inheritance
+
+Read and obey this root-to-current instruction chain:
+- [[AGENTS.md|{{vault_name}} instructions]] (`root`)
+<!-- ariadne:scope-inheritance:end -->
+
 This is an Obsidian vault maintained as a durable, agent-readable Markdown knowledge base.
 
 Read first:

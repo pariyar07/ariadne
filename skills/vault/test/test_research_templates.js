@@ -357,6 +357,16 @@ function testTemplateSchemaAndGeneratedFixture() {
   for (const name of ["Research Boundary.md", "Research Inquiry.md", "Research Synthesis.md"])
     assert.ok(fs.existsSync(path.join(TEMPLATES, name)), `${name} must be shipped`);
 
+  const rootIndex = readTemplate("00 Index.md");
+  assert.match(rootIndex, /^type: scope-index$/m);
+  assert.match(rootIndex, /^scope_id: root$/m);
+  assert.match(rootIndex, /<!-- ariadne:scope-boundary:start -->/);
+  assert.match(rootIndex, /## Current Focus/, "root topology must preserve the existing vault workflow");
+
+  const rootAgents = readTemplate("AGENTS.md");
+  assert.match(rootAgents, /<!-- ariadne:scope-inheritance:start -->/);
+  assert.match(rootAgents, /Keep research frontmatter to top-level scalars/, "root inheritance must preserve research policy");
+
   const fixture = generatedFixture();
   const notes = markdownNotes(fixture.root);
   const rootDescriptor = frontmatter(fs.readFileSync(path.join(fixture.root, `${fixture.rootBoundary}.md`), "utf8"));
