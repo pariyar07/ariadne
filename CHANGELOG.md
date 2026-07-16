@@ -4,6 +4,10 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+
+- Generated `Agent/00 Agent Navigation.md` checkpoints now link their scope-local `Agent/Task Routing Matrix.md`, so routing matrices have a durable operational entry route instead of appearing as dangling graph leaves whose outgoing scope links kept them outside the validator's strict zero-link orphan definition.
+
 ## [0.3.2] - 2026-07-17
 
 ### Fixed

@@ -52,7 +52,8 @@ function inheritanceBody(model, descriptor) {
 
 function navigationBody(model, descriptor) {
   const sourceFile = `${basePath(descriptor)}Agent/00 Agent Navigation.md`;
-  const lines = ["## Scope Navigation", "", `- Boundary: [[${descriptorLink(sourceFile, descriptor)}|${descriptor.title}]]`];
+  const routingFile = `${basePath(descriptor)}Agent/Task Routing Matrix.md`;
+  const lines = ["## Scope Navigation", "", `- Boundary: [[${descriptorLink(sourceFile, descriptor)}|${descriptor.title}]]`, `- Routing: [[${qualifiedLink(sourceFile, routingFile)}|Task Routing Matrix]]`];
   const up = parent(model, descriptor);
   if (up) lines.push(`- Parent: [[${descriptorLink(sourceFile, up)}|${up.title}]]`);
   lines.push(...children(model, descriptor).map((child) => `- Child: [[${descriptorLink(sourceFile, child)}|${child.title}]]`));
