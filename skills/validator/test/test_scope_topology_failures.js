@@ -48,7 +48,7 @@ function tamperAuthority(directory, mutate) {
   const lockPath = path.join(directory, ".ariadne/scope-topology.lock"); const manifestPath = path.join(directory, ".ariadne/scope-topology-operation.json"); const lock = JSON.parse(fs.readFileSync(lockPath, "utf8")); const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   mutate(lock); reseal(lock); manifest.authority = structuredClone(lock); manifest.authority_checksum = lock.checksum; reseal(manifest); fs.writeFileSync(lockPath, JSON.stringify(lock)); fs.writeFileSync(manifestPath, JSON.stringify(manifest)); return lock.operation_id;
 }
-function run(args, options = {}) { return spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env: { ...process.env, ...options.env } }); }
+function run(args, options = {}) { const env = { ...process.env, ...options.env }; if (Object.keys(options.env || {}).some((key) => key.startsWith("ARIADNE_SYNC_"))) env.ARIADNE_SCOPE_TOPOLOGY_TEST_MODE = "1"; return spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env }); }
 
 // Check mode is byte-for-byte and metadata zero-write.
 {
@@ -56,6 +56,17 @@ function run(args, options = {}) { return spawnSync(process.execPath, [cli, ...a
   const result = run([directory, "--check"]);
   assert.strictEqual(result.status, 0, result.stderr); assert.ok(JSON.parse(result.stdout).changes.length > 0);
   assert.strictEqual(hashTree(directory), before); fs.rmSync(directory, { recursive: true, force: true });
+}
+
+// Production CLI ignores injection variables unless test mode is exactly 1.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const productionEnv = { ...process.env, ARIADNE_SYNC_FAIL_AT: "after-lock-create" }; delete productionEnv.ARIADNE_SCOPE_TOPOLOGY_TEST_MODE; const production = spawnSync(process.execPath, [cli, directory, "--write", "--request", requestFile], { encoding: "utf8", env: productionEnv });
+  assert.strictEqual(production.status, 0, production.stderr); assert.ok(!fs.existsSync(path.join(directory, ".ariadne/scope-topology.lock"))); assert.ok(!fs.existsSync(path.join(directory, ".ariadne/scope-topology-operation.json")));
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const injected = spawnSync(process.execPath, [cli, directory, "--write", "--request", requestFile], { encoding: "utf8", env: { ...process.env, ARIADNE_SCOPE_TOPOLOGY_TEST_MODE: "1", ARIADNE_SYNC_FAIL_AT: "after-lock-create" } });
+  assert.notStrictEqual(injected.status, 0); assert.match(injected.stderr, /injected failure/u); fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
 
 // Every durable boundary is recoverable through explicit resume.
@@ -247,7 +258,7 @@ for (const point of [
 
 // A live pre-election stage is not touched; another contender may atomically win.
 {
-  const directory = vault(); const requestFile = disclosedRequest(directory); const child = spawn(process.execPath, [cli, directory, "--write", "--request", requestFile], { env: { ...process.env, ARIADNE_SYNC_PAUSE_AT: "after-candidate-open" }, stdio: "ignore" }); const control = path.join(directory, ".ariadne");
+  const directory = vault(); const requestFile = disclosedRequest(directory); const child = spawn(process.execPath, [cli, directory, "--write", "--request", requestFile], { env: { ...process.env, ARIADNE_SCOPE_TOPOLOGY_TEST_MODE: "1", ARIADNE_SYNC_PAUSE_AT: "after-candidate-open" }, stdio: "ignore" }); const control = path.join(directory, ".ariadne");
   for (let count = 0; count < 200 && (!fs.existsSync(control) || !fs.readdirSync(control).some((name) => name.startsWith("scope-topology.candidate-stage-"))); count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
   const concurrent = run([directory, "--write", "--request", requestFile]); assert.strictEqual(concurrent.status, 0, concurrent.stderr); assert.ok(fs.readdirSync(control).some((name) => name.startsWith("scope-topology.candidate-stage-"))); child.kill("SIGTERM");
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
@@ -258,7 +269,7 @@ for (const point of [
   const directory = vault(); const requestFile = disclosedRequest(directory); const control = path.join(directory, ".ariadne"); fs.mkdirSync(control); const release = path.join(os.tmpdir(), `ariadne-release-${crypto.randomUUID()}`); const resultRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-race-results-")); const children = [];
   for (const name of ["a", "b"]) {
     const output = path.join(resultRoot, `${name}.out`); const error = path.join(resultRoot, `${name}.err`); const status = path.join(resultRoot, `${name}.status`);
-    children.push({ status, child: spawn("sh", ["-c", '"$1" "$2" "$3" --write --request "$4" >"$5" 2>"$6"; echo $? >"$7"', "sh", process.execPath, cli, directory, requestFile, output, error, status], { env: { ...process.env, ARIADNE_SYNC_CANDIDATE_RELEASE: release }, stdio: "ignore" }) });
+    children.push({ status, child: spawn("sh", ["-c", '"$1" "$2" "$3" --write --request "$4" >"$5" 2>"$6"; echo $? >"$7"', "sh", process.execPath, cli, directory, requestFile, output, error, status], { env: { ...process.env, ARIADNE_SCOPE_TOPOLOGY_TEST_MODE: "1", ARIADNE_SYNC_CANDIDATE_RELEASE: release }, stdio: "ignore" }) });
   }
   for (let count = 0; count < 500 && fs.readdirSync(control).filter((name) => name.startsWith("scope-topology.candidate-stage-")).length < 2; count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
   assert.strictEqual(fs.readdirSync(control).filter((name) => name.startsWith("scope-topology.candidate-stage-")).length, 2); fs.writeFileSync(release, "go");

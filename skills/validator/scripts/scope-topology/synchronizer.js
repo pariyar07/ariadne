@@ -19,7 +19,8 @@ const absolute = (root, relative) => path.join(root, ...relative.split("/"));
 const control = (root, relative) => absolute(root, relative);
 const stableHash = (value) => hashPlan(value);
 const candidateStage = (root, operationId, pid = process.pid) => path.join(root, ".ariadne", `${STAGE_PREFIX}${operationId}-${pid}`);
-function failpoint(name, legacy = null) { if (process.env.ARIADNE_SYNC_PAUSE_AT === name) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30000); if (process.env.ARIADNE_SYNC_FAIL_AT === name || process.env.ARIADNE_SYNC_FAIL_AFTER === name || legacy && process.env.ARIADNE_SYNC_FAIL_AFTER === legacy) throw new Error(`injected failure: ${name}`); }
+function testMode() { return process.env.ARIADNE_SCOPE_TOPOLOGY_TEST_MODE === "1"; }
+function failpoint(name, legacy = null) { if (!testMode()) return; if (process.env.ARIADNE_SYNC_PAUSE_AT === name) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30000); if (process.env.ARIADNE_SYNC_FAIL_AT === name || process.env.ARIADNE_SYNC_FAIL_AFTER === name || legacy && process.env.ARIADNE_SYNC_FAIL_AFTER === legacy) throw new Error(`injected failure: ${name}`); }
 function fsyncDirectory(directory, label) { failpoint(`before-${label}-dir-fsync`); const fd = fs.openSync(directory, "r"); try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); } failpoint(`after-${label}-dir-fsync`); }
 function safeUnlink(file, label) { failpoint(`before-${label}-remove`); try { fs.unlinkSync(file); } catch (error) { if (error.code !== "ENOENT") throw error; } failpoint(`after-${label}-remove`); fsyncDirectory(path.dirname(file), label); }
 function regularIdentity(file, maxLinks = 1) { const stat = fs.lstatSync(file); if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink < 1 || stat.nlink > maxLinks) throw new Error(`unsafe control file: ${file}`); return { dev: stat.dev, ino: stat.ino }; }
@@ -163,7 +164,7 @@ function createLock(root, authority) {
     failpoint("before-candidate-partial-write"); fs.writeSync(fd, bytes.subarray(0, split)); failpoint("after-candidate-partial-write"); fs.writeSync(fd, bytes.subarray(split)); failpoint("after-candidate-full-write"); failpoint("before-candidate-fsync"); fs.fsyncSync(fd); failpoint("after-candidate-fsync");
   } finally { fs.closeSync(fd); }
   fsyncDirectory(controlDirectory, "candidate-stage");
-  if (process.env.ARIADNE_SYNC_CANDIDATE_RELEASE) { while (!fs.existsSync(process.env.ARIADNE_SYNC_CANDIDATE_RELEASE)) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); }
+  if (testMode() && process.env.ARIADNE_SYNC_CANDIDATE_RELEASE) { while (!fs.existsSync(process.env.ARIADNE_SYNC_CANDIDATE_RELEASE)) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); }
   const fixed = control(root, CANDIDATE); const lock = control(root, LOCK); failpoint("before-candidate-link");
   try { fs.linkSync(stage, fixed); } catch (error) {
     if (error.code !== "EEXIST") throw error; const ownIdentity = strictCandidateIdentity(root, stage, 1); if (!sameIdentity(ownIdentity, authority.lock_identity)) throw new Error("candidate stage identity changed"); const winnerPath = fs.existsSync(fixed) ? fixed : lock;
