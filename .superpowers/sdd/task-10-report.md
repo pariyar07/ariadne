@@ -1,18 +1,17 @@
 # Task 10 Report
 
-Status: DONE
+Status: DONE_WITH_CONCERNS
 
 ## Candidate and private gate
 
-- Fresh public verification HEAD: `651eb5747f5d70e1122566bab04e24bf32dc2897`.
-- `git rev-parse 651eb57^{commit}` resolved to the same full commit.
-- Before this report-only bookkeeping commit, `git merge-base --is-ancestor 651eb57 HEAD` exited `0` and HEAD was exactly the accepted candidate. Final HEAD is a one-commit descendant whose only change is this report; no candidate implementation or public product documentation changed after the accepted gate.
-- The separately maintained private Task 6 report records `Status: pass` against candidate `651eb5747f5d70e1122566bab04e24bf32dc2897` for the generic categories scope-topology tests, deterministic evals, lab validation, and diff hygiene.
+- Fresh public verification candidate: `93ab085` (`fix: preserve scope topology move content`). The full suite below ran against its exact content immediately before that commit was created.
+- The previously accepted private Task 6 pass remains pinned to `651eb5747f5d70e1122566bab04e24bf32dc2897`; it does **not** cover `93ab085`.
+- The private scope-topology gate is pending a fresh rerun against `93ab085` (or the final report-only descendant). Publication remains blocked on that separate result.
 - No private gate contracts, graders, canaries, transcripts, or fixture internals were copied into this repository.
 
 ## Fresh public verification
 
-The candidate tree was clean before the suite. These commands were run from the repository root on 2026-07-16; every command exited `0`:
+These commands were run from the repository root on 2026-07-16 against the exact implementation and documentation content committed as `93ab085`; every command exited `0`:
 
 ```text
 $ node skills/validator/test/test_scope_topology.js
@@ -37,7 +36,7 @@ $ node scripts/validate_repo.js --skills-only
 skill-repo-ok
 ```
 
-The topology suite includes the write-fixture second-run no-change assertions; its successful exit verifies those assertions. The suite left the tracked tree unchanged.
+The topology suite includes byte-preserving move, failure/resume, redirect, descriptor metadata, scoped global-drift, and second-run no-change assertions. Its successful exit verifies those assertions.
 
 ## Dependency audit
 
@@ -58,7 +57,7 @@ The required compatible rerun used `rg --pcre2` and returned only relative impor
 
 ## Diff, boundary, and generated-artifact audit
 
-Before this report was added:
+Before the implementation commit and again before this report update:
 
 ```text
 $ git status --short
@@ -67,7 +66,7 @@ $ git diff --stat
 $ git diff
 ```
 
-All four commands produced no output. `git diff --check "$(git rev-parse c7ed6fb^)"..HEAD` also produced no output for the candidate series.
+`git diff --check` produced no output. The status and diff commands showed only the explicitly reviewed Task 10 fix paths before commit; after `93ab085`, the implementation tree was clean.
 
 Generated fixture hashes were freshly recorded as:
 
@@ -81,7 +80,8 @@ The candidate-series name and added-line audits found no maintainer-local absolu
 
 ## Blockers and remaining risk
 
-- Blockers: none.
-- No feature or implementation changes were made during Task 10.
-- The accepted deterministic private gate explicitly excludes live Codex, Claude, Gemini, and off-machine sessions; this remains a documented release risk, not a failing required gate.
+- Public blockers: none.
+- Release blocker: the private deterministic scope-topology gate has not yet been rerun against `93ab085`; the old pass applies only to `651eb57`.
+- Recognized non-registry user Base formulas are deliberately report-only and are not included in authorized write effects until a complete supported-shape normalizer exists.
+- Live Codex, Claude, Gemini, and off-machine sessions remain outside the deterministic private gate.
 - No push, pull request, or merge was performed.
