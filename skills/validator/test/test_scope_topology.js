@@ -453,6 +453,48 @@ assert.throws(
 );
 fs.rmSync(backslashPathVault, { recursive: true, force: true });
 
+// A directory whose on-disk spelling is not already Unicode-NFC-normalized must also refuse
+// discovery. inventoryVault's relativePath is always NFC-normalized, so relativePath alone
+// cannot distinguish an already-NFC folder from one whose real bytes are NFD-decomposed -- a
+// filesystem that does not itself normalize on write (ext4, unlike APFS) can hold the latter,
+// and a write step that trusts only the normalized relativePath could target a scope_path the
+// filesystem doesn't actually have under that spelling. APFS -- this repo's dev/CI filesystem --
+// both normalizes fs.readdirSync's own results to NFC and resolves NFD-spelled paths to the same
+// underlying entry regardless of which spelling is used to reach it, so a real end-to-end
+// fixture can't exhibit the divergence here; a patched fs.readdirSync simulates an ext4-like
+// non-normalizing directory listing for exactly one directory, relying on APFS's confirmed
+// normalization-insensitive path resolution to keep the underlying lstat/readFile calls working
+// underneath the substituted (differently-spelled) name.
+const nfcName = "Caf\u00e9".normalize("NFC");
+const nfdName = "Caf\u00e9".normalize("NFD");
+assert.notStrictEqual(nfcName, nfdName, "fixture requires genuinely distinct NFC/NFD byte forms");
+const nfdPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-nfd-path-"));
+fs.writeFileSync(path.join(nfdPathVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(nfdPathVault, nfcName), { recursive: true });
+fs.writeFileSync(path.join(nfdPathVault, nfcName, "AGENTS.md"), "# Cafe\n");
+const originalReaddirSync = fs.readdirSync;
+fs.readdirSync = function patchedReaddirSync(dir, options) {
+  const entries = originalReaddirSync.call(fs, dir, options);
+  if (dir === nfdPathVault && options && options.withFileTypes) {
+    for (const entry of entries) if (entry.name === nfcName) entry.name = nfdName;
+  }
+  return entries;
+};
+let nfdPathInventory;
+try {
+  nfdPathInventory = inventoryVault(nfdPathVault);
+} finally {
+  fs.readdirSync = originalReaddirSync;
+}
+const nfdCandidate = nfdPathInventory.directories.find((item) => item.relativePath === nfcName);
+assert.ok(nfdCandidate, "candidate directory must still be discoverable by its NFC relativePath");
+assert.strictEqual(nfdCandidate.rawRelativePath, nfdName, "rawRelativePath must preserve the physical NFD spelling");
+assert.throws(
+  () => planOperation(nfdPathInventory, buildTopology(nfdPathInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /does not match its on-disk spelling/u,
+);
+fs.rmSync(nfdPathVault, { recursive: true, force: true });
+
 // A control character in a legacy title must refuse rather than corrupt the written file. A
 // literal newline can't even survive as a single frontmatter value through this codebase's
 // line-based reader (it would split the title across two unrelated lines on the way in), so
@@ -469,6 +511,24 @@ assert.throws(
   /control character or line break/u,
 );
 fs.rmSync(controlCharVault, { recursive: true, force: true });
+
+// A C1 control character (U+0080-U+009F), not just the C0 range, must also refuse. U+0085 (NEL)
+// is the sharpest example: a real, standards-compliant YAML parser gives it line-break
+// semantics and folds it to a space, so "Bad<U+0085>Title" would silently become "Bad Title" in
+// any such reader even though this codebase's own naive parser -- which only recognizes \r\n/\n
+// as line breaks -- round-trips the character on the same line unchanged.
+const c1ControlVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-c1-control-"));
+fs.writeFileSync(path.join(c1ControlVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(c1ControlVault, "Tricky"), { recursive: true });
+fs.writeFileSync(path.join(c1ControlVault, "Tricky", "AGENTS.md"), "# Tricky\n");
+fs.writeFileSync(path.join(c1ControlVault, "Tricky", "00 Named Index.md"), "---\ntitle: Bad\u0085Title\ntype: index\nstatus: active\n---\n# unsafe\n", "utf8");
+const c1ControlInventory = inventoryVault(c1ControlVault);
+assert.strictEqual(c1ControlInventory.files.find((item) => item.relativePath === "Tricky/00 Named Index.md").frontmatter.title, "Bad\u0085Title");
+assert.throws(
+  () => planOperation(c1ControlInventory, buildTopology(c1ControlInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "tricky", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /control character or line break/u,
+);
+fs.rmSync(c1ControlVault, { recursive: true, force: true });
 
 // Dismissal on a *named* legacy hub (not just AGENTS.md or a bare 00 Index.md) must be honored.
 const namedDismissalVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-named-dismissal-"));

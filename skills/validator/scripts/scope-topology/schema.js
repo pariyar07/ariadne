@@ -2,7 +2,13 @@
 
 const path = require("path");
 
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/u;
+// \p{Cc} is the Unicode "Control" general category: U+0000-U+001F (C0) and U+007F-U+009F (C1).
+// A C1 control character left in a YAML scalar is not merely invisible -- a real YAML parser
+// gives some of them line-break semantics (e.g. U+0085 NEL folds to a space the same way a
+// literal newline would), so a title like "A<U+0085>B" would silently become "A B" in any
+// standards-compliant reader even though this codebase's own naive parser round-trips it
+// unchanged. Matching only the C0 range (\x00-\x1f\x7f) missed the whole C1 block.
+const CONTROL_CHARACTERS = /\p{Cc}/u;
 const WINDOWS_RESERVED = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/iu;
 const SCOPE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const STATUSES = new Set(["active", "archived", "retired"]);

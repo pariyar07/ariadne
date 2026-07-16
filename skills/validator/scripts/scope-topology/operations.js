@@ -84,7 +84,12 @@ function descriptorPath(descriptor) { return descriptor.scopePath === "." ? "00 
 // codebase's own naive parser still round-trips correctly, making the bug invisible to this
 // repository's own test suite. Always quoting removes the need to enumerate anything.
 function yamlScalar(value, field) {
-  if (/[\x00-\x1f\x7f]/u.test(value)) {
+  // \p{Cc} covers both C0 (U+0000-U+001F) and C1 (U+007F-U+009F) control characters. C1 is not
+  // merely invisible in real YAML: U+0085 (NEL) has line-break semantics in a standards-compliant
+  // parser and folds to a space, so a title containing it would silently change value across the
+  // naive/real-parser boundary the same way an actual newline would, even though this codebase's
+  // own naive parser -- which only recognizes \r\n/\n as line breaks -- round-trips it unchanged.
+  if (/\p{Cc}/u.test(value)) {
     throw new Error(`${field} cannot be safely serialized as YAML: contains a control character or line break (${JSON.stringify(value)})`);
   }
   return quoteScalar(value, field);
@@ -258,6 +263,18 @@ function discoverLegacyCandidates(inventory, model) {
       if (!agents || isDismissedCandidate(agents)) continue;
     }
     if (anyIndexDismissed(inventory, dir)) continue;
+    // inventoryVault's relativePath is always NFC-normalized (so equal-looking paths compare
+    // equal regardless of how a filesystem happened to encode them), but on a filesystem that
+    // does not itself normalize filenames -- ext4 unlike APFS -- the physical directory entry
+    // can be a different sequence of bytes than its NFC form (e.g. an NFD-decomposed name).
+    // Treating the normalized relativePath as the folder's identity would authorize a scope_path
+    // that a subsequent write step can't actually reach, or reach the wrong entry with, on such a
+    // filesystem -- the same class of problem as the backslash-normalization case below, just at
+    // the Unicode-normalization layer instead of the path-separator layer. Refuse whenever the
+    // physical spelling captured before normalization doesn't already match its NFC form.
+    if (directory.rawRelativePath !== dir) {
+      throw new Error(`legacy discovery refused: ${dir} does not match its on-disk spelling ${JSON.stringify(directory.rawRelativePath)}; the folder name is not Unicode-NFC-normalized, rename it before adopting`);
+    }
     // A folder whose real path violates the schema's own character/Windows-compatibility
     // restrictions (schema.js's normalizeScopePath, e.g. a literal ":" in a segment) could
     // never be re-read as a valid descriptor after adoption -- it would immediately become an
