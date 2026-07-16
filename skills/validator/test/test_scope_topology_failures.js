@@ -7,6 +7,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawn, spawnSync } = require("child_process");
+const { buildTopology, hashPlan, inventoryVault, parseOperationRequest, planOperation } = require("../scripts/scope-topology");
 
 const root = path.resolve(__dirname, "../../..");
 const cli = path.join(root, "skills/validator/scripts/sync_scope_topology.js");
@@ -38,6 +39,11 @@ function disclosedRequest(directory) {
   const requestFile = path.join(os.tmpdir(), `ariadne-request-${crypto.randomUUID()}.json`);
   fs.writeFileSync(requestFile, JSON.stringify(request)); return requestFile;
 }
+function requestFileFor(directory, request) {
+  const inventory = inventoryVault(directory); const model = buildTopology(inventory); const preview = planOperation(inventory, model, parseOperationRequest({ ...request, allowed_write_paths: [] }));
+  const file = path.join(os.tmpdir(), `ariadne-request-${crypto.randomUUID()}.json`); fs.writeFileSync(file, JSON.stringify({ ...request, allowed_write_paths: preview.content_write_paths })); return file;
+}
+function reseal(value) { delete value.checksum; value.checksum = hashPlan(value); return value; }
 function run(args, options = {}) { return spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env: { ...process.env, ...options.env } }); }
 
 // Check mode is byte-for-byte and metadata zero-write.
@@ -54,8 +60,10 @@ for (const boundary of ["after-lock", "after-manifest", "after-temp", "after-ren
   const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AFTER: boundary } });
   assert.notStrictEqual(failed.status, 0, boundary);
   const manifestPath = path.join(directory, ".ariadne/scope-topology-operation.json");
-  assert.ok(fs.existsSync(manifestPath), boundary);
-  const id = JSON.parse(fs.readFileSync(manifestPath, "utf8")).operation_id;
+  const lockPath = path.join(directory, ".ariadne/scope-topology.lock");
+  assert.ok(fs.existsSync(manifestPath) || fs.existsSync(lockPath), boundary);
+  const recoveryFile = fs.existsSync(manifestPath) ? manifestPath : lockPath;
+  const id = JSON.parse(fs.readFileSync(recoveryFile, "utf8")).operation_id;
   const resumed = run([directory, "--resume", id]); assert.strictEqual(resumed.status, 0, `${boundary}: ${resumed.stderr}`);
   assert.strictEqual(JSON.parse(resumed.stdout).changes.length, 0, boundary);
   assert.ok(!fs.existsSync(manifestPath)); assert.ok(!fs.existsSync(path.join(directory, ".ariadne/scope-topology.lock")));
@@ -89,6 +97,88 @@ for (const boundary of ["after-lock", "after-manifest", "after-temp", "after-ren
   const resumed = run([directory, "--resume", manifest.operation_id]); assert.notStrictEqual(resumed.status, 0); assert.match(resumed.stderr, /precondition changed/u);
   const aborted = run([directory, "--abort", manifest.operation_id]); assert.strictEqual(aborted.status, 0, aborted.stderr); assert.ok(Array.isArray(JSON.parse(aborted.stdout).reconciliation_paths));
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// Critical recovery protocol: lock-only abort, tamper refusal, and exact CLI mode.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory);
+  const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-lock-create" } });
+  assert.notStrictEqual(failed.status, 0); const lock = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology.lock"), "utf8"));
+  const aborted = run([directory, "--abort", lock.operation_id]); assert.strictEqual(aborted.status, 0, aborted.stderr);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// Pre/post durable mutation windows reconcile from intent, including terminal cleanup.
+for (const point of [
+  "after-lock-create", "before-manifest-create-temp-open", "after-manifest-create-temp-open", "before-manifest-create-write", "after-manifest-create-write",
+  "before-manifest-create-fsync", "after-manifest-create-fsync", "before-manifest-create-rename", "after-manifest-create-rename", "before-manifest-create-dir-fsync", "after-manifest-create-dir-fsync",
+  "after-effect-intent", "before-mkdir", "after-mkdir", "before-temp-open", "after-temp-open", "before-temp-write", "after-temp-write", "before-temp-fsync", "after-temp-fsync",
+  "before-target-rename", "after-target-rename", "before-target-rename-dir-fsync", "after-target-rename-dir-fsync", "before-effect-complete-rename", "after-effect-complete-rename",
+  "before-final-check", "after-terminal-complete", "before-lock-remove", "after-lock-remove", "before-lock-dir-fsync", "after-lock-dir-fsync", "after-lock-cleanup", "before-manifest-remove",
+]) {
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: point } });
+  assert.notStrictEqual(failed.status, 0, point); const lockPath = path.join(directory, ".ariadne/scope-topology.lock"); const manifestPath = path.join(directory, ".ariadne/scope-topology-operation.json");
+  const recoveryPath = fs.existsSync(lockPath) ? lockPath : manifestPath; assert.ok(fs.existsSync(recoveryPath), point); const id = JSON.parse(fs.readFileSync(recoveryPath, "utf8")).operation_id;
+  const resumed = run([directory, "--resume", id]); assert.strictEqual(resumed.status, 0, `${point}: ${resumed.stderr}`); assert.deepStrictEqual(JSON.parse(resumed.stdout).changes, [], point);
+  assert.ok(!fs.existsSync(lockPath) && !fs.existsSync(manifestPath), point); fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// A crash after final manifest removal has no recovery state because cleanup is complete.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-manifest-remove" } }); assert.notStrictEqual(failed.status, 0);
+  assert.ok(!fs.existsSync(path.join(directory, ".ariadne/scope-topology.lock"))); assert.ok(!fs.existsSync(path.join(directory, ".ariadne/scope-topology-operation.json")));
+  const checked = run([directory, "--check"]); assert.strictEqual(checked.status, 0, checked.stderr); assert.deepStrictEqual(JSON.parse(checked.stdout).changes, []);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory);
+  const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-manifest-create" } }); assert.notStrictEqual(failed.status, 0);
+  const file = path.join(directory, ".ariadne/scope-topology-operation.json"); const manifest = JSON.parse(fs.readFileSync(file, "utf8")); manifest.temporary_paths = ["victim"]; reseal(manifest);
+  fs.writeFileSync(path.join(directory, "victim"), "keep"); fs.writeFileSync(file, JSON.stringify(manifest));
+  const aborted = run([directory, "--abort", manifest.operation_id]); assert.notStrictEqual(aborted.status, 0); assert.match(aborted.stderr, /checksum|invalid manifest runtime field/u); assert.strictEqual(fs.readFileSync(path.join(directory, "victim"), "utf8"), "keep");
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// Parent pinning refuses an ancestor swapped to a symlink after intent.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const point = "after-effect-intent:replace:Agent/Scope Map.md";
+  const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: point } }); assert.notStrictEqual(failed.status, 0);
+  const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8")); const agent = path.join(directory, "Agent"); fs.renameSync(agent, `${agent}.saved`); const outside = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-outside-")); fs.symlinkSync(outside, agent);
+  const resumed = run([directory, "--resume", manifest.operation_id]); assert.notStrictEqual(resumed.status, 0); assert.match(resumed.stderr, /unsafe directory|identity changed/u);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+// The control directory itself may not be redirected outside the vault.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const outside = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-control-outside-")); fs.symlinkSync(outside, path.join(directory, ".ariadne"));
+  const written = run([directory, "--write", "--request", requestFile]); assert.notStrictEqual(written.status, 0); assert.deepStrictEqual(fs.readdirSync(outside), []);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+// Abort cannot be redirected through a swapped parent to delete an outside lookalike temp.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const targetPath = "Agent/Scope Map.md"; const point = `after-temp-fsync:${targetPath}`;
+  const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: point } }); assert.notStrictEqual(failed.status, 0); const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8"));
+  const index = manifest.authority.effects.findIndex((item) => item.type === "replace" && item.path === targetPath); const effect = manifest.authority.effects[index]; const agent = path.join(directory, "Agent"); fs.renameSync(agent, `${agent}.saved`); const outside = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-abort-outside-")); fs.writeFileSync(path.join(outside, path.basename(effect.temp_path)), Buffer.from(effect.bytes_base64, "base64")); fs.symlinkSync(outside, agent);
+  const aborted = run([directory, "--abort", manifest.operation_id]); assert.notStrictEqual(aborted.status, 0); assert.ok(fs.existsSync(path.join(outside, path.basename(effect.temp_path))));
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// A move crash after rename is reconciled; a source-parent symlink swap is refused.
+{
+  const move = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/scope_topology/operations/move.json"), "utf8")); const directory = vault(); const requestFile = requestFileFor(directory, move);
+  const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-move-rename" } }); assert.notStrictEqual(failed.status, 0); const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8"));
+  const resumed = run([directory, "--resume", manifest.operation_id]); assert.strictEqual(resumed.status, 0, resumed.stderr); assert.deepStrictEqual(JSON.parse(resumed.stdout).changes, []);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+{
+  const move = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/scope_topology/operations/move.json"), "utf8")); const directory = vault(); const requestFile = requestFileFor(directory, move); const point = `after-effect-intent:move:${move.source_path}`;
+  const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: point } }); assert.notStrictEqual(failed.status, 0); const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8"));
+  const parent = path.dirname(path.join(directory, move.source_path)); fs.renameSync(parent, `${parent}.saved`); const outside = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-move-outside-")); fs.symlinkSync(outside, parent);
+  const resumed = run([directory, "--resume", manifest.operation_id]); assert.notStrictEqual(resumed.status, 0);
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+{
+  const directory = vault(); const result = run([directory, "--check", "--abort", "x"]); assert.notStrictEqual(result.status, 0); assert.match(result.stderr, /exactly one/u); fs.rmSync(directory, { recursive: true, force: true });
 }
 
 console.log("scope topology failure tests passed");
