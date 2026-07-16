@@ -4,6 +4,10 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+
+- `ariadne:scope`'s `adopt` operation now discovers legacy candidates (local `AGENTS.md` presence, per the scope topology LLD) so whole-vault and ancestor-chain adoption work on vaults with zero pre-existing `type: scope-index` descriptors. Previously `create`, `adopt`, and `repair` all required a scope to already be tagged or already adopted, so a genuinely unmigrated vault (root included) could never take its first `sync_scope_topology.js --write` step, contradicting the documented "whole-vault adoption adopts every approved scope candidate" behavior. Root titles now also come from an existing legacy hub when present instead of a hardcoded `"Vault"`.
+
 ## [0.3.0] - 2026-07-16
 
 ### Added

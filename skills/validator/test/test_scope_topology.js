@@ -181,6 +181,69 @@ const rootCheckpointReplacement = adoption.replacements.findIndex((item) => item
 assert.ok(rootDescriptorReplacement >= 0 && rootDescriptorReplacement < rootCheckpointReplacement);
 assert.strictEqual(adoption.replacements[rootDescriptorReplacement].activation, true);
 
+// Legacy candidate discovery: a genuinely unadopted vault (zero pre-existing scope-index
+// descriptors anywhere) must be whole-vault adoptable in one operation, per
+// docs/guides/scope-topology-migration.md. Root, a bare-index candidate, a named-index
+// candidate, and a nested candidate behind a transparent intermediate folder are all
+// discovered from local AGENTS.md presence; a dismissed candidate is excluded.
+const legacyWholeVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-whole-vault-"));
+fs.cpSync(fixture("legacy_vault"), legacyWholeVault, { recursive: true });
+const legacyWholeInventory = inventoryVault(legacyWholeVault);
+const legacyWholeModel = buildTopology(legacyWholeInventory);
+assert.strictEqual(legacyWholeModel.active, false);
+const legacyWholeRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const legacyWholePlan = planWithDisclosedWrites(legacyWholeInventory, legacyWholeModel, legacyWholeRequest);
+assert.strictEqual(legacyWholePlan.write_authorized, true);
+const legacyWholeDescriptors = legacyWholePlan.replacements.filter((item) => item.kind === "descriptor");
+assert.deepStrictEqual(legacyWholeDescriptors.map((item) => item.path).sort(), [
+  "00 Index.md", "Domains/Alpha/00 Index.md", "Domains/Beta/00 Index.md", "Domains/Gamma/Delta/00 Index.md",
+]);
+assert.match(legacyWholeDescriptors.find((item) => item.path === "00 Index.md").bytes, /title: Example Vault/u);
+const legacyBeta = legacyWholeDescriptors.find((item) => item.path === "Domains/Beta/00 Index.md").bytes;
+assert.match(legacyBeta, /title: Beta Domain/u);
+assert.match(legacyBeta, /parent_scope_id: root/u);
+assert.match(legacyWholeDescriptors.find((item) => item.path === "Domains/Alpha/00 Index.md").bytes, /parent_scope_id: root/u);
+assert.match(legacyWholeDescriptors.find((item) => item.path === "Domains/Gamma/Delta/00 Index.md").bytes, /parent_scope_id: root/u);
+applyOperation(legacyWholeVault, { ...legacyWholeRequest, allowed_write_paths: legacyWholePlan.content_write_paths });
+assert.deepStrictEqual(checkTopology(legacyWholeVault).changes, []);
+assert.ok(fs.existsSync(path.join(legacyWholeVault, "Domains/Beta/00 Beta Index.md")));
+assert.match(fs.readFileSync(path.join(legacyWholeVault, "Domains/Beta/00 Beta Index.md"), "utf8"), /title: Beta Domain/u);
+assert.ok(!fs.existsSync(path.join(legacyWholeVault, "Domains/Gamma/00 Index.md")));
+const omegaAfter = fs.readFileSync(path.join(legacyWholeVault, "Domains/Omega/00 Index.md"), "utf8");
+assert.match(omegaAfter, /ariadne_scope_adoption: dismissed/u);
+assert.doesNotMatch(omegaAfter, /type: scope-index/u);
+fs.rmSync(legacyWholeVault, { recursive: true, force: true });
+
+// Ancestor-chain adoption against the same unadopted vault only adopts the target and its
+// physical ancestors, leaving unrelated legacy candidates untouched.
+const legacyAncestorVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-ancestor-"));
+fs.cpSync(fixture("legacy_vault"), legacyAncestorVault, { recursive: true });
+const legacyAncestorInventory = inventoryVault(legacyAncestorVault);
+const legacyAncestorRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "alpha", adoption_mode: "ancestor-chain", normalize_files: [], allowed_write_paths: [] };
+const legacyAncestorPlan = planWithDisclosedWrites(legacyAncestorInventory, buildTopology(legacyAncestorInventory), legacyAncestorRequest);
+assert.deepStrictEqual(legacyAncestorPlan.replacements.filter((item) => item.kind === "descriptor").map((item) => item.path).sort(), ["00 Index.md", "Domains/Alpha/00 Index.md"]);
+fs.rmSync(legacyAncestorVault, { recursive: true, force: true });
+
+// Legacy scope_id collisions (same basename at different physical locations) are
+// disambiguated deterministically by full path rather than silently colliding.
+const collisionVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-collision-"));
+fs.cpSync(fixture("root_only"), collisionVault, { recursive: true });
+fs.mkdirSync(path.join(collisionVault, "Engineering"), { recursive: true });
+fs.writeFileSync(path.join(collisionVault, "Engineering", "AGENTS.md"), "# Engineering\n");
+fs.mkdirSync(path.join(collisionVault, "Product", "Engineering"), { recursive: true });
+fs.writeFileSync(path.join(collisionVault, "Product", "AGENTS.md"), "# Product\n");
+fs.writeFileSync(path.join(collisionVault, "Product", "Engineering", "AGENTS.md"), "# Product Engineering\n");
+const collisionInventory = inventoryVault(collisionVault);
+const collisionModel = buildTopology(collisionInventory);
+assert.strictEqual(collisionModel.active, true);
+const collisionRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "engineering", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const collisionPlan = planWithDisclosedWrites(collisionInventory, collisionModel, collisionRequest);
+const collisionDescriptors = collisionPlan.replacements.filter((item) => item.kind === "descriptor" && item.path !== "00 Index.md");
+const collisionIds = collisionDescriptors.map((item) => item.bytes.toString().match(/scope_id: (\S+)/u)[1]).sort();
+assert.deepStrictEqual(collisionIds, ["engineering", "product", "product-engineering"]);
+assert.strictEqual(new Set(collisionIds).size, 3);
+fs.rmSync(collisionVault, { recursive: true, force: true });
+
 const createVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-create-"));
 fs.cpSync(fixture("root_only"), createVault, { recursive: true });
 fs.mkdirSync(path.join(createVault, "New Scope"));

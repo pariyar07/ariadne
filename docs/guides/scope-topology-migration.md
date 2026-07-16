@@ -9,6 +9,8 @@ Schema-v1 scope topology is opt-in for existing vaults. Updating installed skill
 
 Both modes preserve named hubs and user content. Adoption creates canonical checkpoint files or generated blocks; it does not move, merge, rename, archive, or delete existing notes. Use `ariadne_scope_adoption: dismissed` on an intentional legacy hub to suppress its repeated candidate warning without making it a scope.
 
+`adopt` discovers legacy candidates from local `AGENTS.md` presence: any directory with a local `AGENTS.md` is eligible (the vault root is always eligible), except directories already active, already pending, or carrying `ariadne_scope_adoption: dismissed` on their `AGENTS.md` or an existing `00 Index.md`. A directory with only a named index (for example `00 Product Index.md`) gets a fresh canonical `00 Index.md` created alongside it; a directory with an unrecognized bare `00 Index.md` gets `scope_schema` frontmatter merged into that existing file, preserving its body. `scope_id` is derived deterministically from the directory basename, falling back to the full path when two candidates share a basename. For `ancestor-chain` mode, `target_scope_id` must be the derived ID of the intended target — `ariadne:scope` should state the exact ID it computed before you confirm the write set.
+
 Preview the operation with the `sync_scope_topology.js` bundled with the installed validator skill. Inspect its findings, exact sorted `content_write_paths`, and plan hash. Authorize only that set in the operation request. Progressive adoption writes descendants inward and performs root activation last, so strict topology never claims a partially activated tree.
 
 ## Generated Checkpoints And Views

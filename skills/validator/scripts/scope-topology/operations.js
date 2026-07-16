@@ -2,7 +2,7 @@
 
 const crypto = require("crypto");
 const path = require("path");
-const { normalizeScopePath } = require("./schema");
+const { normalizeNfc, normalizeScopePath } = require("./schema");
 const { renderCheckpointBlocks, renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry } = require("./render");
 
 const OPERATIONS = new Set(["create", "adopt", "move", "set-status", "repair"]);
@@ -143,9 +143,103 @@ function hasSupportedRootBaseFormula(text) {
   return supportedCall;
 }
 
+function fileAt(inventory, directory, name) {
+  const target = directory === "." ? name : `${directory}/${name}`;
+  const record = inventory.files.find((item) => item.relativePath === target);
+  return record && record.lstat.isFile() ? record : null;
+}
+
+function isDismissedCandidate(record) {
+  return Boolean(record && record.frontmatter && String(record.frontmatter.ariadne_scope_adoption || "") === "dismissed");
+}
+
+function namedIndexTitle(inventory, directory) {
+  const named = inventory.files
+    .filter((item) => path.posix.dirname(item.relativePath) === directory && /^00 .*Index\.md$/u.test(path.posix.basename(item.relativePath)))
+    .sort((left, right) => Buffer.from(left.relativePath).compare(Buffer.from(right.relativePath)));
+  for (const item of named) {
+    const title = item.frontmatter && typeof item.frontmatter.title === "string" ? item.frontmatter.title.trim() : "";
+    if (title) return title;
+  }
+  return null;
+}
+
+function slugify(name) {
+  const slug = normalizeNfc(name).toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-+|-+$/gu, "");
+  return slug || "scope";
+}
+
+function pathSlug(directory) {
+  return directory.split("/").map(slugify).join("-");
+}
+
+// Legacy candidate discovery for the "adopt" operation only. A directory is a legacy
+// candidate when it has a local AGENTS.md (the LLD's own discovery signal) and is not
+// already active, pending, or explicitly dismissed. The vault root is always eligible
+// unless it is already active or pending. Discovery never touches disk; it only plans.
+function discoverLegacyCandidates(inventory, model) {
+  const knownIds = new Set([...model.descriptorsById.keys(), ...model.pendingDescriptors.map((item) => item.scopeId)]);
+  const knownDirectories = new Map();
+  for (const item of model.descriptorsById.values()) knownDirectories.set(item.scopePath, item.scopeId);
+  for (const item of model.pendingDescriptors) knownDirectories.set(item.directory, item.scopeId);
+
+  const eligible = [];
+  for (const directory of inventory.directories) {
+    const dir = directory.relativePath;
+    if (knownDirectories.has(dir)) continue;
+    if (dir !== ".") {
+      const agents = fileAt(inventory, dir, "AGENTS.md");
+      if (!agents || isDismissedCandidate(agents)) continue;
+    }
+    const bare = fileAt(inventory, dir, "00 Index.md");
+    if (bare && isDismissedCandidate(bare)) continue;
+    eligible.push(dir);
+  }
+  eligible.sort((left, right) => {
+    const leftDepth = left === "." ? 0 : left.split("/").length;
+    const rightDepth = right === "." ? 0 : right.split("/").length;
+    return leftDepth - rightDepth || Buffer.from(left).compare(Buffer.from(right));
+  });
+
+  const naiveSlugs = new Map();
+  for (const dir of eligible) {
+    const slug = dir === "." ? "root" : slugify(path.posix.basename(dir));
+    naiveSlugs.set(slug, [...(naiveSlugs.get(slug) || []), dir]);
+  }
+
+  const resolved = new Map(knownDirectories);
+  const candidates = [];
+  for (const dir of eligible) {
+    let parentScopeId = null;
+    if (dir !== ".") {
+      let current = path.posix.dirname(dir);
+      while (current !== "." && !resolved.has(current)) current = path.posix.dirname(current);
+      parentScopeId = resolved.get(current) || resolved.get(".") || "root";
+    }
+    let scopeId = dir === "." ? "root" : slugify(path.posix.basename(dir));
+    if (dir !== "." && ((naiveSlugs.get(scopeId) || []).length > 1 || knownIds.has(scopeId))) scopeId = pathSlug(dir);
+    if (knownIds.has(scopeId)) throw new Error(`legacy candidate scope_id collision could not be resolved deterministically: ${dir}`);
+    const bare = fileAt(inventory, dir, "00 Index.md");
+    const title = (bare && bare.frontmatter && typeof bare.frontmatter.title === "string" && bare.frontmatter.title.trim())
+      || namedIndexTitle(inventory, dir)
+      || (dir === "." ? "Vault" : path.posix.basename(dir));
+    const descriptor = Object.freeze({
+      scopeId, scopePath: dir, parentScopeId, title, status: "active", scopeOrder: null,
+      formerScopePaths: [], replacedByScopeId: null, fileRecord: bare || null, directory: dir, supported: true,
+    });
+    resolved.set(dir, scopeId);
+    knownIds.add(scopeId);
+    candidates.push(descriptor);
+  }
+  return candidates;
+}
+
 function planOperation(inventory, model, requestValue) {
   const request = parseOperationRequest(requestValue);
-  const current = model.descriptorsById.get(request.target_scope_id) || model.pendingDescriptors.find((item) => item.scopeId === request.target_scope_id);
+  const legacyCandidates = request.operation === "adopt" ? discoverLegacyCandidates(inventory, model) : [];
+  const current = model.descriptorsById.get(request.target_scope_id)
+    || model.pendingDescriptors.find((item) => item.scopeId === request.target_scope_id)
+    || legacyCandidates.find((item) => item.scopeId === request.target_scope_id);
   if (request.operation !== "create" && !current) throw new Error(`target_scope_id is inconsistent with inventory: ${request.target_scope_id}`);
   if (request.operation === "create" && model.descriptorsById.has(request.target_scope_id)) throw new Error("create target already exists");
   const directoryPaths = new Set(inventory.directories.map((item) => item.relativePath));
@@ -169,11 +263,12 @@ function planOperation(inventory, model, requestValue) {
   }
   if (request.operation === "adopt") {
     const pending = model.pendingDescriptors.filter((item) => item.supported);
-    let selected = request.adoption_mode === "whole-vault" ? pending : pending.filter((item) => item.scopeId === request.target_scope_id || current.scopePath.startsWith(`${item.scopePath}/`));
+    const pool = [...pending, ...legacyCandidates];
+    let selected = request.adoption_mode === "whole-vault" ? pool : pool.filter((item) => item.scopeId === request.target_scope_id || current.scopePath.startsWith(`${item.scopePath}/`));
     if (!selected.some((item) => item.scopeId === request.target_scope_id)) throw new Error("adoption target is not a pending descriptor");
     if (!selected.some((item) => item.scopeId === "root")) {
-      const rootFile = inventory.files.find((item) => item.relativePath === "00 Index.md") || null;
-      selected = [{ scopeId: "root", scopePath: ".", parentScopeId: null, title: "Vault", status: "active", scopeOrder: null, formerScopePaths: [], fileRecord: rootFile }, ...selected];
+      const rootCandidate = legacyCandidates.find((item) => item.scopeId === "root");
+      if (rootCandidate) selected = [rootCandidate, ...selected];
     }
     descriptors = selected;
     changedDescriptorIds = new Set(selected.map((item) => item.scopeId));
