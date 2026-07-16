@@ -155,7 +155,7 @@ One deterministic synchronization workflow runs after approved creation, adoptio
 3. Ensure registry structure.
 4. Regenerate Markdown tree.
 5. Regenerate Canvas.
-6. Update applicable Base formulas with child checks before parent checks.
+6. Report applicable Base formulas whose child checks do not precede parent checks; do not authorize a rewrite until a complete supported-shape normalizer exists.
 7. Run scoped validation.
 8. Run whole-vault validation.
 9. Confirm a second write pass produces zero changes.
@@ -180,7 +180,7 @@ Allowed after explicit adoption/repair authorization:
 - Insert or regenerate known marker blocks.
 - Regenerate registry/tree/Canvas.
 - Add generated parent/direct-child routes.
-- Add child-before-parent branches to recognized root Base formulas.
+- Report child-before-parent defects in recognized root Base formulas without authorizing a rewrite.
 - Normalize meaning-preserving schema formatting.
 - Update a stale path for the same uniquely identified descriptor.
 

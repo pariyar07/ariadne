@@ -258,9 +258,19 @@ for (const mutateTemp of [
 
 // A move crash after rename is reconciled; a source-parent symlink swap is refused.
 {
-  const move = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/scope_topology/operations/move.json"), "utf8")); const directory = vault(); const requestFile = requestFileFor(directory, move);
+  const move = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures/scope_topology/operations/move.json"), "utf8")); const directory = vault();
+  const sourceRoot = path.join(directory, move.source_path); const unique = new Map();
+  for (const [index, relative] of ["00 Index.md", "AGENTS.md", "Agent/00 Agent Navigation.md", "Agent/Task Routing Matrix.md"].entries()) {
+    const file = path.join(sourceRoot, relative); fs.mkdirSync(path.dirname(file), { recursive: true });
+    const original = fs.existsSync(file) ? fs.readFileSync(file) : Buffer.from(`user checkpoint ${relative}\n`);
+    const extension = Buffer.from([0x0a, 0x75, 0x6e, 0x69, 0x71, 0x75, 0x65, 0x2d, 0x90 + index]); fs.writeFileSync(file, Buffer.concat([original, extension])); unique.set(relative, extension);
+  }
+  const requestFile = requestFileFor(directory, move);
   const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-move-rename" } }); assert.notStrictEqual(failed.status, 0); const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8"));
   const resumed = run([directory, "--resume", manifest.operation_id]); assert.strictEqual(resumed.status, 0, resumed.stderr); assert.deepStrictEqual(JSON.parse(resumed.stdout).changes, []);
+  for (const [relative, extension] of unique) assert.ok(fs.readFileSync(path.join(directory, move.destination_path, relative)).includes(extension), relative);
+  assert.match(fs.readFileSync(path.join(directory, move.source_path, "00 Index.md"), "utf8"), /type: scope-redirect/u);
+  const zero = run([directory, "--check"]); assert.strictEqual(zero.status, 0, zero.stderr); assert.deepStrictEqual(JSON.parse(zero.stdout).changes, []);
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
 // A cloned destination with matching bytes but a different root inode is not a completed move.

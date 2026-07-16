@@ -68,20 +68,41 @@ function hashPlan(plan) { return crypto.createHash("sha256").update(JSON.stringi
 function descriptorPath(descriptor) { return descriptor.scopePath === "." ? "00 Index.md" : `${descriptor.scopePath}/00 Index.md`; }
 
 function descriptorBytes(descriptor, existingBytes = null) {
-  const lines = ["---", `title: ${descriptor.title}`, "type: scope-index", "scope_schema: 1", `scope_id: ${descriptor.scopeId}`, `scope_path: ${descriptor.scopePath}`];
-  if (descriptor.parentScopeId) lines.push(`parent_scope_id: ${descriptor.parentScopeId}`);
-  lines.push(`status: ${descriptor.status}`);
-  if (descriptor.scopeOrder !== null && descriptor.scopeOrder !== undefined) lines.push(`scope_order: ${descriptor.scopeOrder}`);
-  if (descriptor.formerScopePaths && descriptor.formerScopePaths.length) lines.push("former_scope_paths:", ...descriptor.formerScopePaths.map((item) => `  - ${item}`));
-  if (descriptor.replacedByScopeId) lines.push(`replaced_by_scope_id: ${descriptor.replacedByScopeId}`);
-  lines.push("---");
+  const desired = new Map([
+    ["title", [`title: ${descriptor.title}`]], ["type", ["type: scope-index"]], ["scope_schema", ["scope_schema: 1"]],
+    ["scope_id", [`scope_id: ${descriptor.scopeId}`]], ["scope_path", [`scope_path: ${descriptor.scopePath}`]],
+    ["parent_scope_id", descriptor.parentScopeId ? [`parent_scope_id: ${descriptor.parentScopeId}`] : []], ["status", [`status: ${descriptor.status}`]],
+    ["scope_order", descriptor.scopeOrder !== null && descriptor.scopeOrder !== undefined ? [`scope_order: ${descriptor.scopeOrder}`] : []],
+    ["former_scope_paths", descriptor.formerScopePaths && descriptor.formerScopePaths.length ? ["former_scope_paths:", ...descriptor.formerScopePaths.map((item) => `  - ${item}`)] : []],
+    ["replaced_by_scope_id", descriptor.replacedByScopeId ? [`replaced_by_scope_id: ${descriptor.replacedByScopeId}`] : []],
+  ]);
+  let lines = ["---", ...[...desired.values()].flat(), "---"];
   let body = `\n# ${descriptor.title}\n`;
   if (existingBytes) {
-    let text = existingBytes.toString("utf8");
+    const raw = Buffer.from(existingBytes); let text = raw.toString("utf8");
     const bom = text.startsWith("\ufeff") ? "\ufeff" : "";
     if (bom) text = text.slice(1);
-    const match = text.match(/^---\r?\n[\s\S]*?\r?\n---(\r?\n[\s\S]*|$)/u);
-    if (match) body = match[1] || "\n";
+    const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---(\r?\n[\s\S]*|$)/u);
+    if (match) {
+      const bomBytes = raw.subarray(0, raw[0] === 0xef && raw[1] === 0xbb && raw[2] === 0xbf ? 3 : 0);
+      const start = bomBytes.length; const lfClose = raw.indexOf(Buffer.from("\n---"), start + 4);
+      const closeEnd = lfClose < 0 ? -1 : lfClose + 4;
+      const bodyStart = closeEnd < 0 ? -1 : raw[closeEnd] === 0x0d && raw[closeEnd + 1] === 0x0a ? closeEnd + 2 : raw[closeEnd] === 0x0a ? closeEnd + 1 : closeEnd;
+      const rawBody = bodyStart < 0 ? Buffer.from("\n") : raw.subarray(bodyStart);
+      const original = match[1].split(/\r?\n/u); const merged = []; const seen = new Set();
+      for (let index = 0; index < original.length;) {
+        const field = original[index].match(/^([A-Za-z0-9_-]+):(?:\s.*)?$/u);
+        if (!field) { merged.push(original[index]); index += 1; continue; }
+        let end = index + 1; while (end < original.length && (/^\s/u.test(original[end]) || original[end] === "")) end += 1;
+        if (desired.has(field[1])) { if (!seen.has(field[1])) merged.push(...desired.get(field[1])); seen.add(field[1]); }
+        else merged.push(...original.slice(index, end));
+        index = end;
+      }
+      for (const [field, value] of desired) if (!seen.has(field)) merged.push(...value);
+      lines = ["---", ...merged, "---"];
+      const output = Buffer.concat([bomBytes, Buffer.from(lines.join("\n")), rawBody.length ? Buffer.from("\n") : Buffer.alloc(0), rawBody]);
+      return raw.equals(Buffer.from(raw.toString("utf8"), "utf8")) ? output.toString("utf8") : output;
+    }
     return `${bom}${lines.join("\n")}${body}`;
   }
   return `${lines.join("\n")}${body}`;
@@ -202,10 +223,10 @@ function planOperation(inventory, model, requestValue) {
   const baseMentions = inventory.files.filter((item) => item.relativePath.startsWith("Bases/") && item.relativePath.endsWith(".base") && item.rawBytes && /file\.inFolder/u.test(item.rawBytes.toString("utf8")))
     .map((item) => ({ path: item.relativePath, recognized: hasSupportedRootBaseFormula(item.rawBytes.toString("utf8")) }));
   const base_formula_proposals = baseMentions.filter((item) => item.recognized)
-    .map((item) => ({ path: item.path, recognized: true, authorized: request.allowed_write_paths.includes(item.path), action: "add child-before-parent scope branches" }));
+    .map((item) => ({ path: item.path, recognized: true, authorized: false, action: "report-only; no rewrite authorized" }));
   const base_formula_reports = baseMentions.filter((item) => !item.recognized)
     .map((item) => ({ path: item.path, code: "unsupported-base-formula", rewrite_proposed: false }));
-  const content_write_paths = lifecycleRefused ? [] : [...new Set([...replacements.map((item) => item.path), ...request.normalize_files, ...base_formula_proposals.filter((item) => item.recognized).map((item) => item.path)])].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
+  const content_write_paths = lifecycleRefused ? [] : [...new Set([...replacements.map((item) => item.path), ...request.normalize_files])].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
   const refusals = [];
   if (lifecycleRefused) refusals.push({ code: "lifecycle-transition-refused", path: descriptorPath(current) });
   const missing = content_write_paths.filter((item) => !request.allowed_write_paths.includes(item));

@@ -88,6 +88,10 @@ function deriveOutputs(plan, initialFiles) {
     .map(({ item, bytes }) => ({ path: item.path, kind: item.kind, activation: item.activation === true, sha256: sha(bytes), bytes_base64: bytes.toString("base64") }))
     .sort((left, right) => Number(left.activation) - Number(right.activation));
 }
+function sourcePathForOutput(plan, outputPath) {
+  for (const move of plan.moves) if (outputPath === move.destination_path || outputPath.startsWith(`${move.destination_path}/`)) return `${move.source_path}${outputPath.slice(move.destination_path.length)}`;
+  return outputPath;
+}
 function canonicalDirectories(request, plan) {
   const known = new Set(); const addAncestors = (value, include) => { let current = include ? value : path.posix.dirname(value); while (current !== ".") { known.add(current); current = path.posix.dirname(current); } };
   for (const item of plan.preconditions) addAncestors(item.path, false); if (request.operation === "create") addAncestors(request.destination_path, true); if (request.source_path) addAncestors(request.source_path, true); return known;
@@ -105,7 +109,7 @@ function deriveEffects(operationId, request, plan, initialFiles, moveIdentities)
 }
 function buildAuthority(root, operationId, request, plan, controlPin, inventory) {
   const persistedPlan = JSON.parse(JSON.stringify(plan));
-  const replacementPaths = [...new Set(plan.replacements.map((item) => item.path))]; const initialFiles = replacementPaths.map((itemPath) => { const file = inventory.files.find((item) => item.relativePath === itemPath); return { path: itemPath, sha256: file ? file.contentHash : null, bytes_base64: file ? file.rawBytes.toString("base64") : null }; });
+  const replacementPaths = [...new Set(plan.replacements.map((item) => item.path))]; const initialFiles = replacementPaths.map((itemPath) => { const sourcePath = sourcePathForOutput(plan, itemPath); const file = inventory.files.find((item) => item.relativePath === sourcePath); return { path: itemPath, source_path: sourcePath, sha256: file ? file.contentHash : null, bytes_base64: file ? file.rawBytes.toString("base64") : null }; });
   const moveIdentities = plan.moves.map((move) => ({ source_path: move.source_path, identity: treeIdentity(root, move.source_path) }));
   const effects = deriveEffects(operationId, request, persistedPlan, initialFiles, moveIdentities);
   return seal({ authority_schema: 1, operation_id: operationId, request, request_hash: stableHash(request), plan: persistedPlan, plan_hash: stableHash(persistedPlan), control_pin: controlPin, lock_identity: null, allowed_content_paths: request.allowed_write_paths, preconditions: plan.preconditions, initial_files: initialFiles, move_identities: moveIdentities, effects });
@@ -119,7 +123,7 @@ function validateAuthority(authority) {
   if (authority.plan.operation !== request.operation || authority.plan.target_scope_id !== request.target_scope_id || authority.plan.write_authorized !== true || authority.plan.refusals.length !== 0 || stableHash(request.allowed_write_paths) !== stableHash(authority.allowed_content_paths) || stableHash(authority.plan.content_write_paths) !== stableHash(request.allowed_write_paths) || stableHash(authority.preconditions) !== stableHash(authority.plan.preconditions)) throw new Error("operation authority plan mismatch");
   if (!Array.isArray(authority.initial_files) || new Set(authority.initial_files.map((item) => item.path)).size !== authority.initial_files.length) throw new Error("invalid authority initial inventory");
   const replacementPaths = [...new Set(authority.plan.replacements.map((item) => item.path))]; if (stableHash(authority.initial_files.map((item) => item.path)) !== stableHash(replacementPaths)) throw new Error("authority initial files are incomplete");
-  for (const input of authority.initial_files) { if (input.bytes_base64 === null ? input.sha256 !== null : sha(Buffer.from(input.bytes_base64, "base64")) !== input.sha256) throw new Error("authority initial file hash mismatch"); const planned = authority.preconditions.find((item) => item.path === input.path); if ((planned || {}).sha256 !== (input.sha256 || undefined) && input.sha256 !== null) throw new Error("authority initial precondition mismatch"); }
+  for (const input of authority.initial_files) { if (input.source_path !== sourcePathForOutput(authority.plan, input.path)) throw new Error("authority initial source mapping mismatch"); if (input.bytes_base64 === null ? input.sha256 !== null : sha(Buffer.from(input.bytes_base64, "base64")) !== input.sha256) throw new Error("authority initial file hash mismatch"); const planned = authority.preconditions.find((item) => item.path === input.source_path); if ((planned || {}).sha256 !== (input.sha256 || undefined) && input.sha256 !== null) throw new Error("authority initial precondition mismatch"); }
   if (stableHash(authority.move_identities.map((item) => item.source_path)) !== stableHash(authority.plan.moves.map((item) => item.source_path))) throw new Error("authority move identities mismatch");
   const expectedEffects = deriveEffects(authority.operation_id, request, authority.plan, authority.initial_files, authority.move_identities); if (stableHash(authority.effects) !== stableHash(expectedEffects)) throw new Error("authority effects do not match canonical plan");
   return authority;

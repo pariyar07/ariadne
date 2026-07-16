@@ -76,9 +76,11 @@ function parseScopeDescriptor(file, frontmatter) {
   const parentScopeId = scalar(frontmatter.parent_scope_id, "parent_scope_id", { optional: true });
   const scopeOrderText = scalar(frontmatter.scope_order, "scope_order", { optional: true });
   const formerScopePaths = flatList(frontmatter.former_scope_paths, "former_scope_paths").map(normalizeScopePath);
+  const replacedByScopeId = scalar(frontmatter.replaced_by_scope_id, "replaced_by_scope_id", { optional: true });
 
   if (!SCOPE_ID.test(scopeId)) throw new Error("scope_id must be lower-kebab-case");
   if (parentScopeId !== undefined && !SCOPE_ID.test(parentScopeId)) throw new Error("parent_scope_id must be lower-kebab-case");
+  if (replacedByScopeId !== undefined && !SCOPE_ID.test(replacedByScopeId)) throw new Error("replaced_by_scope_id must be lower-kebab-case");
   if (!STATUSES.has(status)) throw new Error(`unsupported scope status: ${status}`);
   if (scopeId === "root" && scopePath !== ".") throw new Error("root scope_path must be .");
   if (scopePath === "." && scopeId !== "root") throw new Error("vault root must use scope_id root");
@@ -103,6 +105,7 @@ function parseScopeDescriptor(file, frontmatter) {
     status,
     scopeOrder,
     formerScopePaths,
+    replacedByScopeId: replacedByScopeId === undefined ? null : replacedByScopeId,
     tags: flatList(frontmatter.tags, "tags"),
   });
 }

@@ -112,6 +112,38 @@ assert.deepStrictEqual(moved.changes, []);
 assert.ok(fs.existsSync(path.join(moveVault, "Domains/Product/Workstreams/Beta/00 Index.md")));
 assert.ok(fs.existsSync(path.join(moveVault, "Domains/Product/Workstreams/Alpha/00 Index.md")));
 fs.rmSync(moveVault, { recursive: true, force: true });
+
+// A move composes destination checkpoints from the pre-move source bytes.
+const preservingMoveVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-move-preserve-"));
+fs.cpSync(fixture("deep_transparent_ancestry"), preservingMoveVault, { recursive: true });
+const sourceScope = "Domains/Product/Workstreams/Alpha";
+const destinationScope = "Domains/Product/Workstreams/Beta";
+const checkpointPaths = ["00 Index.md", "AGENTS.md", "Agent/00 Agent Navigation.md", "Agent/Task Routing Matrix.md"];
+for (const [index, relative] of checkpointPaths.entries()) {
+  const file = path.join(preservingMoveVault, sourceScope, relative); fs.mkdirSync(path.dirname(file), { recursive: true });
+  const rendered = renderCheckpointBlocks(operationModel).find((item) => item.path === `${sourceScope}/${relative}`);
+  const original = fs.existsSync(file) ? fs.readFileSync(file) : rendered.bytes;
+  const prefix = index === 0 ? Buffer.alloc(0) : Buffer.from(`user-prefix-${index}\n`);
+  fs.writeFileSync(file, Buffer.concat([prefix, original, Buffer.from([0x0a, 0x75, 0x73, 0x65, 0x72, 0x2d, 0x80 + index])]));
+}
+const descriptorFile = path.join(preservingMoveVault, sourceScope, "00 Index.md");
+let descriptorText = fs.readFileSync(descriptorFile).toString("latin1");
+descriptorText = descriptorText.replace("status: active", "status: active\ncreated: 2020-01-02\ntags:\n  - user-tag\nuser_note: keep-me\nreplaced_by_scope_id: zulu");
+fs.writeFileSync(descriptorFile, Buffer.from(descriptorText, "latin1"));
+const preservingInventory = inventoryVault(preservingMoveVault); const preservingModel = buildTopology(preservingInventory);
+const preservingPlan = planWithDisclosedWrites(preservingInventory, preservingModel, operationFixture("move"));
+applyOperation(preservingMoveVault, { ...operationFixture("move"), allowed_write_paths: preservingPlan.content_write_paths });
+for (const [index, relative] of checkpointPaths.entries()) {
+  const bytes = fs.readFileSync(path.join(preservingMoveVault, destinationScope, relative));
+  if (index > 0) assert.ok(bytes.subarray(0, `user-prefix-${index}\n`.length).equals(Buffer.from(`user-prefix-${index}\n`)), relative);
+  assert.ok(bytes.includes(Buffer.from([0x0a, 0x75, 0x73, 0x65, 0x72, 0x2d, 0x80 + index])), relative);
+}
+const movedDescriptor = fs.readFileSync(path.join(preservingMoveVault, destinationScope, "00 Index.md"), "latin1");
+for (const preserved of ["created: 2020-01-02", "  - user-tag", "user_note: keep-me", "replaced_by_scope_id: zulu"]) assert.match(movedDescriptor, new RegExp(preserved.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
+assert.match(movedDescriptor, /scope_path: Domains\/Product\/Workstreams\/Beta/u);
+assert.match(fs.readFileSync(path.join(preservingMoveVault, sourceScope, "00 Index.md"), "utf8"), /type: scope-redirect/u);
+assert.deepStrictEqual(checkTopology(preservingMoveVault).changes, []);
+fs.rmSync(preservingMoveVault, { recursive: true, force: true });
 assert.ok(movePlan.replacements.some((item) => item.kind === "redirect" && item.path === "Domains/Product/Workstreams/Alpha/00 Index.md"));
 assert.match(movePlan.replacements.find((item) => item.kind === "redirect").bytes, /redirect_schema: 1/u);
 assert.match(movePlan.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Beta/00 Index.md")).bytes, /parent_scope_id: product/u);
@@ -156,7 +188,7 @@ fs.writeFileSync(path.join(baseVault, "Bases", "Substring.base"), 'formulas:\n  
 const baseInventory = inventoryVault(baseVault);
 const basePlan = planWithDisclosedWrites(baseInventory, buildTopology(baseInventory), { ...operationFixture("repair"), allowed_write_paths: [] });
 assert.deepStrictEqual(basePlan.base_formula_proposals.map(({ path: itemPath, recognized, authorized }) => ({ path: itemPath, recognized, authorized })), [
-  { path: "Bases/Recognized.base", recognized: true, authorized: true },
+  { path: "Bases/Recognized.base", recognized: true, authorized: false },
 ]);
 assert.deepStrictEqual(basePlan.base_formula_reports, ["Additional", "Ambiguous", "Comment", "Filter", "Nested", "NestedRoot", "Substring", "Unsupported"].map((name) => ({ path: `Bases/${name}.base`, code: "unsupported-base-formula", rewrite_proposed: false })));
 assert.ok(!basePlan.content_write_paths.includes("Bases/Unsupported.base"));
@@ -166,6 +198,11 @@ const unsupportedAuthorization = planOperation(baseInventory, buildTopology(base
 }));
 assert.ok(unsupportedAuthorization.refusals.some((item) => item.code === "unused-write-authorization" && item.path === "Bases/Unsupported.base"));
 assert.ok(!basePlan.replacements.some((item) => item.path.endsWith(".base") && item.path !== "Bases/Scope Registry.base"), "Base proposals must not become implicit rewrites");
+assert.ok(!basePlan.content_write_paths.includes("Bases/Recognized.base"), "report-only Base proposals must not be authorized");
+const recognizedAuthorization = planOperation(baseInventory, buildTopology(baseInventory), parseOperationRequest({
+  ...operationFixture("repair"), allowed_write_paths: [...basePlan.content_write_paths, "Bases/Recognized.base"],
+}));
+assert.ok(recognizedAuthorization.refusals.some((item) => item.code === "unused-write-authorization" && item.path === "Bases/Recognized.base"));
 fs.rmSync(baseVault, { recursive: true, force: true });
 
 const duplicateCreateVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-duplicate-"));
@@ -397,6 +434,7 @@ assert.deepStrictEqual(scoped.map((item) => item.finding_id), [...scoped].sort(b
 assert.ok(scoped.some((item) => item.code === "invalid-schema" && item.origin.startsWith("Healthy/")));
 assert.ok(scoped.some((item) => item.code === "dismissed-candidate" && item.origin.startsWith("Healthy/")));
 assert.ok(scoped.some((item) => item.code === "malformed-redirect" && item.origin.startsWith("Healthy/")));
+assert.deepStrictEqual(scoped.filter((item) => item.code === "scope-map-drift").map((item) => item.finding_id), whole.filter((item) => item.code === "scope-map-drift").map((item) => item.finding_id));
 assert.ok(scoped.every((item) => !item.origin.startsWith("ZBroken/")), "duplicate ID leaked a sibling finding");
 
 const validator = path.join(__dirname, "..", "scripts", "validate_vault.js");

@@ -80,7 +80,7 @@ function scopeFindings(topology, inventory) {
   if (topology.active) {
     const artifacts = [renderScopeRegistry(topology), renderScopeMapMarkdown(topology), renderScopeMapCanvas(topology)];
     const recordAt = (target) => inventory.files.find((candidate) => candidate.relativePath === target);
-    const addMap = (artifact, detail) => add("scope-map-drift", artifact.path, `${artifact.path}: ${detail}`, "root", [artifact.path], detail);
+    const addMap = (artifact, detail) => results.push(finding({ code: "scope-map-drift", origin: artifact.path, message: `${artifact.path}: ${detail}`, scopeIds: [...topology.descriptorsById.keys()], obligations: [artifact.path], discriminator: detail }));
     for (const artifact of artifacts) {
       const record = recordAt(artifact.path);
       if (!record || !record.lstat.isFile()) { addMap(artifact, "missing generated artifact"); continue; }
@@ -251,6 +251,7 @@ function filterFindingsByScope(findings, targetScopeId, topology) {
     return targetPath === "" || candidate === targetPath || candidate.startsWith(`${targetPath}/`);
   }
   return Object.freeze(findings.filter((item) => {
+    if (item.code === "scope-map-drift" && item.scope_ids.includes(targetScopeId)) return true;
     if (item.origin && (inTarget(item.origin) || ancestorSurfaces.has(item.origin))) return true;
     if (item.obligations.some((value) => inTarget(value) || ancestorSurfaces.has(value))) return true;
     return !ambiguousTargetId && item.scope_ids.includes(targetScopeId);

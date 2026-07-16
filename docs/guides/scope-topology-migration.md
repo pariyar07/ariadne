@@ -15,7 +15,7 @@ Preview the operation with the `sync_scope_topology.js` bundled with the install
 
 Every adopted scope has `00 Index.md`, `AGENTS.md`, `Agent/00 Agent Navigation.md`, and `Agent/Task Routing Matrix.md`. A checkpoint may be generated-only when it has no local additions; user extensions outside Ariadne marker blocks are preserved.
 
-`Bases/Scope Registry.base` and `Agent/Scope Map.canvas` are fully derived. `Agent/Scope Map.md` has a derived marker block. Do not repair these by hand. The synchronizer also maintains child-before-parent branches in applicable Base formulas.
+`Bases/Scope Registry.base` and `Agent/Scope Map.canvas` are fully derived. `Agent/Scope Map.md` has a derived marker block. Do not repair these by hand. Other Base formulas are audited for child-before-parent ordering but remain report-only: the synchronizer does not authorize or rewrite them.
 
 ## Interrupted Operations
 
