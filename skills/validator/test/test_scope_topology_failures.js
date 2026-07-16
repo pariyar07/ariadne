@@ -245,11 +245,32 @@ for (const point of [
   assert.deepStrictEqual(leftovers, [], point); fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
 
-// A live writer's partial fixed-protocol stage excludes concurrent acquisition.
+// A live pre-election stage is not touched; another contender may atomically win.
 {
   const directory = vault(); const requestFile = disclosedRequest(directory); const child = spawn(process.execPath, [cli, directory, "--write", "--request", requestFile], { env: { ...process.env, ARIADNE_SYNC_PAUSE_AT: "after-candidate-open" }, stdio: "ignore" }); const control = path.join(directory, ".ariadne");
   for (let count = 0; count < 200 && (!fs.existsSync(control) || !fs.readdirSync(control).some((name) => name.startsWith("scope-topology.candidate-stage-"))); count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
-  const concurrent = run([directory, "--write", "--request", requestFile]); assert.notStrictEqual(concurrent.status, 0); assert.match(concurrent.stderr, /candidate is held by a live writer/u); child.kill("SIGTERM");
+  const concurrent = run([directory, "--write", "--request", requestFile]); assert.strictEqual(concurrent.status, 0, concurrent.stderr); assert.ok(fs.readdirSync(control).some((name) => name.startsWith("scope-topology.candidate-stage-"))); child.kill("SIGTERM");
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// Two fully prepared contenders cross one barrier; atomic link elects exactly one.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const control = path.join(directory, ".ariadne"); fs.mkdirSync(control); const release = path.join(os.tmpdir(), `ariadne-release-${crypto.randomUUID()}`); const resultRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-race-results-")); const children = [];
+  for (const name of ["a", "b"]) {
+    const output = path.join(resultRoot, `${name}.out`); const error = path.join(resultRoot, `${name}.err`); const status = path.join(resultRoot, `${name}.status`);
+    children.push({ status, child: spawn("sh", ["-c", '"$1" "$2" "$3" --write --request "$4" >"$5" 2>"$6"; echo $? >"$7"', "sh", process.execPath, cli, directory, requestFile, output, error, status], { env: { ...process.env, ARIADNE_SYNC_CANDIDATE_RELEASE: release }, stdio: "ignore" }) });
+  }
+  for (let count = 0; count < 500 && fs.readdirSync(control).filter((name) => name.startsWith("scope-topology.candidate-stage-")).length < 2; count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+  assert.strictEqual(fs.readdirSync(control).filter((name) => name.startsWith("scope-topology.candidate-stage-")).length, 2); fs.writeFileSync(release, "go");
+  for (let count = 0; count < 1000 && children.some((item) => !fs.existsSync(item.status)); count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+  assert.deepStrictEqual(children.map((item) => Number(fs.readFileSync(item.status, "utf8"))).sort(), [0, 1]); assert.ok(!fs.readdirSync(control).some((name) => name.includes("candidate") || name === "scope-topology.lock" || name === "scope-topology-operation.json"));
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(resultRoot, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true }); fs.rmSync(release, { force: true });
+}
+
+// Recovery deterministically elects one of multiple dead valid stages and removes losers.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "before-candidate-link" } }); assert.notStrictEqual(failed.status, 0); const control = path.join(directory, ".ariadne"); const originalName = fs.readdirSync(control).find((name) => name.startsWith("scope-topology.candidate-stage-")); const original = JSON.parse(fs.readFileSync(path.join(control, originalName), "utf8")); const clone = structuredClone(original); const oldId = clone.operation_id; const newId = crypto.randomUUID(); clone.operation_id = newId; clone.effects.filter((item) => item.type === "replace").forEach((item) => { item.temp_path = item.temp_path.replace(oldId, newId); }); const clonePath = path.join(control, `scope-topology.candidate-stage-${newId}-2147483647`); fs.writeFileSync(clonePath, "", { mode: 0o600 }); const stat = fs.lstatSync(clonePath); clone.lock_identity = { dev: stat.dev, ino: stat.ino }; reseal(clone); fs.writeFileSync(clonePath, JSON.stringify(clone));
+  const successor = run([directory, "--write", "--request", requestFile]); assert.notStrictEqual(successor.status, 0); const lockPath = path.join(control, "scope-topology.lock"); assert.ok(fs.existsSync(lockPath)); const id = JSON.parse(fs.readFileSync(lockPath, "utf8")).operation_id; const resumed = run([directory, "--resume", id]); assert.strictEqual(resumed.status, 0, resumed.stderr); assert.ok(!fs.readdirSync(control).some((name) => name.includes("candidate")));
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
 

@@ -136,30 +136,43 @@ function strictCandidateIdentity(root, file, maxLinks = 3) {
   if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink < 1 || stat.nlink > maxLinks || (stat.mode & 0o777) !== 0o600) throw new Error(`unsafe candidate file: ${file}`); return { dev: stat.dev, ino: stat.ino };
 }
 function sameIdentity(left, right) { return left.dev === right.dev && left.ino === right.ino; }
-function reconcileCandidates(root, ownedOperationId = null) {
+function candidateRecord(root, directory, name) {
+  const match = name.match(/^scope-topology\.candidate-stage-([0-9a-f-]{36})-([0-9]+)$/u); if (!match) throw new Error(`unrecognized candidate stage: ${name}`); const stage = path.join(directory, name); const identity = strictCandidateIdentity(root, stage, 3); let authority = null;
+  try { authority = validateAuthority(readJson(stage, "candidate stage")); } catch (_error) { /* A dead partial stage is handled by recovery. */ }
+  return { stage, identity, operationId: match[1], pid: Number(match[2]), alive: processAlive(Number(match[2])), authority };
+}
+function reconcileCandidates(root, allowActive = false) {
   const directory = path.join(root, ".ariadne"); pinDirectory(root, directory); const fixed = control(root, CANDIDATE); const lock = control(root, LOCK);
-  const stages = fs.readdirSync(directory).filter((name) => name.startsWith(STAGE_PREFIX)).sort();
-  for (const name of stages) {
-    const match = name.match(/^scope-topology\.candidate-stage-([0-9a-f-]{36})-([0-9]+)$/u); if (!match) throw new Error(`unrecognized candidate stage: ${name}`); const stage = path.join(directory, name); const identity = strictCandidateIdentity(root, stage, 3); const pid = Number(match[2]); if (processAlive(pid) && match[1] !== ownedOperationId) throw new Error("scope topology candidate is held by a live writer");
-    let authority = null; try { authority = validateAuthority(readJson(stage, "candidate stage")); } catch (_error) { safeUnlink(stage, "dead-partial-candidate"); continue; }
-    if (authority.operation_id !== match[1] || !sameIdentity(identity, authority.lock_identity)) throw new Error("candidate stage authority mismatch");
-    if (!fs.existsSync(fixed)) { failpoint("before-candidate-link"); fs.linkSync(stage, fixed); failpoint("after-candidate-link"); fsyncDirectory(directory, "candidate-link"); }
-    const fixedIdentity = strictCandidateIdentity(root, fixed); if (!sameIdentity(identity, fixedIdentity)) throw new Error("candidate collision"); safeUnlink(stage, "candidate-stage");
-  }
+  const records = fs.readdirSync(directory).filter((name) => name.startsWith(STAGE_PREFIX)).sort().map((name) => candidateRecord(root, directory, name)); if (!allowActive && records.some((item) => item.alive)) throw new Error("scope topology candidate is held by a live writer");
+  for (const record of records) if (record.authority && (record.authority.operation_id !== record.operationId || !sameIdentity(record.identity, record.authority.lock_identity))) throw new Error("candidate stage authority mismatch");
+  const dead = records.filter((item) => !item.alive); for (const record of dead.filter((item) => !item.authority)) safeUnlink(record.stage, "dead-partial-candidate");
+  const valid = dead.filter((item) => item.authority); if (!fs.existsSync(fixed) && valid.length) { try { fs.linkSync(valid[0].stage, fixed); fsyncDirectory(directory, "candidate-recovery-link"); } catch (error) { if (error.code !== "EEXIST") throw error; } }
+  if (allowActive && records.some((item) => item.alive)) return;
   if (!fs.existsSync(fixed)) return;
   const authority = validateAuthority(readJson(fixed, "candidate")); const fixedIdentity = strictCandidateIdentity(root, fixed); if (!sameIdentity(fixedIdentity, authority.lock_identity)) throw new Error("candidate identity mismatch");
+  for (const record of valid) safeUnlink(record.stage, sameIdentity(record.identity, fixedIdentity) ? "candidate-winner-stage" : "dead-loser-stage");
   if (fs.existsSync(lock)) { const lockIdentity = regularIdentity(lock, 2); if (!sameIdentity(lockIdentity, fixedIdentity) || stableHash(readJson(lock, "lock")) !== stableHash(authority)) throw new Error("candidate conflicts with lock"); }
   else { failpoint("before-lock-create"); fs.linkSync(fixed, lock); failpoint("after-lock-create"); fsyncDirectory(directory, "lock-create"); }
   safeUnlink(fixed, "candidate");
 }
 function createLock(root, authority) {
-  const controlDirectory = path.dirname(control(root, LOCK)); validatePin(root, authority.control_pin); reconcileCandidates(root); if (fs.existsSync(control(root, LOCK))) throw new Error("scope topology lock exists; use explicit --resume or --abort");
+  const controlDirectory = path.dirname(control(root, LOCK)); validatePin(root, authority.control_pin); reconcileCandidates(root, true); if (fs.existsSync(control(root, LOCK))) throw new Error("scope topology lock exists; use explicit --resume or --abort");
   const stage = candidateStage(root, authority.operation_id); failpoint("before-candidate-open"); const fd = fs.openSync(stage, "wx", 0o600); failpoint("after-candidate-open");
   try {
     const stat = fs.fstatSync(fd); authority.lock_identity = { dev: stat.dev, ino: stat.ino }; seal(authority); const bytes = Buffer.from(`${JSON.stringify(authority, null, 2)}\n`); const split = Math.max(1, Math.floor(bytes.length / 2));
     failpoint("before-candidate-partial-write"); fs.writeSync(fd, bytes.subarray(0, split)); failpoint("after-candidate-partial-write"); fs.writeSync(fd, bytes.subarray(split)); failpoint("after-candidate-full-write"); failpoint("before-candidate-fsync"); fs.fsyncSync(fd); failpoint("after-candidate-fsync");
   } finally { fs.closeSync(fd); }
-  fsyncDirectory(controlDirectory, "candidate-stage"); reconcileCandidates(root, authority.operation_id);
+  fsyncDirectory(controlDirectory, "candidate-stage");
+  if (process.env.ARIADNE_SYNC_CANDIDATE_RELEASE) { while (!fs.existsSync(process.env.ARIADNE_SYNC_CANDIDATE_RELEASE)) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10); }
+  const fixed = control(root, CANDIDATE); const lock = control(root, LOCK); failpoint("before-candidate-link");
+  try { fs.linkSync(stage, fixed); } catch (error) {
+    if (error.code !== "EEXIST") throw error; const ownIdentity = strictCandidateIdentity(root, stage, 1); if (!sameIdentity(ownIdentity, authority.lock_identity)) throw new Error("candidate stage identity changed"); const winnerPath = fs.existsSync(fixed) ? fixed : lock;
+    if (fs.existsSync(winnerPath)) { const winner = validateAuthority(readJson(winnerPath, "candidate winner")); const winnerIdentity = strictCandidateIdentity(root, winnerPath); if (!sameIdentity(winnerIdentity, winner.lock_identity)) throw new Error("candidate identity mismatch"); }
+    safeUnlink(stage, "candidate-loser-stage"); throw new Error("scope topology candidate election lost to another writer");
+  }
+  failpoint("after-candidate-link"); fsyncDirectory(controlDirectory, "candidate-link"); failpoint("before-lock-create");
+  try { fs.linkSync(fixed, lock); } catch (error) { if (error.code !== "EEXIST") throw error; throw new Error("scope topology lock exists; use explicit --resume or --abort"); }
+  failpoint("after-lock-create"); fsyncDirectory(controlDirectory, "lock-create"); safeUnlink(stage, "candidate-winner-stage"); safeUnlink(fixed, "candidate");
 }
 function readJson(file, label) { let value; try { value = JSON.parse(fs.readFileSync(file, "utf8")); } catch (error) { throw new Error(`${label} is unreadable: ${error.message}`); } validateChecksum(value, label); return value; }
 function saveManifest(root, manifest, label) { manifest.updated_at = new Date().toISOString(); seal(manifest); durableJson(control(root, MANIFEST), manifest, label, manifest.operation_id); }
