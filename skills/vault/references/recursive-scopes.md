@@ -13,6 +13,8 @@ An agentic Markdown knowledge vault is a recursive scope tree. Obsidian-compatib
 
 A folder becomes a scope only when repeated work needs a durable route. Promote conservatively:
 
+All topology lifecycle operations use the validator-owned `sync_scope_topology.js` and the exact [scope-operation-request.md](../../scope/references/scope-operation-request.md) contract. Audit first with zero writes; mutations require a current-turn target confirmation and the complete disclosed `allowed_write_paths`. Generated artifacts and generated marker blocks are engine-owned.
+
 1. Create or update the scope hub.
 2. Link child scope from parent navigation.
 3. Link parent scope from child hub.

@@ -1,0 +1,9 @@
+{
+  "name": "scope_identity_current",
+  "files": [{"path":"AGENTS.md","content":"Outside scope_id: decoy and [[Outside]].\n<!-- ariadne:workspace-vault-link:start -->\nscope_id: product\nscope_path: Domains/Product\nRelated Ariadne scope: [[Domains/Product]]\n<!-- ariadne:workspace-vault-link:end -->\n"}],
+  "vault": {"files":[
+    {"path":"00 Index.md","content":"---\ntitle: Vault\ntype: scope-index\nscope_schema: 1\nscope_id: root\nscope_path: .\nstatus: active\n---\n"},
+    {"path":"Domains/Product/00 Index.md","content":"---\ntitle: Product\ntype: scope-index\nscope_schema: 1\nscope_id: product\nscope_path: Domains/Product\nparent_scope_id: root\nstatus: active\n---\n"}
+  ]},
+  "expected":{"git":{"insideWorkTree":false,"isLinkedWorktree":false},"arrays":{"staleScopePathFiles":[],"unknownScopeIdFiles":[],"invalidScopeIdentityFiles":[],"unverifiedScopeIdentityFiles":[]},"objects":{"workspaceScopeIdentityByFile":{"AGENTS.md":{"scopeId":"product","scopePath":"Domains/Product","linkedScopePath":"Domains/Product","canonicalScopePath":"Domains/Product","verification":"current"}}},"values":{"scopeIdentityVaultConfirmed":true,"scopeLinkRepairGuidance":null}}
+}

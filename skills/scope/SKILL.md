@@ -12,7 +12,7 @@ Use this skill when a vault already exists and the user wants a new durable scop
 1. Read root instructions and every applicable ancestor scope instruction through the intended parent.
 2. Read root/local indexes, agent navigation, task routing, and the parent hub.
 3. In a multi-scope vault, require the new scope name and parent to be named or confirmed in the current turn.
-4. State an explicit `allowed_write_set` before creation. Include the new subtree and each parent/root hub, routing matrix, or Base formula individually.
+4. Run the validator-owned `sync_scope_topology.js --check` in zero-write mode. Use [scope-operation-request.md](references/scope-operation-request.md) for the exact schema-v1 request and CLI.
 5. If the vault is Git-backed, inspect status before writing. Preserve unrelated modified and untracked files, never use broad staging, and stage only paths in the declared write set when the user explicitly authorizes a commit.
 
 ## Minimal Questions
@@ -25,22 +25,24 @@ Ask only what is missing:
 4. Does it need intake infrastructure — `Raw/Sources/`, `Inbox/`, `Processing Queue/`, local `Ingest Compile Workflow`?
 5. Does it need local rules, templates, Bases, or only a hub?
 
-## Create Or Promote A Scope
+## Promotion Threshold
 
-1. Create the scope folder.
-2. Create the scope hub.
-3. Add a row to `Agent/Task Routing Matrix.md` — do this before nav links so the routing chain is never broken even momentarily.
-4. Link child scope from parent hub/navigation.
-5. Link parent scope from child hub.
-6. Add local `AGENTS.md` only when local rules differ.
-7. Add intake infrastructure when the scope will receive raw material — create `Raw/Sources/`, `Raw/Sources/00 Source Index.md`, `Inbox/`, `Inbox/00 Inbox Index.md`, `Processing Queue/`, `Processing Queue/00 Processing Queue Index.md`, and a local `Agent/Ingest Compile Workflow.md`. Add a routing row for "Shared link or source material" pointing to the new workflow. Skip these if the scope will never ingest raw sources.
-8. Add local Bases only when metadata/status inspection helps.
-9. Add local templates only for repeated note shapes.
-10. Add health-check coverage if the scope can decay.
-11. Add the new scope's folder path to every root `Bases/*.base` scope formula that contains `file.inFolder`. Insert the most-specific child branch before its parent branch; first-match formulas otherwise classify the child as its parent. Preserve unrelated formula branches and user changes.
-12. Run scoped validation first, then whole-vault validation. The scoped run must report `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` for the new subtree. The whole-vault run confirms no cross-scope regression; report unrelated pre-existing whole-vault warnings separately rather than treating them as child-scope failures.
-13. If the parent vault is not globally registered, or its global discovery block is stale, offer `ariadne:global-discovery` for the parent vault. Scope creation should not write global files or add scope-specific global discovery rules.
-14. If an external code repository or folder should point to this scope, offer `ariadne:workspace-instructions`. Scope-specific workspace links require a current-turn explicit target or user confirmation and belong in workspace files, not global discovery.
+Promote only when repeated work needs a durable route, local lifecycle, or local operating rules. A useful folder, a one-off project, or a possible future route stays a normal folder.
+
+## Create, Adopt, Move, Or Change Status
+
+1. Confirm the target scope and requested lifecycle action in the current turn. Audit/check is always zero-write; create, adopt, move, set-status, and repair require confirmation.
+2. Build the exact request with `allowed_write_paths: []`. Run it to obtain the refusal/disclosure, then show every proposed `content_write_paths` entry. Generated-only checkpoints do not waive confirmation.
+3. After confirmation, copy exactly those paths into `allowed_write_paths` and invoke `sync_scope_topology.js --write --request`. Never directly edit descriptors, generated files, generated blocks, registry/map artifacts, root Base scope branches, physical moves, parent relationships, or redirects.
+4. For create, prepare the destination directory and user-owned content, then let the engine create the descriptor and generated wiring. Insert the most-specific child branch before its parent branch; first-match formulas otherwise classify the child as its parent.
+5. For adopt, choose `ancestor-chain` (target plus required ancestors) or `whole-vault` explicitly. Do not adopt candidates marked `ariadne_scope_adoption: dismissed`.
+6. For move/reparent, provide the exact current `source_path` and new `destination_path`. The engine performs the physical move, reparents the subtree, records former paths, and writes the redirect; never emulate those steps manually.
+7. For status, use only supported transitions: active to archived, archived to active or retired, and retired to archived. A retired scope cannot have active children. A replacement is valid only when retiring.
+8. If interrupted, report the operation ID and use `--resume` or `--abort`; never manipulate engine control files. Reconcile any abort `reconciliation_paths` before another operation.
+9. Run scoped validation first, then whole-vault validation. The scoped run must report `routing-matrix-warnings: 0` and `base-scope-formula-warnings: 0` for the subtree. Report unrelated pre-existing whole-vault warnings separately.
+10. Run a second check with `sync_scope_topology.js --check`. It must disclose no changes; this is the idempotency checkpoint.
+11. If the parent vault is not globally registered, or its global discovery block is stale, offer `ariadne:global-discovery` for the parent vault. Scope creation should not write global files or add scope-specific global discovery rules.
+12. If an external code repository or folder should point to this scope, offer `ariadne:workspace-instructions`. Scope-specific workspace links require a current-turn explicit target or user confirmation and belong in workspace files, not global discovery.
 
 ## Import Existing Vault As Scope
 
@@ -49,8 +51,8 @@ Ask only what is missing:
 3. Preserve local instructions as local deltas.
 4. Rewrite cross-scope links only when needed for validation or ambiguity.
 5. Scope local Bases to the imported path.
-6. Add parent and child navigation links.
-7. Validate.
+6. Route adoption and generated parent/child wiring through the synchronizer workflow above.
+7. Validate twice and require the second check to be empty.
 
 ## Rules
 

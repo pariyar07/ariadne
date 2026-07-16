@@ -10,7 +10,7 @@ const { execFileSync, spawnSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "..");
 
 function copyTrackedWorkingTree(destination) {
-  const files = execFileSync("git", ["ls-files", "-z"], { cwd: ROOT, encoding: "utf8" })
+  const files = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], { cwd: ROOT, encoding: "utf8" })
     .split("\0")
     .filter(Boolean);
 
@@ -47,6 +47,8 @@ const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-repo-guardrail-t
 
 try {
   copyTrackedWorkingTree(tempRoot);
+
+  fs.rmSync(path.join(tempRoot, "docs/guides/scope-topology-migration.md"));
 
   assert(!fs.existsSync(path.join(tempRoot, "skills/research-intake")), "v0.2.0 must remove the research-intake adapter");
   assert(!fs.existsSync(path.join(tempRoot, "skills/synthesis")), "v0.2.0 must remove the synthesis adapter");
@@ -114,9 +116,144 @@ try {
   );
 
   const baseline = runValidator(tempRoot);
-  assert.strictEqual(baseline.status, 0, baseline.stderr || baseline.stdout);
+  assertRejected(baseline, "scope topology migration documentation missing: docs/guides/scope-topology-migration.md");
+
+  fs.writeFileSync(path.join(tempRoot, "docs/guides/scope-topology-migration.md"), [
+    "# Scope topology migration",
+    "whole-vault",
+    "ancestor-chain",
+    "root activation last",
+    "ariadne_scope_adoption: dismissed",
+    "--resume",
+    "--abort",
+    "installed skills",
+    "rollback",
+    "reconciliation",
+  ].join("\n"));
+  for (const file of ["README.md", "docs/guides/validator.md", "skills/validator/SKILL.md"]) {
+    const target = path.join(tempRoot, file);
+    fs.writeFileSync(target, fs.readFileSync(target, "utf8").replaceAll("scope-adoption-warnings", "removed-adoption-counter"));
+  }
+  const incompleteTopologyDocs = runValidator(tempRoot);
+  assertRejected(incompleteTopologyDocs, "README.md healthy output must include scope topology counter: scope-adoption-warnings");
+
+  for (const file of ["README.md", "docs/guides/validator.md", "skills/validator/SKILL.md"]) {
+    const target = path.join(tempRoot, file);
+    fs.writeFileSync(target, fs.readFileSync(target, "utf8").replaceAll("removed-adoption-counter", "scope-adoption-warnings"));
+  }
+  const topologyBaseline = runValidator(tempRoot);
+  assert.strictEqual(topologyBaseline.status, 0, topologyBaseline.stderr || topologyBaseline.stdout);
 
   let restore = replace(
+    tempRoot,
+    "skills/validator/scripts/validate_vault.js",
+    '["scope-adoption-warnings", result.scopeAdoptionWarnings || [], Boolean(result.scopeAdoptionWarnings)],',
+    '["removed-adoption-counter", result.scopeAdoptionWarnings || [], Boolean(result.scopeAdoptionWarnings)],'
+  );
+  assertRejected(runValidator(tempRoot), "skills/validator/scripts/validate_vault.js must register scope topology counter structurally: scope-adoption-warnings");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/validator/test/fixtures/scope_topology/expected/scope-profile-counters.json",
+    '  "scope-map-warnings"',
+    '  "removed-map-counter"'
+  );
+  assertRejected(runValidator(tempRoot), "scope-profile-counters.json must exactly declare the executable scope counter output contract");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/validator/test/test_scope_topology_adversarial.js",
+    'contract("canvas-id-collision", "deep_transparent_ancestry", () =>',
+    'removedContract("canvas-id-collision", "deep_transparent_ancestry", () =>'
+  );
+  assertRejected(runValidator(tempRoot), "test_scope_topology_adversarial.js missing executable contract: canvas-id-collision");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/validator/test/test_scope_topology_adversarial.js",
+    '  assert.throws(() => renderScopeMapCanvas(model, { idFactory: () => "0000000000000000" }), /Canvas ID collision/u);',
+    '  renderScopeMapCanvas(model, { idFactory: (_kind, value) => value });'
+  );
+  assertRejected(runValidator(tempRoot), "scope topology executable contract suite failed");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/scope/SKILL.md",
+    "sync_scope_topology.js",
+    "mutate_scope_tree.js"
+  );
+  let rejected = runValidator(tempRoot);
+  assertRejected(rejected, "skills/scope/SKILL.md must route topology changes through the synchronizer contract: sync_scope_topology.js");
+  assertRejected(rejected, "unapproved executable reference found in topology-changing skill surface skills/scope/SKILL.md: mutate_scope_tree.js");
+  restore();
+
+  restore = replace(
+    tempRoot,
+    "skills/navigation/SKILL.md",
+    "Never edit inside generated blocks",
+    "Edit inside generated blocks"
+  );
+  assertRejected(runValidator(tempRoot), "skills/navigation/SKILL.md must route topology changes through the synchronizer contract: Never edit inside generated blocks");
+  restore();
+
+  const alternateAuthority = path.join(tempRoot, "skills", "scope", "references", "alternate-topology.md");
+  fs.writeFileSync(alternateAuthority, "Run `scripts/rebuild_scope_map.sh` to update topology.\n");
+  assertRejected(runValidator(tempRoot), "unapproved executable reference found in topology-changing skill surface skills/scope/references/alternate-topology.md: scripts/rebuild_scope_map.sh");
+  fs.rmSync(alternateAuthority);
+
+  const bypassAuthority = path.join(tempRoot, "skills", "scope", "references", "bypass-topology.md");
+  fs.writeFileSync(bypassAuthority, "Use `scripts/rebuild_topology.js` to rebuild topology.\n\nRun `tools/topology_manager.sh` to move and retire scopes.\n");
+  rejected = runValidator(tempRoot);
+  assertRejected(rejected, "unapproved executable reference found in topology-changing skill surface skills/scope/references/bypass-topology.md: scripts/rebuild_topology.js");
+  assertRejected(rejected, "unapproved executable reference found in topology-changing skill surface skills/scope/references/bypass-topology.md: tools/topology_manager.sh");
+  fs.rmSync(bypassAuthority);
+
+  const harmlessUtility = path.join(tempRoot, "skills", "scope", "references", "import-test.md");
+  fs.writeFileSync(harmlessUtility, "Run `test/test_scope_import.js` to validate the import utility fixtures.\n");
+  const harmlessResult = runValidator(tempRoot);
+  assert.strictEqual(harmlessResult.status, 0, harmlessResult.stderr || harmlessResult.stdout);
+  fs.rmSync(harmlessUtility);
+
+  const reviewerCounterexamples = path.join(tempRoot, "skills", "scope", "references", "reviewer-counterexamples.md");
+  fs.writeFileSync(reviewerCounterexamples, "Run `tools/reparent_tree.js` for this operation.\n\nRun `test/test_scope_move.js` to validate the move fixtures.\n");
+  assertRejected(runValidator(tempRoot), "unapproved executable reference found in topology-changing skill surface skills/scope/references/reviewer-counterexamples.md: tools/reparent_tree.js");
+  fs.rmSync(reviewerCounterexamples);
+
+  const reviewerTestOnly = path.join(tempRoot, "skills", "scope", "references", "scope-move-test.md");
+  fs.writeFileSync(reviewerTestOnly, "Run `test/test_scope_move.js` to validate the move fixtures.\n");
+  const reviewerTestResult = runValidator(tempRoot);
+  assert.strictEqual(reviewerTestResult.status, 0, reviewerTestResult.stderr || reviewerTestResult.stdout);
+  fs.rmSync(reviewerTestOnly);
+
+  const innocuousRuntimeHelper = path.join(tempRoot, "skills", "scope", "references", "runtime-helper.md");
+  fs.writeFileSync(innocuousRuntimeHelper, "Run `tools/format_notes.js` to format notes.\n");
+  assertRejected(runValidator(tempRoot), "unapproved executable reference found in topology-changing skill surface skills/scope/references/runtime-helper.md: tools/format_notes.js");
+  fs.rmSync(innocuousRuntimeHelper);
+
+  const spoofedCanonicalNames = path.join(tempRoot, "skills", "scope", "references", "spoofed-canonical-tools.md");
+  fs.writeFileSync(spoofedCanonicalNames, [
+    "Run `tools/sync_scope_topology.js`.",
+    "Run `tools/validate_vault.js`.",
+    "Run `tools/validate_vault.sh`.",
+    "Run `tools/register_vault.js`.",
+  ].join("\n\n"));
+  rejected = runValidator(tempRoot);
+  for (const executable of ["sync_scope_topology.js", "validate_vault.js", "validate_vault.sh", "register_vault.js"]) {
+    assertRejected(rejected, `unapproved executable reference found in topology-changing skill surface skills/scope/references/spoofed-canonical-tools.md: tools/${executable}`);
+  }
+  fs.rmSync(spoofedCanonicalNames);
+
+  const requestDataExample = path.join(tempRoot, "skills", "scope", "references", "request-data-example.md");
+  fs.writeFileSync(requestDataExample, "Pass the non-executable request data file `/path/to/request.js` to `--request`.\n");
+  const requestDataResult = runValidator(tempRoot);
+  assert.strictEqual(requestDataResult.status, 0, requestDataResult.stderr || requestDataResult.stdout);
+  fs.rmSync(requestDataExample);
+
+  restore = replace(
     tempRoot,
     "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md",
     "partially superseded by the direct-breaking v0.2.0 release decision",
@@ -160,7 +297,7 @@ try {
 
   const activeRetiredPath = path.join(tempRoot, "docs", "active-retired-path.md");
   fs.writeFileSync(activeRetiredPath, "Use `skills/research-intake/SKILL.md` and `skills/synthesis/SKILL.md`.\n");
-  let rejected = runValidator(tempRoot);
+  rejected = runValidator(tempRoot);
   assertRejected(rejected, "retired research skill path found outside migration allowlist in docs/active-retired-path.md: skills/research-intake");
   assertRejected(rejected, "retired research skill path found outside migration allowlist in docs/active-retired-path.md: skills/synthesis");
   fs.rmSync(activeRetiredPath);

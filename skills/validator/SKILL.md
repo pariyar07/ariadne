@@ -22,6 +22,9 @@ metadata:
     - provenance-cycle-warnings
     - uncompiled-raw-source-warnings
     - research-hub-warnings
+    - scope-adoption-warnings
+    - scope-contract-warnings
+    - scope-map-warnings
 ---
 
 # Ariadne Validator
@@ -52,6 +55,40 @@ For a subtree or its schema-v1 research pipeline, pass a vault-relative scope:
 Scoped runs still inventory the whole vault before filtering findings. `--scope` rejects absolute paths, traversal, missing paths, and files. `--profile research` requires a scope; it keeps in-scope YAML, broken-link, orphan, and unlinked-Base failures while excluding sibling-origin defects. Descriptor, hub, and routing findings carry explicit governing obligations when an outside origin directly applies to the selected scope.
 
 The shell wrapper checks for Node.js and delegates to `validate_vault.js`.
+
+## Scope Topology Synchronizer
+
+Resolve `scripts/sync_scope_topology.js` relative to this installed skill. It is the only scope topology mutation authority. `--check` is always zero-write and reports `findings`, proposed `changes`, complete `content_write_paths`, and `plan_hash`:
+
+```bash
+node /path/to/skills/validator/scripts/sync_scope_topology.js /path/to/vault --check
+node /path/to/skills/validator/scripts/sync_scope_topology.js /path/to/vault --check --scope "Domains/Product"
+```
+
+Mutation accepts one exact schema-v1 JSON request:
+
+```json
+{"operation_schema":1,"operation":"move","target_scope_id":"alpha","source_path":"Domains/Alpha","destination_path":"Projects/Alpha","normalize_files":[],"allowed_write_paths":["00 Index.md","Agent/Scope Map.md"]}
+```
+
+```bash
+node /path/to/skills/validator/scripts/sync_scope_topology.js /path/to/vault --write --request /path/to/request.json
+```
+
+See `ariadne:scope` [scope-operation-request.md](../scope/references/scope-operation-request.md) for complete create, adopt, move, set-status, and repair requests. Unknown or inapplicable fields and unsafe paths are refused before writes. Missing or extra authorization is refused exactly as `operation is not write-authorized: missing-write-authorization:<path>` or `unused-write-authorization:<path>`. Preview with empty `allowed_write_paths`, disclose the resulting content paths, obtain current-turn confirmation, then authorize exactly that sorted set.
+
+`normalize_files` is report-only until a complete normalizer exists. Any requested path produces `normalization-deferred`, is excluded from effects and `content_write_paths`, and keeps write mode unauthorized.
+
+Content write paths are user-confirmed vault content. Engine control paths under `.ariadne/` and owned temporary files are sealed synchronizer state; they are not listed in `allowed_write_paths` and must not be edited manually.
+
+An interrupted write reports or preserves an operation ID. Resume or abort only that ID:
+
+```bash
+node /path/to/skills/validator/scripts/sync_scope_topology.js /path/to/vault --resume 00000000-0000-0000-0000-000000000000
+node /path/to/skills/validator/scripts/sync_scope_topology.js /path/to/vault --abort 00000000-0000-0000-0000-000000000000
+```
+
+Resume validates the sealed authority, identities, hashes, and preconditions before continuing. Abort returns `aborted`, `operation_id`, and `reconciliation_paths`; inspect those evidence paths because content may already have landed. After success, run scoped validation, whole-vault validation, and a second `--check`; the second check must propose no changes.
 
 ## Checks
 
@@ -94,6 +131,9 @@ ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
 base-scope-formula-warnings: 0
+scope-adoption-warnings: 0
+scope-contract-warnings: 0
+scope-map-warnings: 0
 research-boundary-warnings: 0
 research-provenance-warnings: 0
 provenance-cycle-warnings: 0

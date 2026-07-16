@@ -1,0 +1,10 @@
+{
+  "name":"scope_identity_colliding_descriptor",
+  "files":[{"path":"AGENTS.md","content":"<!-- ariadne:workspace-vault-link:start -->\nscope_id: product\nscope_path: Domains/Product\nRelated Ariadne scope: [[Domains/Product]]\n<!-- ariadne:workspace-vault-link:end -->\n"},{"path":"CLAUDE.md","content":"<!-- ariadne:workspace-vault-link:start -->\nscope_id: linked\nscope_path: Domains/Linked\nRelated Ariadne scope: [[Domains/Linked]]\n<!-- ariadne:workspace-vault-link:end -->\n"}],
+  "vault":{"files":[
+    {"path":"00 Index.md","content":"---\ntitle: Vault\ntype: scope-index\nscope_schema: 1\nscope_id: root\nscope_path: .\nstatus: active\n---\n"},
+    {"path":"Domains/Product/00 Index.md","content":"---\ntitle: Product\ntype: scope-index\nscope_schema: 1\nscope_id: product\nscope_path: Domains/Product\nparent_scope_id: root\nstatus: active\n---\n"},
+    {"path":"Domains/Linked/00 Index.md","content":"---\ntitle: Linked\ntype: scope-index\nscope_schema: 1\nscope_id: linked\nscope_path: Domains/Linked\nparent_scope_id: root\nstatus: active\n---\n"}
+  ],"hardlinks":[{"path":"Hardlink/Product Index.md","target":"Domains/Product/00 Index.md"},{"path":"Hardlink/00 Index.md","target":"Domains/Linked/00 Index.md"}]},
+  "expected":{"git":{"insideWorkTree":false,"isLinkedWorktree":false},"arrays":{"staleScopePathFiles":[],"unknownScopeIdFiles":[],"invalidScopeIdentityFiles":[],"unverifiedScopeIdentityFiles":[],"ambiguousScopeIdFiles":["AGENTS.md","CLAUDE.md"]},"objects":{"workspaceScopeIdentityByFile":{"AGENTS.md":{"scopeId":"product","scopePath":"Domains/Product","linkedScopePath":"Domains/Product","canonicalScopePath":null,"verification":"ambiguous"},"CLAUDE.md":{"scopeId":"linked","scopePath":"Domains/Linked","linkedScopePath":"Domains/Linked","canonicalScopePath":null,"verification":"ambiguous"}}},"values":{"scopeIdentityVaultConfirmed":true}}
+}

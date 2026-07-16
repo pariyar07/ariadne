@@ -4,6 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { inventoryVault, buildTopology, normalizeScopePath, parseScopeDescriptor } = require("../../validator/scripts/scope-topology");
 
 const ROOT_INSTRUCTION_FILES = new Set(["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".hermes.md", "HERMES.md"]);
 const LOCAL_ONLY_FILES = new Set(["AGENTS.override.md", "CLAUDE.local.md", "GEMINI.local.md"]);
@@ -23,6 +24,16 @@ const RETIRED_RESEARCH_SKILL_REPLACEMENTS = new Map([
 ]);
 const RETIRED_RESEARCH_SKILL_REPAIR_GUIDANCE =
   "Replace retired research skill names only inside Ariadne-managed marker blocks; preserve all text outside those blocks.";
+const SCOPE_LINK_REPAIR_GUIDANCE =
+  "After confirming the stable scope_id in the supplied vault inventory, update only scope_path and the Related Ariadne scope target inside the workspace-vault-link marker to the reported canonicalScopePath; preserve all text outside the marker.";
+const SCOPE_LINK_UNVERIFIED_GUIDANCE =
+  "Supply --vault only after confirming the intended vault; until then scope identity is unverified and no current-path claim or repair is safe.";
+const SCOPE_LINK_UNKNOWN_ID_GUIDANCE =
+  "The supplied scope_id is absent from the confirmed vault inventory; confirm the intended scope before changing any marker field, and preserve all text outside the marker.";
+const SCOPE_LINK_AMBIGUOUS_GUIDANCE =
+  "The supplied scope_id has no unique valid canonical mapping in the confirmed vault inventory; repair the vault topology ambiguity before changing the workspace marker.";
+const SCOPE_LINK_INVALID_GUIDANCE =
+  "Repair the closed scope identity schema only inside the workspace-vault-link marker: one lower-kebab scope_id, one normalized vault-relative NFC scope_path, and one equal Related Ariadne scope target.";
 
 function toPosix(file) {
   return file.split(path.sep).join("/");
@@ -91,6 +102,21 @@ function markerManagedText(text) {
     }
   }
   return blocks.join("\n");
+}
+
+function workspaceVaultLinkBlocks(text) {
+  const blocks = [];
+  let offset = 0;
+  while (offset < text.length) {
+    const start = text.indexOf(CURRENT_MARKER_START, offset);
+    if (start === -1) break;
+    const contentStart = start + CURRENT_MARKER_START.length;
+    const end = text.indexOf(CURRENT_MARKER_END, contentStart);
+    if (end === -1) break;
+    blocks.push(text.slice(contentStart, end));
+    offset = end + CURRENT_MARKER_END.length;
+  }
+  return blocks;
 }
 
 function isTextFile(file) {
@@ -309,6 +335,148 @@ function detectRetiredResearchSkillNames(root, files) {
   };
 }
 
+function identityFields(block) {
+  const ids = [...block.matchAll(/^scope_id:[ \t]*(.*)$/gmu)].map((match) => match[1].trim());
+  const paths = [...block.matchAll(/^scope_path:[ \t]*(.*)$/gmu)].map((match) => match[1].trim());
+  const links = [...block.matchAll(/^Related Ariadne scope:[ \t]*(.*)$/gmu)].map((match) => match[1].trim());
+  if (ids.length === 0 && paths.length === 0 && links.length === 0) return null;
+  const linkMatch = links.length === 1 ? links[0].match(/^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/u) : null;
+  return {
+    scopeId: ids.length === 1 ? ids[0] : null,
+    scopePath: paths.length === 1 ? paths[0] : null,
+    linkedScopePath: linkMatch ? linkMatch[1].trim() : null,
+    closed: ids.length === 1 && paths.length === 1 && links.length === 1 && Boolean(linkMatch),
+  };
+}
+
+function validClosedIdentity(identity) {
+  if (!identity.closed || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(identity.scopeId)) return false;
+  let normalized;
+  try {
+    normalized = normalizeScopePath(identity.scopePath);
+  } catch {
+    return false;
+  }
+  if (identity.scopePath !== identity.scopePath.normalize("NFC") || normalized !== identity.scopePath) return false;
+  if (identity.linkedScopePath !== identity.linkedScopePath.normalize("NFC") || identity.linkedScopePath !== identity.scopePath) return false;
+  if ((identity.scopeId === "root") !== (identity.scopePath === ".")) return false;
+  return true;
+}
+
+function confirmedScopeInventory(vaultRoot) {
+  if (!vaultRoot) return null;
+  const inventory = inventoryVault(vaultRoot);
+  const topology = buildTopology(inventory);
+  const declarationsById = new Map();
+  const ambiguousIds = new Set();
+  const descriptorFiles = inventory.files.filter((file) => path.posix.basename(file.relativePath) === "00 Index.md" && file.frontmatter && String(file.frontmatter.type || "") === "scope-index");
+  const canonicalDescriptorPaths = new Map();
+
+  for (const file of descriptorFiles) {
+    const rawId = typeof file.frontmatter.scope_id === "string" ? file.frontmatter.scope_id.normalize("NFC").trim() : null;
+    let descriptor;
+    try {
+      descriptor = parseScopeDescriptor(file.relativePath, file.frontmatter);
+    } catch {
+      if (rawId) ambiguousIds.add(rawId);
+      continue;
+    }
+    if (!descriptor || !descriptor.supported) {
+      if (rawId) ambiguousIds.add(rawId);
+      continue;
+    }
+    const declarations = declarationsById.get(descriptor.scopeId) || [];
+    declarations.push({ descriptor, file });
+    declarationsById.set(descriptor.scopeId, declarations);
+    if (!file.canonicalContained || !file.canonicalPath || file.linkCount !== 1) ambiguousIds.add(descriptor.scopeId);
+    if (descriptor.scopePath !== (path.posix.dirname(file.relativePath) === "." ? "." : path.posix.dirname(file.relativePath))) ambiguousIds.add(descriptor.scopeId);
+    if (inventory.caseFoldCollisions.has(file.caseFoldPath)) ambiguousIds.add(descriptor.scopeId);
+    if (file.canonicalPath) {
+      const ids = canonicalDescriptorPaths.get(file.canonicalPath) || [];
+      ids.push(descriptor.scopeId);
+      canonicalDescriptorPaths.set(file.canonicalPath, ids);
+    }
+  }
+
+  for (const [id, declarations] of declarationsById) {
+    if (declarations.length !== 1) ambiguousIds.add(id);
+    const canonical = topology.descriptorsById.get(id);
+    if (!canonical || canonical.file !== declarations[0].descriptor.file || canonical.scopePath !== declarations[0].descriptor.scopePath) ambiguousIds.add(id);
+  }
+  for (const ids of canonicalDescriptorPaths.values()) if (ids.length > 1) for (const id of ids) ambiguousIds.add(id);
+  const roots = declarationsById.get("root") || [];
+  const globallyAmbiguous = roots.length !== 1 || ambiguousIds.has("root") || !topology.active;
+
+  return { descriptorsById: topology.descriptorsById, ambiguousIds, globallyAmbiguous };
+}
+
+function detectWorkspaceScopeIdentity(root, files, vaultRoot) {
+  const workspaceScopeIdentityByFile = {};
+  const staleScopePathFiles = [];
+  const unknownScopeIdFiles = [];
+  const invalidScopeIdentityFiles = [];
+  const unverifiedScopeIdentityFiles = [];
+  const confirmedInventory = confirmedScopeInventory(vaultRoot);
+  const descriptorsById = confirmedInventory?.descriptorsById || null;
+  const ambiguousScopeIdFiles = [];
+
+  for (const file of allInstructionFiles(files).filter(isTextFile)) {
+    const blocks = workspaceVaultLinkBlocks(read(root, file));
+    if (blocks.length !== 1) continue;
+    const identity = identityFields(blocks[0]);
+    if (!identity) continue;
+    const publicIdentity = {
+      scopeId: identity.scopeId,
+      scopePath: identity.scopePath,
+      linkedScopePath: identity.linkedScopePath,
+    };
+    if (!validClosedIdentity(identity)) {
+      workspaceScopeIdentityByFile[file] = { ...publicIdentity, canonicalScopePath: null, verification: "invalid" };
+      invalidScopeIdentityFiles.push(file);
+      continue;
+    }
+    if (!descriptorsById) {
+      workspaceScopeIdentityByFile[file] = { ...publicIdentity, canonicalScopePath: null, verification: "unverified" };
+      unverifiedScopeIdentityFiles.push(file);
+      continue;
+    }
+    if (confirmedInventory.globallyAmbiguous || confirmedInventory.ambiguousIds.has(identity.scopeId)) {
+      workspaceScopeIdentityByFile[file] = { ...publicIdentity, canonicalScopePath: null, verification: "ambiguous" };
+      ambiguousScopeIdFiles.push(file);
+      continue;
+    }
+    const descriptor = descriptorsById.get(identity.scopeId);
+    if (!descriptor) {
+      workspaceScopeIdentityByFile[file] = { ...publicIdentity, canonicalScopePath: null, verification: "unknown-id" };
+      unknownScopeIdFiles.push(file);
+      continue;
+    }
+    const canonicalScopePath = descriptor.scopePath;
+    const verification = identity.scopePath === canonicalScopePath ? "current" : "stale";
+    workspaceScopeIdentityByFile[file] = { ...publicIdentity, canonicalScopePath, verification };
+    if (verification === "stale") {
+      staleScopePathFiles.push(file);
+    }
+  }
+
+  let scopeLinkRepairGuidance = null;
+  if (invalidScopeIdentityFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_INVALID_GUIDANCE;
+  else if (unverifiedScopeIdentityFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_UNVERIFIED_GUIDANCE;
+  else if (ambiguousScopeIdFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_AMBIGUOUS_GUIDANCE;
+  else if (unknownScopeIdFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_UNKNOWN_ID_GUIDANCE;
+  else if (staleScopePathFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_REPAIR_GUIDANCE;
+  return {
+    workspaceScopeIdentityByFile,
+    staleScopePathFiles: staleScopePathFiles.sort(),
+    unknownScopeIdFiles: unknownScopeIdFiles.sort(),
+    invalidScopeIdentityFiles: invalidScopeIdentityFiles.sort(),
+    unverifiedScopeIdentityFiles: unverifiedScopeIdentityFiles.sort(),
+    ambiguousScopeIdFiles: ambiguousScopeIdFiles.sort(),
+    scopeIdentityVaultConfirmed: Boolean(descriptorsById),
+    scopeLinkRepairGuidance,
+  };
+}
+
 function detectAdapters(root, files) {
   const adapterDuplicateFiles = [];
   const adapterLocalImports = [];
@@ -429,7 +597,7 @@ function detectCodexOverride(root, files) {
   return { codexOverrideOutOfSyncFiles };
 }
 
-function checkWorkspace(root) {
+function checkWorkspace(root, options = {}) {
   const workspaceRoot = path.resolve(root);
   const files = listFiles(workspaceRoot);
   const git = inspectGit(workspaceRoot, files);
@@ -465,6 +633,7 @@ function checkWorkspace(root) {
     ...detectContentSignals(workspaceRoot, files, git),
     ...detectMarkers(workspaceRoot, files),
     ...detectRetiredResearchSkillNames(workspaceRoot, files),
+    ...detectWorkspaceScopeIdentity(workspaceRoot, files, options.vaultRoot),
     ...detectAdapters(workspaceRoot, files),
     ...detectHermes(workspaceRoot, files),
     ...detectNestedInstructions(workspaceRoot, files),
@@ -482,6 +651,7 @@ function printHuman(report) {
   if (report.retiredResearchSkillRepairGuidance) {
     console.log(`retiredResearchSkillRepairGuidance: ${report.retiredResearchSkillRepairGuidance}`);
   }
+  if (report.scopeLinkRepairGuidance) console.log(`scopeLinkRepairGuidance: ${report.scopeLinkRepairGuidance}`);
 }
 
 function main() {
@@ -492,7 +662,12 @@ function main() {
     process.exit(2);
   }
 
-  const report = checkWorkspace(target);
+  const vaultIndex = args.indexOf("--vault");
+  if (vaultIndex !== -1 && !args[vaultIndex + 1]) {
+    console.error("--vault requires a path to a confirmed vault");
+    process.exit(2);
+  }
+  const report = checkWorkspace(target, { vaultRoot: vaultIndex === -1 ? null : args[vaultIndex + 1] });
   if (args.includes("--json")) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   } else {

@@ -31,6 +31,7 @@ docs/
   guides/quickstart.md          ← usage scenarios and skill chains
   guides/global-discovery.md     ← cold-agent vault discovery registration
   guides/research-lifecycle-migration.md ← breaking research lifecycle migration
+  guides/scope-topology-migration.md ← scope contract adoption and recovery
   guides/weekly-maintenance-automation.md ← recurring maintenance automation prompt
   guides/validator.md            ← validator counter reference
   releases/                      ← published release notes
@@ -73,6 +74,7 @@ Each skill is a folder with:
 | Read validator counter docs | `docs/guides/validator.md` |
 | Read usage scenarios and skill chains | `docs/guides/quickstart.md` |
 | Read research lifecycle migration guidance | `docs/guides/research-lifecycle-migration.md` |
+| Read scope topology migration guidance | `docs/guides/scope-topology-migration.md` |
 | Read global discovery docs | `docs/guides/global-discovery.md` |
 | Read weekly automation prompt | `docs/guides/weekly-maintenance-automation.md` |
 | Read public boundary | `PUBLIC_BOUNDARY.md` |

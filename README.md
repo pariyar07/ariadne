@@ -14,20 +14,23 @@ flowchart LR
 
   subgraph Vault["Markdown knowledge vault"]
     Operating["Operating graph\nAGENTS · navigation · routing"]
-    Scopes["Recursive scope tree\nroot policy → local deltas"]
+    Checkpoints["Canonical scope checkpoints\nstable ID · path · lifecycle"]
+    Topology["Topology synchronizer\npreview · authorize · recover"]
     Knowledge["Knowledge graph\nresearch · concepts · decisions"]
-    Views["Optional view layer\nBases · Canvas · dashboards"]
-    Validator["Deterministic validator\nstructure · scope · research schema"]
+    Views["Derived optional views\nregistry · Markdown map · Canvas"]
+    Validator["Deterministic validator\nwhole vault · scoped profiles"]
   end
 
   Human --> Agent
   Agent -->|"enters through"| Operating
-  Operating -->|"selects the smallest context"| Scopes
-  Scopes --> Knowledge
-  Knowledge -.-> Views
+  Operating -->|"selects the smallest context"| Checkpoints
+  Checkpoints --> Knowledge
+  Topology -->|"maintains generated cores"| Checkpoints
+  Checkpoints -.->|"generates"| Views
   Validator -.->|"checks"| Operating
-  Validator -.->|"checks"| Scopes
+  Validator -.->|"checks"| Checkpoints
   Validator -.->|"checks"| Knowledge
+  Validator -.->|"checks"| Views
   Views -.->|"surfaces state and gaps"| Human
 ```
 
@@ -122,7 +125,7 @@ node skills/vault/scripts/register_vault.js --agents codex,claude,gemini --docto
 
 The research lifecycle skill names changed atomically. Existing copied skills, generated vault instructions, saved prompts, and external schedulers need an explicit migration pass; see [Research Lifecycle Migration](docs/guides/research-lifecycle-migration.md).
 
-Latest release: [Ariadne v0.2.0 — Research Lifecycle](https://github.com/pariyar07/ariadne/releases/tag/v0.2.0).
+Upcoming release: [Ariadne v0.3.0 — Deterministic Scope Topology](docs/releases/v0.3.0.md). Latest published release: [v0.2.1](docs/releases/v0.2.1.md).
 
 ## Skills
 
@@ -179,7 +182,7 @@ Every vault created with Ariadne has three layers:
 
 ### Recursive Scope Model
 
-The vault is a tree of scopes, not a flat folder. The root scope owns global policy. Each child scope inherits parent rules and adds only local deltas.
+The vault is a tree of scopes, not a flat folder. Each adopted scope has an immutable `scope_id`, a canonical path and lifecycle in its exact `00 Index.md`, plus four marker-managed checkpoint surfaces. The root owns global policy; each child inherits parent rules and adds only local deltas. Markdown descriptors and checkpoints are canonical, while registry, map, and Canvas views are derived.
 
 ```text
 Vault root (global policy)
@@ -220,7 +223,16 @@ Run the validator from a vault root:
 node /path/to/skills/validator/scripts/validate_vault.js "/path/to/vault"
 ```
 
-Use `--scope "Domains/Product"` for a vault-relative subtree, and add `--profile research` for schema-v1 research and nearest-routing obligations. Scoped runs inventory the whole vault before filtering results; in-scope fatal defects still fail a research-profile run while sibling defects do not.
+Use `--profile scope` for the schema-v1 scope contract, optionally with `--scope "Domains/Product"` for an applicable subtree. Add `--profile research` for schema-v1 research and nearest-routing obligations. Scoped runs inventory the whole vault before filtering results; sibling-only defects do not affect scoped status.
+
+Scope topology changes go through the installed synchronizer. Preview before authorizing its exact content write set:
+
+```bash
+node /path/to/skills/validator/scripts/sync_scope_topology.js "/path/to/vault" --check
+node /path/to/skills/validator/scripts/sync_scope_topology.js "/path/to/vault" --check --scope "Domains/Product"
+```
+
+`Bases/Scope Registry.base` and `Agent/Scope Map.canvas` are fully derived artifacts; the generated block in `Agent/Scope Map.md` is derived too. Do not edit them manually. Regenerate them with the synchronizer, which preserves user content outside managed checkpoint blocks. See the [scope topology migration guide](docs/guides/scope-topology-migration.md) before adopting an existing vault.
 
 A healthy vault reports all zeros:
 
@@ -236,6 +248,9 @@ ambiguous-wikilink-warnings: 0
 scope-navigation-warnings: 0
 routing-matrix-warnings: 0
 base-scope-formula-warnings: 0
+scope-adoption-warnings: 0
+scope-contract-warnings: 0
+scope-map-warnings: 0
 research-boundary-warnings: 0
 research-provenance-warnings: 0
 provenance-cycle-warnings: 0
@@ -253,7 +268,10 @@ See `docs/guides/validator.md` for the full counter reference.
 | `docs/guides/global-discovery.md` | Optional machine-level vault registration so cold agents can find local vaults from any folder |
 | `docs/guides/weekly-maintenance-automation.md` | Weekly maintenance prompt, Codex setup notes, Claude Code adaptation, and subagent boundaries |
 | `docs/guides/validator.md` | Validator counter reference |
+| `docs/guides/scope-topology-migration.md` | Scope topology adoption, recovery, and rollback guidance |
 | `docs/guides/research-lifecycle-migration.md` | Breaking v0.2.0 skill-name and generated-vault migration guidance |
+| `docs/releases/v0.3.0.md` | v0.3.0 deterministic scope topology release notes and verification summary |
+| `docs/releases/v0.2.1.md` | Published v0.2.1 frontend-neutral positioning release notes |
 | `docs/releases/v0.2.0.md` | Published v0.2.0 release notes and verification pointers |
 
 ## Global Discovery

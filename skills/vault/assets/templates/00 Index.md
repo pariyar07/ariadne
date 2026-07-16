@@ -1,13 +1,28 @@
 ---
 title: "{{vault_name}}"
-type: index
+type: scope-index
+scope_schema: 1
+scope_id: root
+scope_path: .
 status: active
 created: "{{date}}"
+scope_order: 0
+former_scope_paths: []
 tags:
   - vault
+  - scope
 ---
 
 # {{vault_name}}
+
+<!-- ariadne:scope-boundary:start -->
+## Scope Boundary
+
+- Scope: {{vault_name}} (`root`)
+- Path: `.`
+- Status: active
+- Direct children: none
+<!-- ariadne:scope-boundary:end -->
 
 ## Purpose
 

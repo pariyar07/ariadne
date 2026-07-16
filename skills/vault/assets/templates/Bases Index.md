@@ -26,6 +26,7 @@ Use wikilinks for Base files from this index so Obsidian can traverse the view l
 
 | Base | Purpose | Related hub |
 | --- | --- | --- |
+| [[Bases/Scope Registry.base]] | Shows adopted scopes by topology and lifecycle metadata. | [[Agent/Scope Map]] |
 | [[Bases/Project Notes.base]] | Shows all Markdown notes except templates, with type, status, created date, and folder. | [[00 Index]] |
 | [[Bases/Research Pipeline.base]] | Shows only declared research artifact types whose `research_boundary` exactly matches the configured descriptor. Descendant rollup is explicit, never folder-derived. | [[Research/00 Research Index]] |
 | [[Bases/Entities.base]] | Shows durable entity notes. | [[Entities/00 Entities Index]] |

@@ -72,12 +72,12 @@ Before writing, read applicable existing root and ancestor instructions. When re
    - `system` - procedures, workflows, infrastructure, automation.
    - `mixed` - more than one of the above.
 3. Create or update the base folder structure.
-4. Add core files from `assets/templates/`.
+4. Add core files from `assets/templates/`. A new vault must include the schema-v1 root checkpoint (`00 Index.md`, `AGENTS.md`, `Agent/00 Agent Navigation.md`, and `Agent/Task Routing Matrix.md`) plus `Bases/Scope Registry.base`, `Agent/Scope Map.md`, and `Agent/Scope Map.canvas`.
 5. Customize `00 Index.md`, `AGENTS.md`, and `CLAUDE.md` for the vault purpose.
 6. Add `Agent/00 Agent Navigation.md`, `Agent/Vault Navigation Standard.md`, `Agent/Task Routing Matrix.md`, and `Agent/Vault Health Check Procedure.md` when useful.
 7. Add relevant mode folders from `references/vault-structure.md`.
 8. Create Bases from the `.base` files in `assets/templates/` when useful.
-9. Add `Bases/00 Bases Index.md` and link each Base from it.
+9. Add `Bases/00 Bases Index.md` and link each Base from it, including the generated scope registry.
 10. Add Kanban boards or Dataview dashboards only when a recurring workstream needs visible status tracking.
 11. Validate that Markdown frontmatter and Base YAML parse.
 12. If machine-level discovery is absent or stale, explicitly offer `ariadne:global-discovery` so future cold agents can discover the vault from outside the vault. Do not silently write global files.
@@ -187,6 +187,8 @@ New vaults should separate:
 - view layer: Bases, canvases, dashboards, and generated reports
 
 Future scopes should be promoted only when recurring use needs a dedicated route. A promoted scope needs a hub, parent/child navigation links, routing coverage, optional local rules, optional templates, optional Bases, and health-check coverage.
+
+The root starts as the active `root` scope at path `.`. Keep the generated `ariadne:scope-boundary`, `ariadne:scope-inheritance`, `ariadne:scope-navigation`, `ariadne:scope-routing`, and `ariadne:scope-map` blocks byte-compatible with the shared topology renderer. Keep vault-specific workflows and policy outside those blocks. The scope registry and Canvas are fully generated; do not hand-edit them or copy policy into inheritance output.
 
 ## Templates
 

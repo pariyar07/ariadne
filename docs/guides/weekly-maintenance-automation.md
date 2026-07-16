@@ -78,12 +78,13 @@ Use the vault's AGENTS.md instructions and the smallest relevant Ariadne/Obsidia
 Sequence:
 1. Read the vault entry files: AGENTS.md, 00 Index.md or 00 Global Index.md, Agent/00 Agent Navigation.md, Agent/Vault Health Check Procedure.md, Agent/Vault Navigation Standard.md, and any narrower local AGENTS.md/index files for scopes you touch.
 2. Run the validator script from ariadne:validator and capture the exact result.
-3. Inspect validator output and fix only deterministic, low-risk issues: broken wikilinks where the intended existing target is clear, stale references to deleted files, missing Base index links, obvious YAML/frontmatter/base syntax issues, or duplicate navigation drift.
+3. Inspect validator output and fix only deterministic, low-risk issues. For scope contract or map drift, use the installed `sync_scope_topology.js`: preview the complete write set, obtain current-turn authorization, and never hand-edit generated registry/Base/Canvas content.
 4. Run a maintainer pass over global and scoped Inbox, Processing Queue, Raw/Sources, Questions, Decisions, Bases, navigation files, high-change domain scopes, and existing Outputs only when they are already part of the vault. Search progressively; do not scan the whole vault by default. Route research-semantic findings to `ariadne:research-stewardship` for one explicitly named boundary; do not guess evidence roles, synthesis dispositions, or promotion targets.
 5. Use subagents only for independent read-only audits, such as one subagent for validation/navigation, one for intake/source queues, and one for Bases/existing outputs. The main agent owns edits and reconciles results.
 6. For issues that require product direction, architecture judgment, large restructures, deletions, or ambiguous scope ownership, create or update a needs-review follow-up in the relevant scope instead of making broad changes.
 7. Do not create a dated report in Outputs by default. Keep the weekly maintenance result in the automation chat/output unless a durable vault note is needed for an actual fix, unresolved follow-up, or explicit user-approved record.
 8. Re-run the validator. Aim for all zero warnings unless an accepted warning is explicitly documented in the final summary.
+   After a scope topology write, run scoped validation, whole-vault validation, and a second synchronizer `--check` that proposes no changes. Use explicit `--resume` or `--abort` for an interrupted operation; never delete its control files manually.
 9. End with a concise summary: validator result, files changed, unresolved follow-ups, and whether human approval is needed.
 
 Guardrails:

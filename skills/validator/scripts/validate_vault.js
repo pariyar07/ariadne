@@ -4,12 +4,75 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const {
+  buildTopology,
+  filterFindingsByScope,
+  findingCounter,
+  inventoryVault,
+  normalizeScopePath,
+  scopeFindings,
+} = require("./scope-topology");
 
 const GLOBAL_POLICY_FINGERPRINTS = [
   "Keep notes as plain Markdown",
   "Use YAML frontmatter",
   "Do not read the whole vault",
 ];
+
+let validationSnapshot = null;
+let fallbackReadCount = 0;
+let liveObservationCount = 0;
+const liveObservationMethods = ["existsSync", "statSync", "lstatSync", "realpathSync", "readdirSync", "readFileSync"];
+const originalFsMethods = new Map(liveObservationMethods.map((name) => [name, fs[name].bind(fs)]));
+
+function activateLiveObservationGuard() {
+  if (process.env.ARIADNE_TEST_INVENTORY_TRACE !== "1") return;
+  for (const name of liveObservationMethods) {
+    fs[name] = (...args) => {
+      liveObservationCount += 1;
+      return originalFsMethods.get(name)(...args);
+    };
+  }
+}
+
+function snapshotRelative(file) {
+  if (!validationSnapshot) return null;
+  const absolute = path.isAbsolute(file) ? file : path.resolve(file);
+  const relative = toPosix(path.relative(validationSnapshot.root, absolute));
+  return relative === "" ? "." : relative;
+}
+
+function vaultExists(file) {
+  if (!validationSnapshot) return originalFsMethods.get("existsSync")(file);
+  const relative = snapshotRelative(file);
+  return validationSnapshot.files.has(relative) || validationSnapshot.directories.has(relative);
+}
+
+function vaultIsDirectory(file) {
+  if (!validationSnapshot) return originalFsMethods.get("statSync")(file).isDirectory();
+  return validationSnapshot.directories.has(snapshotRelative(file));
+}
+
+function vaultRealpath(file) {
+  if (!validationSnapshot) return originalFsMethods.get("realpathSync")(file);
+  const relative = snapshotRelative(file);
+  const record = validationSnapshot.directories.get(relative) || validationSnapshot.files.get(relative);
+  if (!record || !record.canonicalPath) throw new Error(`snapshot path has no canonical target: ${relative}`);
+  return record.canonicalPath;
+}
+
+function vaultDirectoryEntries(directory) {
+  if (!validationSnapshot) return originalFsMethods.get("readdirSync")(directory);
+  const relative = snapshotRelative(directory);
+  const prefix = relative === "." ? "" : `${relative}/`;
+  const names = new Set();
+  for (const key of [...validationSnapshot.files.keys(), ...validationSnapshot.directories.keys()]) {
+    if (key === relative || !key.startsWith(prefix)) continue;
+    const remainder = key.slice(prefix.length);
+    if (remainder && !remainder.includes("/")) names.add(remainder);
+  }
+  return [...names].sort((left, right) => Buffer.from(left).compare(Buffer.from(right)));
+}
 
 function toPosix(file) {
   return file.split(path.sep).join("/");
@@ -93,11 +156,17 @@ function linkAliasesFor(sourceFile, targetFile) {
 }
 
 function readText(file) {
+  const normalized = toPosix(file).replace(/^\.\//u, "");
+  if (validationSnapshot && validationSnapshot.files.has(normalized)) {
+    const record = validationSnapshot.files.get(normalized);
+    return record.rawBytes ? record.rawBytes.toString("utf8") : "";
+  }
+  fallbackReadCount += 1;
   return fs.readFileSync(file, "utf8");
 }
 
 function fileLinksTo(sourceFile, targetFile) {
-  if (!fs.existsSync(sourceFile)) return false;
+  if (!vaultExists(sourceFile)) return false;
   const text = textWithoutCode(readText(sourceFile));
   const links = [...wikilinkTargets(text), ...markdownLinkTargets(text)];
   const aliases = new Set(linkAliasesFor(sourceFile, targetFile));
@@ -105,7 +174,7 @@ function fileLinksTo(sourceFile, targetFile) {
 }
 
 function fileLinksToQualified(sourceFile, targetFile) {
-  if (!fs.existsSync(sourceFile)) return false;
+  if (!vaultExists(sourceFile)) return false;
   const links = [
     ...wikilinkTargets(textWithoutCode(readText(sourceFile))),
     ...markdownLinkTargets(textWithoutCode(readText(sourceFile))),
@@ -307,9 +376,9 @@ function scopeHub(hub, markdownFrontmatter) {
   if (String(frontmatter.type || "") === "scope-index") return true;
 
   const dir = path.posix.dirname(hub);
-  return fs.existsSync(path.join(dir, "AGENTS.md")) ||
-    fs.existsSync(path.join(dir, "Bases")) &&
-      fs.readdirSync(path.join(dir, "Bases")).some((file) => file.endsWith(".base"));
+  return vaultExists(path.join(dir, "AGENTS.md")) ||
+    vaultExists(path.join(dir, "Bases")) &&
+      vaultDirectoryEntries(path.join(dir, "Bases")).some((file) => file.endsWith(".base"));
 }
 
 function mentionsParentInheritance(text) {
@@ -373,20 +442,27 @@ function valuesAsList(value) {
 }
 
 function findingText(finding) {
-  return typeof finding === "string" ? finding : finding.message;
+  if (typeof finding === "string") return finding;
+  return finding.finding_id ? `[${finding.code} ${finding.finding_id}] ${finding.message}` : finding.message;
 }
 
 function structuredFinding(message, origin, obligations = []) {
   return { message, origin, obligations };
 }
 
-function validate(vaultPath, options = {}) {
+function validate(vaultPath, options = {}, inventory = null) {
   process.chdir(vaultPath);
+  validationSnapshot = inventory ? {
+    root: inventory.root,
+    files: new Map(inventory.files.map((file) => [file.relativePath, file])),
+    directories: new Map(inventory.directories.map((directory) => [directory.relativePath, directory])),
+  } : null;
+  fallbackReadCount = 0;
 
   const errors = [];
   const markdownFrontmatter = new Map();
   const nestedFrontmatter = new Map();
-  const files = walk(".");
+  const files = inventory ? inventory.files.map((file) => file.relativePath) : walk(".");
   const markdownFiles = files.filter((file) => file.endsWith(".md")).sort();
   const baseFiles = files.filter((file) => file.endsWith(".base")).sort();
   const allTargets = files.filter((file) => !file.startsWith(".")).sort();
@@ -465,7 +541,7 @@ function validate(vaultPath, options = {}) {
   const unlinkedBases = [];
   for (const file of baseFiles.filter(basesScopeFile)) {
     const indexFile = path.posix.join(path.posix.dirname(file), "00 Bases Index.md");
-    if (!fs.existsSync(indexFile)) {
+    if (!vaultExists(indexFile)) {
       unlinkedBases.push(`${file}: missing sibling ${indexFile}`);
     } else if (!fileLinksTo(indexFile, file)) {
       unlinkedBases.push(`${file}: not linked from ${indexFile} by relative Markdown link or wikilink`);
@@ -553,7 +629,7 @@ function validate(vaultPath, options = {}) {
   }
 
   const bloatWarnings = [];
-  if (fs.existsSync("00 Index.md")) {
+  if (vaultExists("00 Index.md")) {
     const lines = lineCount("00 Index.md");
     const links = wikilinkCount("00 Index.md");
     if (lines > 250 || links > 150) {
@@ -562,7 +638,7 @@ function validate(vaultPath, options = {}) {
   }
 
   const agentNav = "Agent/00 Agent Navigation.md";
-  if (fs.existsSync(agentNav)) {
+  if (vaultExists(agentNav)) {
     const lines = lineCount(agentNav);
     const links = wikilinkCount(agentNav);
     if (lines > 200 || links > 100) {
@@ -579,7 +655,7 @@ function validate(vaultPath, options = {}) {
     }
 
     const localAgents = path.posix.join(dir, "AGENTS.md");
-    if (fs.existsSync(localAgents)) continue;
+    if (vaultExists(localAgents)) continue;
 
     const nonIndexNotes = directNotes.filter((file) => !/^00 .*Index\.md$/u.test(path.posix.basename(file)));
     if (nonIndexNotes.length > 30 && !["Raw", "Raw/Sources", "Templates", "Archive", "Outputs", "Bases"].includes(dir)) {
@@ -608,14 +684,14 @@ function validate(vaultPath, options = {}) {
     return data.type === "research-boundary" && typeof data.research_schema === "string" && data.research_schema === "1";
   });
   const descriptorSet = new Set(descriptors);
-  const vaultRootReal = fs.realpathSync(".");
+  const vaultRootReal = vaultRealpath(".");
 
   function canonicalDescriptorScope(value) {
     if (typeof value !== "string" || value === "" || path.posix.isAbsolute(value) || /^[A-Za-z]:[\\/]/u.test(value)) return null;
     const normalized = path.posix.normalize(value);
     const absolute = path.resolve(vaultRootReal, normalized);
-    if (!fs.existsSync(absolute) || !fs.statSync(absolute).isDirectory()) return null;
-    const realScope = fs.realpathSync(absolute);
+    if (!vaultExists(absolute) || !vaultIsDirectory(absolute)) return null;
+    const realScope = vaultRealpath(absolute);
     const relative = toPosix(path.relative(vaultRootReal, realScope));
     if (relative === ".." || relative.startsWith("../")) return null;
     return relative === "" ? "." : relative;
@@ -949,6 +1025,9 @@ function printResults(result) {
     ["scope-navigation-warnings", result.scopeNavigationWarnings],
     ["routing-matrix-warnings", result.routingMatrixWarnings],
     ["base-scope-formula-warnings", result.baseScopeFormulaWarnings],
+    ["scope-adoption-warnings", result.scopeAdoptionWarnings || [], Boolean(result.scopeAdoptionWarnings)],
+    ["scope-contract-warnings", result.scopeContractWarnings || [], Boolean(result.scopeContractWarnings)],
+    ["scope-map-warnings", result.scopeMapWarnings || [], Boolean(result.scopeMapWarnings)],
     ["research-boundary-warnings", result.researchBoundaryWarnings],
     ["research-provenance-warnings", result.researchProvenanceWarnings],
     ["provenance-cycle-warnings", result.provenanceCycleWarnings],
@@ -956,7 +1035,8 @@ function printResults(result) {
     ["research-hub-warnings", result.researchHubWarnings],
   ];
 
-  for (const [name, values] of counters) {
+  for (const [name, values, enabled = true] of counters) {
+    if (!enabled) continue;
     console.log(`${name}: ${values.length}`);
     values.slice().map(findingText).sort().forEach((line) => console.log(line));
   }
@@ -981,14 +1061,18 @@ function parseArguments(argv) {
     if (flag === "--profile") profile = value;
     index += 2;
   }
-  if (profile && profile !== "research") throw new Error(`unsupported profile: ${profile}`);
-  if (profile && !scope) throw new Error("--profile requires --scope");
+  if (profile && !["research", "scope"].includes(profile)) throw new Error(`unsupported profile: ${profile}`);
+  if (profile === "research" && !scope) throw new Error("--profile requires --scope");
   if (scope) {
     if (path.isAbsolute(scope) || /^[A-Za-z]:[\\/]/u.test(scope)) throw new Error("--scope must be vault-relative");
     if (scope.split(/[\\/]/u).includes("..")) throw new Error("--scope must not contain traversal");
-    const normalized = toPosix(path.posix.normalize(scope));
-    if (normalized === ".." || normalized.startsWith("../") || normalized === "." || normalized === "") {
+    const normalized = profile === "scope" ? normalizeScopePath(scope) : toPosix(path.posix.normalize(scope));
+    if (normalized === ".." || normalized.startsWith("../") || normalized === "" || normalized === "." && profile !== "scope") {
       throw new Error("--scope must name a contained vault directory");
+    }
+    if (profile === "scope") {
+      scope = normalized;
+      return { vault, scope, profile };
     }
     const vaultRoot = path.resolve(vault);
     const absoluteScope = path.resolve(vaultRoot, normalized);
@@ -1045,8 +1129,33 @@ function filterResults(result, options) {
 
 try {
   const options = parseArguments(process.argv.slice(2));
-  const result = filterResults(validate(options.vault, options), options);
+  let targetScopeId = null;
+  let topologyFindings = null;
+  let inventory = null;
+  if (options.profile === "scope") {
+    inventory = inventoryVault(options.vault);
+    liveObservationCount = 0;
+    activateLiveObservationGuard();
+    const topology = buildTopology(inventory);
+    topologyFindings = scopeFindings(topology, inventory);
+    if (options.scope) {
+      const matches = [...topology.descriptorsById.values()].filter((descriptor) => descriptor.scopePath === options.scope);
+      if (matches.length !== 1) throw new Error(`--scope must resolve to one canonical adopted scope: ${options.scope}`);
+      targetScopeId = matches[0].scopeId;
+      topologyFindings = filterFindingsByScope(topologyFindings, targetScopeId, topology);
+    }
+  }
+  const result = filterResults(validate(options.vault, options, inventory), options);
+  if (topologyFindings) {
+    result.scopeAdoptionWarnings = [];
+    result.scopeContractWarnings = [];
+    result.scopeMapWarnings = [];
+    for (const item of topologyFindings) result[findingCounter(item)].push(item);
+  }
   printResults(result);
+  if (process.env.ARIADNE_TEST_INVENTORY_TRACE === "1") {
+    console.error(`inventory-snapshots: ${inventory ? 1 : 0}; fallback-reads: ${fallbackReadCount}; live-observations: ${liveObservationCount}`);
+  }
   const ok = result.errors.length === 0 &&
     result.broken.length === 0 &&
     result.trueOrphans.length === 0 &&
