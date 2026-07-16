@@ -43,7 +43,7 @@ node scripts/check_workspace.js "/path/to/workspace" --json
 
 Resolve `scripts/check_workspace.js` relative to this `SKILL.md`. In an Ariadne repository checkout, the same script lives at `skills/workspace-instructions/scripts/check_workspace.js`.
 
-Use the checker for mechanical signals only: Git/worktree state, tracked or ignored instruction files, local-file `.gitignore` coverage, private-path signals, instruction line counts, high line-count files, duplicated vault navigation, adapter duplication, copied global-discovery blocks, malformed, duplicate, legacy, or foreign marker blocks, `WORKSPACE.md` references, fixed-depth child directories, child Git repos, exact child-name mentions by file, root Git plus child Git repo topology, Codex `AGENTS.override.md` bodies that have drifted out of sync with `AGENTS.md` (`codexOverrideOutOfSyncFiles`), Hermes `.hermes.md` / `HERMES.md` override signals, shared instruction files that exceed the ~150-line open-standard length (`oversizedForStandardFiles`), and a canonical `AGENTS.md` that carries no command guidance (`agentsMissingCommandGuidance`).
+Use the checker for mechanical signals only: Git/worktree state, tracked or ignored instruction files, local-file `.gitignore` coverage, private-path signals, instruction line counts, high line-count files, duplicated vault navigation, adapter duplication, copied global-discovery blocks, malformed, duplicate, legacy, or foreign marker blocks, stable scope identity and stale linked paths inside workspace-vault-link markers, `WORKSPACE.md` references, fixed-depth child directories, child Git repos, exact child-name mentions by file, root Git plus child Git repo topology, Codex `AGENTS.override.md` bodies that have drifted out of sync with `AGENTS.md` (`codexOverrideOutOfSyncFiles`), Hermes `.hermes.md` / `HERMES.md` override signals, shared instruction files that exceed the ~150-line open-standard length (`oversizedForStandardFiles`), and a canonical `AGENTS.md` that carries no command guidance (`agentsMissingCommandGuidance`).
 
 Do not let checker output replace judgment. This skill decides whether to ask a question, preserve workspace-specific rules, split shared/local content, or perform conservative cleanup.
 
@@ -161,6 +161,8 @@ The block may say how to consult registered vaults and which vault or scope is r
 
 Rules:
 
+- A scope-specific block may declare `scope_id: <stable-id>` and `scope_path: <current/path>`, with `Related Ariadne scope: [[<current/path>]]`. Treat the ID as stable and the path as locational. The checker reports `workspaceScopeIdentityByFile`, `staleScopePathFiles`, and `unknownScopeIdFiles` from this block only; it does not infer identity from prose outside the markers.
+- Repair a stale path only after confirming the same unique `scope_id` against vault-local scope inventory. Update only the declared path and linked target inside the marker. Do not replace vault navigation or rewrite surrounding user content.
 - If the link names a vault or scope, it must come from the current prompt, existing workspace instructions, or explicit user confirmation.
 - If multiple registered vaults are plausible, ask before writing the link.
 - Scope-specific links require a current-turn explicit target or user confirmation.

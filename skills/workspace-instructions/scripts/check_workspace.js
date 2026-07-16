@@ -23,6 +23,8 @@ const RETIRED_RESEARCH_SKILL_REPLACEMENTS = new Map([
 ]);
 const RETIRED_RESEARCH_SKILL_REPAIR_GUIDANCE =
   "Replace retired research skill names only inside Ariadne-managed marker blocks; preserve all text outside those blocks.";
+const SCOPE_LINK_REPAIR_GUIDANCE =
+  "After confirming the stable scope_id against vault-local scope inventory, update only the scope_path and Related Ariadne scope target inside the workspace-vault-link marker; preserve all text outside the marker.";
 
 function toPosix(file) {
   return file.split(path.sep).join("/");
@@ -91,6 +93,21 @@ function markerManagedText(text) {
     }
   }
   return blocks.join("\n");
+}
+
+function workspaceVaultLinkBlocks(text) {
+  const blocks = [];
+  let offset = 0;
+  while (offset < text.length) {
+    const start = text.indexOf(CURRENT_MARKER_START, offset);
+    if (start === -1) break;
+    const contentStart = start + CURRENT_MARKER_START.length;
+    const end = text.indexOf(CURRENT_MARKER_END, contentStart);
+    if (end === -1) break;
+    blocks.push(text.slice(contentStart, end));
+    offset = end + CURRENT_MARKER_END.length;
+  }
+  return blocks;
 }
 
 function isTextFile(file) {
@@ -309,6 +326,36 @@ function detectRetiredResearchSkillNames(root, files) {
   };
 }
 
+function detectWorkspaceScopeIdentity(root, files) {
+  const workspaceScopeIdentityByFile = {};
+  const staleScopePathFiles = [];
+  const unknownScopeIdFiles = [];
+
+  for (const file of allInstructionFiles(files).filter(isTextFile)) {
+    const blocks = workspaceVaultLinkBlocks(read(root, file));
+    if (blocks.length !== 1) continue;
+    const block = blocks[0];
+    const scopeId = block.match(/^scope_id:[ \t]*(\S.*?)[ \t]*$/mu)?.[1] || null;
+    const scopePath = block.match(/^scope_path:[ \t]*(\S.*?)[ \t]*$/mu)?.[1] || null;
+    const linkedScopePath = block.match(/^Related Ariadne scope:[ \t]*\[\[([^\]|]+)(?:\|[^\]]+)?\]\][ \t]*$/mu)?.[1]?.trim() || null;
+
+    if (scopeId === null && scopePath === null && linkedScopePath === null) continue;
+    workspaceScopeIdentityByFile[file] = { scopeId, scopePath, linkedScopePath };
+    if ((scopePath !== null || linkedScopePath !== null) && scopeId === null) unknownScopeIdFiles.push(file);
+    if (scopeId !== null && scopePath !== null && linkedScopePath !== null && scopePath !== linkedScopePath) {
+      staleScopePathFiles.push(file);
+    }
+  }
+
+  return {
+    workspaceScopeIdentityByFile,
+    staleScopePathFiles: staleScopePathFiles.sort(),
+    unknownScopeIdFiles: unknownScopeIdFiles.sort(),
+    scopeLinkRepairGuidance:
+      staleScopePathFiles.length > 0 || unknownScopeIdFiles.length > 0 ? SCOPE_LINK_REPAIR_GUIDANCE : null,
+  };
+}
+
 function detectAdapters(root, files) {
   const adapterDuplicateFiles = [];
   const adapterLocalImports = [];
@@ -465,6 +512,7 @@ function checkWorkspace(root) {
     ...detectContentSignals(workspaceRoot, files, git),
     ...detectMarkers(workspaceRoot, files),
     ...detectRetiredResearchSkillNames(workspaceRoot, files),
+    ...detectWorkspaceScopeIdentity(workspaceRoot, files),
     ...detectAdapters(workspaceRoot, files),
     ...detectHermes(workspaceRoot, files),
     ...detectNestedInstructions(workspaceRoot, files),

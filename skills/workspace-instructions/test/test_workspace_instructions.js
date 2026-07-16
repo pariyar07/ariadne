@@ -80,6 +80,20 @@ function runChecker(workspace) {
   }));
 }
 
+function snapshotFiles(root) {
+  const snapshot = {};
+  function walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === ".git") continue;
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(fullPath);
+      else if (entry.isFile()) snapshot[path.relative(root, fullPath)] = fs.readFileSync(fullPath, "utf8");
+    }
+  }
+  walk(root);
+  return snapshot;
+}
+
 function runRepoValidator() {
   try {
     return execFileSync(process.execPath, [REPO_VALIDATOR, "--skills-only"], {
@@ -145,9 +159,11 @@ function main() {
     const scenario = readScenario(fixtureName);
     const { tmpRoot, workspace } = materializeFixture(scenario);
     try {
+      const before = snapshotFiles(workspace);
       const first = runChecker(workspace);
       const second = runChecker(workspace);
       assert.deepStrictEqual(first, second, `${scenario.name}: checker output must be idempotent`);
+      assert.deepStrictEqual(snapshotFiles(workspace), before, `${scenario.name}: checker must preserve workspace files`);
       assertScenario(scenario, first);
     } finally {
       fs.rmSync(tmpRoot, { recursive: true, force: true });
