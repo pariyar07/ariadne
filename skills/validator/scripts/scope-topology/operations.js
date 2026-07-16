@@ -68,56 +68,26 @@ function canonical(value) {
 function hashPlan(plan) { return crypto.createHash("sha256").update(JSON.stringify(canonical(plan))).digest("hex"); }
 function descriptorPath(descriptor) { return descriptor.scopePath === "." ? "00 Index.md" : `${descriptor.scopePath}/00 Index.md`; }
 
-function isWordChar(char) {
-  return char !== undefined && /[\p{L}\p{N}]/u.test(char);
-}
-
-const YAML_RESERVED_SCALARS = new Set(["null", "~", "true", "false"]);
-const YAML_LEADING_INDICATORS = /^[-?:,[\]{}#&*!|>'"%@`]/u;
-
-// A single word-bounded quote character (e.g. the apostrophe in "Satyam's") is safe to leave
-// unquoted: validate_vault.js's syntax scanner treats it as scalar-internal punctuation, not a
-// delimiter. Two or more quote characters anywhere in the value are not safe even when each is
-// individually word-bounded, because the scanner's quote-tracking is stateful across the whole
-// value -- for example "Multiple ''' apostrophes here" has three individually-adjacent-to-word
-// apostrophes but still misreads as an unterminated quote, since the first non-word-bounded one
-// (if any) opens real quote-tracking that subsequent quote characters then interact with.
-function hasUnsafeQuoteCharacters(value) {
-  const positions = [...value].map((char, index) => ({ char, index })).filter((item) => item.char === "'" || item.char === "\"");
-  if (positions.length === 0) return false;
-  if (positions.length > 1) return true;
-  const { index } = positions[0];
-  return !(isWordChar(value[index - 1]) && isWordChar(value[index + 1]));
-}
-
-// Matches YAML 1.1-resolver implicit types that a real, standards-compliant YAML parser (e.g.
-// the one Obsidian's own frontmatter reader almost certainly uses) would coerce away from a
-// plain string, even though this codebase's own naive parser treats every unquoted value as a
-// string. Quoting -- not escaping -- is what prevents implicit typing in any compliant parser,
-// so the fix is purely about detecting when it's needed, not how the quote is unescaped.
-const YAML_IMPLICIT_TYPE = /^(?:[+-]?(?:0|[1-9]\d*)(?:\.\d+)?|[+-]?0x[0-9a-fA-F]+|[+-]?0o[0-7]+|\d{4}-\d{2}-\d{2}(?:[Tt ].*)?|y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF|null|Null|NULL|~)$/u;
-
-// A minimal, dependency-free YAML plain/quoted-scalar serializer for the exact subset this
-// codebase's own hand-rolled parsers (inventory.js's parseScalar and validate_vault.js's
+// A minimal, dependency-free YAML quoted-scalar serializer for the exact subset this codebase's
+// own hand-rolled parsers (inventory.js's parseScalar and validate_vault.js's
 // validateYamlSyntax) support. Neither parser un-escapes doubled or backslash-escaped quote
 // characters -- they only strip a literal leading/trailing quote character by position -- so
 // correctness here means never emitting a quoted form that either parser could misread, not
-// implementing full YAML escaping. Values needing quoting are wrapped in whichever quote
-// character does not also appear inside them; a value containing both a `'` and a `"`, a
-// backslash, or any control character (which would corrupt this line-based frontmatter format
-// regardless of quoting) cannot be serialized safely under this constraint and is refused
-// rather than guessed at.
+// implementing full YAML escaping.
+//
+// Every generated string scalar is quoted unconditionally rather than only when a resolver
+// regex judges it necessary. A conditional "quote only implicit-looking values" approach was
+// tried first and rejected: it requires enumerating every YAML 1.1 implicit-type form a real,
+// standards-compliant parser (e.g. whatever Obsidian's frontmatter reader uses) would coerce --
+// booleans, null, ints, floats, hex/octal/binary, dates, sexagesimal -- and any omission (e.g.
+// `01`, `1.`, `.inf`, `.NaN`, `0b101`, `12:34`) silently produces a wrong-typed value that this
+// codebase's own naive parser still round-trips correctly, making the bug invisible to this
+// repository's own test suite. Always quoting removes the need to enumerate anything.
 function yamlScalar(value, field) {
   if (/[\x00-\x1f\x7f]/u.test(value)) {
     throw new Error(`${field} cannot be safely serialized as YAML: contains a control character or line break (${JSON.stringify(value)})`);
   }
-  if (value === "") return "''";
-  if (/^\s|\s$/u.test(value)) return quoteScalar(value, field);
-  if (YAML_IMPLICIT_TYPE.test(value)) return quoteScalar(value, field);
-  if (YAML_LEADING_INDICATORS.test(value)) return quoteScalar(value, field);
-  if (/:(?:\s|$)/u.test(value) || / #/u.test(value)) return quoteScalar(value, field);
-  if (hasUnsafeQuoteCharacters(value)) return quoteScalar(value, field);
-  return value;
+  return quoteScalar(value, field);
 }
 
 function quoteScalar(value, field) {
@@ -293,10 +263,24 @@ function discoverLegacyCandidates(inventory, model) {
     // never be re-read as a valid descriptor after adoption -- it would immediately become an
     // invalid-descriptor refusal on the very next check. Refuse discovery rather than silently
     // adopt a folder into a scope_path it can't actually keep.
+    //
+    // normalizeScopePath is also lossy by design (it maps backslashes to forward slashes so a
+    // Windows-style path can be typed as a scope_path). A real POSIX directory can legally be
+    // named with a literal backslash, e.g. "A\B" -- normalizeScopePath("A\\B") returns "A/B"
+    // without throwing, so checking only "did it throw" let such a directory through discovery
+    // with a scope_path that no longer identifies the same physical folder: the write plan would
+    // authorize "A/B" while the actual directory on disk is "A\B", and the write would refuse at
+    // the allowed_write_paths check with the two paths talking past each other. Comparing the
+    // normalized result against the original path catches any such lossy transformation, not
+    // just outright rejections.
+    let normalizedDir;
     try {
-      normalizeScopePath(dir);
+      normalizedDir = normalizeScopePath(dir);
     } catch (error) {
       throw new Error(`legacy discovery refused: ${dir} cannot be a valid scope_path (${error.message}); rename the folder before adopting`);
+    }
+    if (normalizedDir !== dir) {
+      throw new Error(`legacy discovery refused: ${dir} does not match its normalized scope_path form ${normalizedDir}; rename the folder before adopting`);
     }
     eligible.push(dir);
   }

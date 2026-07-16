@@ -158,7 +158,7 @@ for (const [index, relative] of checkpointPaths.entries()) {
 }
 const movedDescriptor = fs.readFileSync(path.join(preservingMoveVault, destinationScope, "00 Index.md"), "latin1");
 for (const preserved of ["created: 2020-01-02", "  - user-tag", "user_note: keep-me", "replaced_by_scope_id: zulu"]) assert.match(movedDescriptor, new RegExp(preserved.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
-assert.match(movedDescriptor, /scope_path: Domains\/Product\/Workstreams\/Beta/u);
+assert.match(movedDescriptor, /scope_path: 'Domains\/Product\/Workstreams\/Beta'/u);
 assert.match(movedDescriptor, /status: retired/u);
 assert.match(fs.readFileSync(path.join(preservingMoveVault, sourceScope, "00 Index.md"), "utf8"), /type: scope-redirect/u);
 assert.deepStrictEqual(checkTopology(preservingMoveVault).changes, []);
@@ -198,9 +198,9 @@ const legacyWholeDescriptors = legacyWholePlan.replacements.filter((item) => ite
 assert.deepStrictEqual(legacyWholeDescriptors.map((item) => item.path).sort(), [
   "00 Index.md", "Domains/Alpha/00 Index.md", "Domains/Beta/00 Index.md", "Domains/Gamma/Delta/00 Index.md",
 ]);
-assert.match(legacyWholeDescriptors.find((item) => item.path === "00 Index.md").bytes, /title: Example Vault/u);
+assert.match(legacyWholeDescriptors.find((item) => item.path === "00 Index.md").bytes, /title: 'Example Vault'/u);
 const legacyBeta = legacyWholeDescriptors.find((item) => item.path === "Domains/Beta/00 Index.md").bytes;
-assert.match(legacyBeta, /title: Beta Domain/u);
+assert.match(legacyBeta, /title: 'Beta Domain'/u);
 assert.match(legacyBeta, /parent_scope_id: root/u);
 assert.match(legacyWholeDescriptors.find((item) => item.path === "Domains/Alpha/00 Index.md").bytes, /parent_scope_id: root/u);
 assert.match(legacyWholeDescriptors.find((item) => item.path === "Domains/Gamma/Delta/00 Index.md").bytes, /parent_scope_id: root/u);
@@ -354,6 +354,12 @@ const yamlTitleCases = [
   ["0xFF", "hex-looking"],
   ["+1", "leading-plus integer-looking"],
   ["2026-07-16", "ISO-date-looking"],
+  ["1.", "trailing-dot float-looking"],
+  [".inf", "YAML 1.1 infinity-looking"],
+  [".NaN", "YAML 1.1 NaN-looking"],
+  ["0b101", "binary-looking"],
+  ["12:34", "sexagesimal-looking"],
+  ["Plain Simple Title", "no special characters at all -- must still be quoted unconditionally"],
 ];
 for (const [title, label] of yamlTitleCases) {
   const yamlVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-yaml-title-"));
@@ -426,6 +432,26 @@ assert.throws(
   /cannot be a valid scope_path/u,
 );
 fs.rmSync(illegalPathVault, { recursive: true, force: true });
+
+// A folder whose real (POSIX-legal) path contains a literal backslash must also refuse
+// discovery. normalizeScopePath treats "\\" as a path separator and rewrites it to "/" without
+// throwing (so a Windows-style path can be typed as a scope_path) -- checking only whether
+// normalizeScopePath threw let a real directory named e.g. "A\B" through discovery with a
+// scope_path ("A/B") that no longer identifies the same physical folder: the write plan would
+// authorize "A/B" while the directory on disk is still "A\B", and the write would refuse at the
+// allowed_write_paths check with the two paths talking past each other instead of at discovery,
+// where the actual problem is.
+const backslashPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-backslash-path-"));
+fs.writeFileSync(path.join(backslashPathVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(backslashPathVault, "A\\B"), { recursive: true });
+fs.writeFileSync(path.join(backslashPathVault, "A\\B", "AGENTS.md"), "# A B\n");
+const backslashPathInventory = inventoryVault(backslashPathVault);
+assert.ok(backslashPathInventory.directories.some((item) => item.relativePath === "A\\B"), "fixture directory must be discoverable as A\\B");
+assert.throws(
+  () => planOperation(backslashPathInventory, buildTopology(backslashPathInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /does not match its normalized scope_path form/u,
+);
+fs.rmSync(backslashPathVault, { recursive: true, force: true });
 
 // A control character in a legacy title must refuse rather than corrupt the written file. A
 // literal newline can't even survive as a single frontmatter value through this codebase's
