@@ -18,6 +18,8 @@ const SCOPE_GUIDANCE_BY_SCENARIO = {
   scope_identity_unverified: "Supply --vault only after confirming the intended vault; until then scope identity is unverified and no current-path claim or repair is safe.",
   scope_identity_partial: "Repair the closed scope identity schema only inside the workspace-vault-link marker: one lower-kebab scope_id, one normalized vault-relative NFC scope_path, and one equal Related Ariadne scope target.",
   scope_identity_invalid: "Repair the closed scope identity schema only inside the workspace-vault-link marker: one lower-kebab scope_id, one normalized vault-relative NFC scope_path, and one equal Related Ariadne scope target.",
+  scope_identity_duplicate_id: "The supplied scope_id has no unique valid canonical mapping in the confirmed vault inventory; repair the vault topology ambiguity before changing the workspace marker.",
+  scope_identity_colliding_descriptor: "The supplied scope_id has no unique valid canonical mapping in the confirmed vault inventory; repair the vault topology ambiguity before changing the workspace marker.",
 };
 
 function run(cmd, args, cwd) {
@@ -77,6 +79,11 @@ function materializeFixture(scenario) {
     vault = path.join(tmpRoot, "vault");
     fs.mkdirSync(vault, { recursive: true });
     for (const file of scenario.vault.files || []) writeFile(vault, file.path, file.content);
+    for (const link of scenario.vault.hardlinks || []) {
+      const fullPath = path.join(vault, link.path);
+      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+      fs.linkSync(path.join(vault, link.target), fullPath);
+    }
   }
 
   return { tmpRoot, workspace, vault };

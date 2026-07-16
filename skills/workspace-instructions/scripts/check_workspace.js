@@ -4,7 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const { inventoryVault, buildTopology, normalizeScopePath } = require("../../validator/scripts/scope-topology");
+const { inventoryVault, buildTopology, normalizeScopePath, parseScopeDescriptor } = require("../../validator/scripts/scope-topology");
 
 const ROOT_INSTRUCTION_FILES = new Set(["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".hermes.md", "HERMES.md"]);
 const LOCAL_ONLY_FILES = new Set(["AGENTS.override.md", "CLAUDE.local.md", "GEMINI.local.md"]);
@@ -30,6 +30,8 @@ const SCOPE_LINK_UNVERIFIED_GUIDANCE =
   "Supply --vault only after confirming the intended vault; until then scope identity is unverified and no current-path claim or repair is safe.";
 const SCOPE_LINK_UNKNOWN_ID_GUIDANCE =
   "The supplied scope_id is absent from the confirmed vault inventory; confirm the intended scope before changing any marker field, and preserve all text outside the marker.";
+const SCOPE_LINK_AMBIGUOUS_GUIDANCE =
+  "The supplied scope_id has no unique valid canonical mapping in the confirmed vault inventory; repair the vault topology ambiguity before changing the workspace marker.";
 const SCOPE_LINK_INVALID_GUIDANCE =
   "Repair the closed scope identity schema only inside the workspace-vault-link marker: one lower-kebab scope_id, one normalized vault-relative NFC scope_path, and one equal Related Ariadne scope target.";
 
@@ -363,9 +365,49 @@ function validClosedIdentity(identity) {
 
 function confirmedScopeInventory(vaultRoot) {
   if (!vaultRoot) return null;
-  const topology = buildTopology(inventoryVault(vaultRoot));
-  if (!topology.active) throw new Error("confirmed vault must contain a valid active schema-v1 root scope descriptor");
-  return topology.descriptorsById;
+  const inventory = inventoryVault(vaultRoot);
+  const topology = buildTopology(inventory);
+  const declarationsById = new Map();
+  const ambiguousIds = new Set();
+  const descriptorFiles = inventory.files.filter((file) => path.posix.basename(file.relativePath) === "00 Index.md" && file.frontmatter && String(file.frontmatter.type || "") === "scope-index");
+  const canonicalDescriptorPaths = new Map();
+
+  for (const file of descriptorFiles) {
+    const rawId = typeof file.frontmatter.scope_id === "string" ? file.frontmatter.scope_id.normalize("NFC").trim() : null;
+    let descriptor;
+    try {
+      descriptor = parseScopeDescriptor(file.relativePath, file.frontmatter);
+    } catch {
+      if (rawId) ambiguousIds.add(rawId);
+      continue;
+    }
+    if (!descriptor || !descriptor.supported) {
+      if (rawId) ambiguousIds.add(rawId);
+      continue;
+    }
+    const declarations = declarationsById.get(descriptor.scopeId) || [];
+    declarations.push({ descriptor, file });
+    declarationsById.set(descriptor.scopeId, declarations);
+    if (!file.canonicalContained || !file.canonicalPath || file.linkCount !== 1) ambiguousIds.add(descriptor.scopeId);
+    if (descriptor.scopePath !== (path.posix.dirname(file.relativePath) === "." ? "." : path.posix.dirname(file.relativePath))) ambiguousIds.add(descriptor.scopeId);
+    if (inventory.caseFoldCollisions.has(file.caseFoldPath)) ambiguousIds.add(descriptor.scopeId);
+    if (file.canonicalPath) {
+      const ids = canonicalDescriptorPaths.get(file.canonicalPath) || [];
+      ids.push(descriptor.scopeId);
+      canonicalDescriptorPaths.set(file.canonicalPath, ids);
+    }
+  }
+
+  for (const [id, declarations] of declarationsById) {
+    if (declarations.length !== 1) ambiguousIds.add(id);
+    const canonical = topology.descriptorsById.get(id);
+    if (!canonical || canonical.file !== declarations[0].descriptor.file || canonical.scopePath !== declarations[0].descriptor.scopePath) ambiguousIds.add(id);
+  }
+  for (const ids of canonicalDescriptorPaths.values()) if (ids.length > 1) for (const id of ids) ambiguousIds.add(id);
+  const roots = declarationsById.get("root") || [];
+  const globallyAmbiguous = roots.length !== 1 || ambiguousIds.has("root") || !topology.active;
+
+  return { descriptorsById: topology.descriptorsById, ambiguousIds, globallyAmbiguous };
 }
 
 function detectWorkspaceScopeIdentity(root, files, vaultRoot) {
@@ -374,7 +416,9 @@ function detectWorkspaceScopeIdentity(root, files, vaultRoot) {
   const unknownScopeIdFiles = [];
   const invalidScopeIdentityFiles = [];
   const unverifiedScopeIdentityFiles = [];
-  const descriptorsById = confirmedScopeInventory(vaultRoot);
+  const confirmedInventory = confirmedScopeInventory(vaultRoot);
+  const descriptorsById = confirmedInventory?.descriptorsById || null;
+  const ambiguousScopeIdFiles = [];
 
   for (const file of allInstructionFiles(files).filter(isTextFile)) {
     const blocks = workspaceVaultLinkBlocks(read(root, file));
@@ -396,6 +440,11 @@ function detectWorkspaceScopeIdentity(root, files, vaultRoot) {
       unverifiedScopeIdentityFiles.push(file);
       continue;
     }
+    if (confirmedInventory.globallyAmbiguous || confirmedInventory.ambiguousIds.has(identity.scopeId)) {
+      workspaceScopeIdentityByFile[file] = { ...publicIdentity, canonicalScopePath: null, verification: "ambiguous" };
+      ambiguousScopeIdFiles.push(file);
+      continue;
+    }
     const descriptor = descriptorsById.get(identity.scopeId);
     if (!descriptor) {
       workspaceScopeIdentityByFile[file] = { ...publicIdentity, canonicalScopePath: null, verification: "unknown-id" };
@@ -413,6 +462,7 @@ function detectWorkspaceScopeIdentity(root, files, vaultRoot) {
   let scopeLinkRepairGuidance = null;
   if (invalidScopeIdentityFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_INVALID_GUIDANCE;
   else if (unverifiedScopeIdentityFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_UNVERIFIED_GUIDANCE;
+  else if (ambiguousScopeIdFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_AMBIGUOUS_GUIDANCE;
   else if (unknownScopeIdFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_UNKNOWN_ID_GUIDANCE;
   else if (staleScopePathFiles.length > 0) scopeLinkRepairGuidance = SCOPE_LINK_REPAIR_GUIDANCE;
   return {
@@ -421,6 +471,7 @@ function detectWorkspaceScopeIdentity(root, files, vaultRoot) {
     unknownScopeIdFiles: unknownScopeIdFiles.sort(),
     invalidScopeIdentityFiles: invalidScopeIdentityFiles.sort(),
     unverifiedScopeIdentityFiles: unverifiedScopeIdentityFiles.sort(),
+    ambiguousScopeIdFiles: ambiguousScopeIdFiles.sort(),
     scopeIdentityVaultConfirmed: Boolean(descriptorsById),
     scopeLinkRepairGuidance,
   };
