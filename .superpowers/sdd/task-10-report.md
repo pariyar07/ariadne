@@ -4,14 +4,14 @@ Status: DONE_WITH_CONCERNS
 
 ## Candidate and private gate
 
-- Fresh public verification candidate: `93ab085` (`fix: preserve scope topology move content`). The full suite below ran against its exact content immediately before that commit was created.
-- The previously accepted private Task 6 pass remains pinned to `651eb5747f5d70e1122566bab04e24bf32dc2897`; it does **not** cover `93ab085`.
-- The private scope-topology gate is pending a fresh rerun against `93ab085` (or the final report-only descendant). Publication remains blocked on that separate result.
+- Fresh public verification candidate: `c77a567` (`fix: defer unsupported topology normalization`). The full suite below ran against its exact content immediately before that commit was created.
+- The previously accepted private Task 6 pass remains pinned to `651eb5747f5d70e1122566bab04e24bf32dc2897`; it does **not** cover `c77a567`.
+- The private scope-topology gate is pending a fresh rerun against `c77a567` (or the final report-only descendant). Publication remains blocked on that separate result.
 - No private gate contracts, graders, canaries, transcripts, or fixture internals were copied into this repository.
 
 ## Fresh public verification
 
-These commands were run from the repository root on 2026-07-16 against the exact implementation and documentation content committed as `93ab085`; every command exited `0`:
+These commands were run from the repository root on 2026-07-16 against the exact implementation and documentation content committed as `c77a567`; every command exited `0`:
 
 ```text
 $ node skills/validator/test/test_scope_topology.js
@@ -36,7 +36,7 @@ $ node scripts/validate_repo.js --skills-only
 skill-repo-ok
 ```
 
-The topology suite includes byte-preserving move, failure/resume, redirect, descriptor metadata, scoped global-drift, and second-run no-change assertions. Its successful exit verifies those assertions.
+The topology suite includes byte-preserving move, failure/resume, redirect, descriptor metadata, replacement lifecycle, deferred normalization with zero bytes changed, scoped global-drift, and second-run no-change assertions. Its successful exit verifies those assertions.
 
 ## Dependency audit
 
@@ -66,7 +66,7 @@ $ git diff --stat
 $ git diff
 ```
 
-`git diff --check` produced no output. The status and diff commands showed only the explicitly reviewed Task 10 fix paths before commit; after `93ab085`, the implementation tree was clean.
+`git diff --check` produced no output. The status and diff commands showed only the explicitly reviewed Task 10 fix paths before commit; after `c77a567`, the implementation tree was clean.
 
 Generated fixture hashes were freshly recorded as:
 
@@ -81,7 +81,8 @@ The candidate-series name and added-line audits found no maintainer-local absolu
 ## Blockers and remaining risk
 
 - Public blockers: none.
-- Release blocker: the private deterministic scope-topology gate has not yet been rerun against `93ab085`; the old pass applies only to `651eb57`.
+- Release blocker: the private deterministic scope-topology gate has not yet been rerun against `c77a567`; the old pass applies only to `651eb57`.
 - Recognized non-registry user Base formulas are deliberately report-only and are not included in authorized write effects until a complete supported-shape normalizer exists.
+- Requested `normalize_files` are likewise report-only and deterministically refuse write mode until a complete normalizer exists.
 - Live Codex, Claude, Gemini, and off-machine sessions remain outside the deterministic private gate.
 - No push, pull request, or merge was performed.
