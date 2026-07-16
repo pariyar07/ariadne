@@ -48,6 +48,13 @@ const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-repo-guardrail-t
 try {
   copyTrackedWorkingTree(tempRoot);
 
+  assert(!fs.existsSync(path.join(tempRoot, "docs/superpowers")), "public repository must not track docs/superpowers artifacts");
+  const internalArtifact = path.join(tempRoot, "docs/superpowers/plans/probe.md");
+  fs.mkdirSync(path.dirname(internalArtifact), { recursive: true });
+  fs.writeFileSync(internalArtifact, "internal planning artifact\n");
+  assertRejected(runValidator(tempRoot), "internal superpowers artifact must not be committed: docs/superpowers/plans/probe.md");
+  fs.rmSync(path.join(tempRoot, "docs/superpowers"), { recursive: true, force: true });
+
   fs.rmSync(path.join(tempRoot, "docs/guides/scope-topology-migration.md"));
 
   assert(!fs.existsSync(path.join(tempRoot, "skills/research-intake")), "v0.2.0 must remove the research-intake adapter");
@@ -103,10 +110,6 @@ try {
   const patchReleaseText = fs.readFileSync(path.join(tempRoot, "docs/releases/v0.2.1.md"), "utf8");
   assert(patchReleaseText.includes("# Ariadne v0.2.1"), "v0.2.1 release note must exist");
   assert(patchReleaseText.includes("Obsidian remains an optional"), "v0.2.1 release note must explain frontend compatibility");
-
-  const implementationPlan = fs.readFileSync(path.join(tempRoot, "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md"), "utf8");
-  assert(implementationPlan.includes("partially superseded by the direct-breaking v0.2.0 release decision"), "implementation plan must identify the direct-breaking supersession");
-  assert(!implementationPlan.includes("Compatibility adapters remain for one migration release"), "implementation plan must not direct workers to restore compatibility adapters");
 
   assert(
     fs.readFileSync(path.join(tempRoot, "docs/guides/quickstart.md"), "utf8").includes(
@@ -252,15 +255,6 @@ try {
   const requestDataResult = runValidator(tempRoot);
   assert.strictEqual(requestDataResult.status, 0, requestDataResult.stderr || requestDataResult.stdout);
   fs.rmSync(requestDataExample);
-
-  restore = replace(
-    tempRoot,
-    "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md",
-    "partially superseded by the direct-breaking v0.2.0 release decision",
-    "implementation remains active"
-  );
-  assertRejected(runValidator(tempRoot), "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md must preserve the direct-breaking v0.2.0 supersession notice");
-  restore();
 
   restore = replace(
     tempRoot,
