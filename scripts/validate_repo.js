@@ -93,6 +93,13 @@ const TOPOLOGY_ORCHESTRATION_CONTRACTS = new Map([
   ["skills/vault/references/recursive-scopes.md", [TOPOLOGY_SYNCHRONIZER, "scope-operation-request.md"]],
   ["skills/scope/references/scope-operation-request.md", ["operation_schema", "allowed_write_paths", "content_write_paths", "Engine control paths"]],
 ]);
+const TOPOLOGY_ORCHESTRATION_PATHS = [
+  "skills/scope/",
+  "skills/navigation/SKILL.md",
+  "skills/maintenance/SKILL.md",
+  "skills/validator/SKILL.md",
+  "skills/vault/references/recursive-scopes.md",
+];
 const RESEARCH_LIFECYCLE_PLAN = "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md";
 const RESEARCH_LIFECYCLE_PLAN_SUPERSESSION = "partially superseded by the direct-breaking v0.2.0 release decision";
 const PREPUBLIC_TERM_PATTERNS = [
@@ -319,12 +326,23 @@ function validateTopologyAuthority(errors, files) {
     }
   }
 
-  for (const file of files.filter((item) => item.startsWith("skills/") && /\.(?:md|js|sh)$/u.test(item))) {
-    if (file.startsWith("skills/validator/scripts/") || file.startsWith("skills/validator/test/")) continue;
-    const text = read(file);
-    for (const match of text.matchAll(/(?:[A-Za-z0-9_./-]*scope[A-Za-z0-9_./-]*\.(?:js|sh))(?![A-Za-z])/giu)) {
-      if (!match[0].endsWith(TOPOLOGY_SYNCHRONIZER)) {
-        fail(errors, `alternate topology mutation authority found in ${file}: ${match[0]}`);
+  const orchestrationFiles = files.filter((file) =>
+    file.endsWith(".md") && TOPOLOGY_ORCHESTRATION_PATHS.some((entry) => entry.endsWith("/") ? file.startsWith(entry) : file === entry)
+  );
+  for (const file of orchestrationFiles) {
+    for (const paragraph of read(file).split(/\n\s*\n/gu)) {
+      for (const match of paragraph.matchAll(/[A-Za-z0-9_./-]+\.(?:js|sh)(?![A-Za-z0-9])/giu)) {
+        const executable = match[0];
+        if (executable.endsWith(TOPOLOGY_SYNCHRONIZER)) continue;
+        const name = path.posix.basename(executable).toLowerCase();
+        const context = paragraph.toLowerCase();
+        const topologyNamed = /(?:scope|topology)/u.test(name);
+        const mutationNamed = /(?:creat|adopt|mov|archiv|retir|repair|sync|rebuild|mutat|manager|manage)/u.test(name);
+        const topologyContext = /(?:scope|topology|descriptor|generated\s+(?:block|file)|scope\s+map|registry|redirect)/u.test(context);
+        const mutationContext = /(?:\bcreat(?:e|es|ing)?\b|\badopt(?:s|ing)?\b|\bmov(?:e|es|ing)?\b|\barchiv(?:e|es|ing)?\b|\bretir(?:e|es|ing)?\b|\brepair(?:s|ing)?\b|\bsync(?:s|ing|hroniz(?:e|es|ing))?\b|\brebuild(?:s|ing)?\b|\bmutat(?:e|es|ing|ion)\b|\bmanag(?:e|es|ing|er)\b)/u.test(context);
+        if (topologyNamed && mutationNamed || topologyContext && mutationContext) {
+          fail(errors, `alternate topology mutation authority found in ${file}: ${executable}`);
+        }
       }
     }
   }

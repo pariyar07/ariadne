@@ -117,6 +117,19 @@ try {
   assertRejected(runValidator(tempRoot), "alternate topology mutation authority found in skills/scope/references/alternate-topology.md: scripts/rebuild_scope_map.sh");
   fs.rmSync(alternateAuthority);
 
+  const bypassAuthority = path.join(tempRoot, "skills", "scope", "references", "bypass-topology.md");
+  fs.writeFileSync(bypassAuthority, "Use `scripts/rebuild_topology.js` to rebuild topology.\n\nRun `tools/topology_manager.sh` to move and retire scopes.\n");
+  rejected = runValidator(tempRoot);
+  assertRejected(rejected, "alternate topology mutation authority found in skills/scope/references/bypass-topology.md: scripts/rebuild_topology.js");
+  assertRejected(rejected, "alternate topology mutation authority found in skills/scope/references/bypass-topology.md: tools/topology_manager.sh");
+  fs.rmSync(bypassAuthority);
+
+  const harmlessUtility = path.join(tempRoot, "skills", "scope", "references", "import-test.md");
+  fs.writeFileSync(harmlessUtility, "Run `test/test_scope_import.js` to validate the import utility fixtures.\n");
+  const harmlessResult = runValidator(tempRoot);
+  assert.strictEqual(harmlessResult.status, 0, harmlessResult.stderr || harmlessResult.stdout);
+  fs.rmSync(harmlessUtility);
+
   restore = replace(
     tempRoot,
     "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md",
