@@ -11,13 +11,15 @@ const { replaceMarkerBlock } = require("./markers");
 
 const LOCK = ".ariadne/scope-topology.lock";
 const MANIFEST = ".ariadne/scope-topology-operation.json";
+const CANDIDATE = ".ariadne/scope-topology.lock.candidate";
+const STAGE_PREFIX = "scope-topology.candidate-stage-";
 const sha = (value) => crypto.createHash("sha256").update(value).digest("hex");
 const posix = (value) => value.split(path.sep).join("/");
 const absolute = (root, relative) => path.join(root, ...relative.split("/"));
 const control = (root, relative) => absolute(root, relative);
 const stableHash = (value) => hashPlan(value);
-const lockCandidate = (root, operationId) => `${control(root, LOCK)}.${operationId}.candidate`;
-function failpoint(name, legacy = null) { if (process.env.ARIADNE_SYNC_FAIL_AT === name || process.env.ARIADNE_SYNC_FAIL_AFTER === name || legacy && process.env.ARIADNE_SYNC_FAIL_AFTER === legacy) throw new Error(`injected failure: ${name}`); }
+const candidateStage = (root, operationId, pid = process.pid) => path.join(root, ".ariadne", `${STAGE_PREFIX}${operationId}-${pid}`);
+function failpoint(name, legacy = null) { if (process.env.ARIADNE_SYNC_PAUSE_AT === name) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30000); if (process.env.ARIADNE_SYNC_FAIL_AT === name || process.env.ARIADNE_SYNC_FAIL_AFTER === name || legacy && process.env.ARIADNE_SYNC_FAIL_AFTER === legacy) throw new Error(`injected failure: ${name}`); }
 function fsyncDirectory(directory, label) { failpoint(`before-${label}-dir-fsync`); const fd = fs.openSync(directory, "r"); try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); } failpoint(`after-${label}-dir-fsync`); }
 function safeUnlink(file, label) { failpoint(`before-${label}-remove`); try { fs.unlinkSync(file); } catch (error) { if (error.code !== "ENOENT") throw error; } failpoint(`after-${label}-remove`); fsyncDirectory(path.dirname(file), label); }
 function regularIdentity(file, maxLinks = 1) { const stat = fs.lstatSync(file); if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink < 1 || stat.nlink > maxLinks) throw new Error(`unsafe control file: ${file}`); return { dev: stat.dev, ino: stat.ino }; }
@@ -128,13 +130,36 @@ function durableJson(file, value, label, operationId) {
   try { failpoint(`before-${label}-write`); fs.writeFileSync(fd, `${JSON.stringify(value, null, 2)}\n`); failpoint(`after-${label}-write`); failpoint(`before-${label}-fsync`); fs.fsyncSync(fd); failpoint(`after-${label}-fsync`); } finally { fs.closeSync(fd); }
   failpoint(`before-${label}-rename`); fs.renameSync(temp, file); failpoint(`after-${label}-rename`); fsyncDirectory(path.dirname(file), label);
 }
+function processAlive(pid) { try { process.kill(pid, 0); return true; } catch (error) { return error.code === "EPERM"; } }
+function strictCandidateIdentity(root, file, maxLinks = 3) {
+  const parent = pinDirectory(root, path.dirname(file)); if (parent.path !== ".ariadne") throw new Error("candidate is outside control directory"); const stat = fs.lstatSync(file);
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink < 1 || stat.nlink > maxLinks || (stat.mode & 0o777) !== 0o600) throw new Error(`unsafe candidate file: ${file}`); return { dev: stat.dev, ino: stat.ino };
+}
+function sameIdentity(left, right) { return left.dev === right.dev && left.ino === right.ino; }
+function reconcileCandidates(root, ownedOperationId = null) {
+  const directory = path.join(root, ".ariadne"); pinDirectory(root, directory); const fixed = control(root, CANDIDATE); const lock = control(root, LOCK);
+  const stages = fs.readdirSync(directory).filter((name) => name.startsWith(STAGE_PREFIX)).sort();
+  for (const name of stages) {
+    const match = name.match(/^scope-topology\.candidate-stage-([0-9a-f-]{36})-([0-9]+)$/u); if (!match) throw new Error(`unrecognized candidate stage: ${name}`); const stage = path.join(directory, name); const identity = strictCandidateIdentity(root, stage, 3); const pid = Number(match[2]); if (processAlive(pid) && match[1] !== ownedOperationId) throw new Error("scope topology candidate is held by a live writer");
+    let authority = null; try { authority = validateAuthority(readJson(stage, "candidate stage")); } catch (_error) { safeUnlink(stage, "dead-partial-candidate"); continue; }
+    if (authority.operation_id !== match[1] || !sameIdentity(identity, authority.lock_identity)) throw new Error("candidate stage authority mismatch");
+    if (!fs.existsSync(fixed)) { failpoint("before-candidate-link"); fs.linkSync(stage, fixed); failpoint("after-candidate-link"); fsyncDirectory(directory, "candidate-link"); }
+    const fixedIdentity = strictCandidateIdentity(root, fixed); if (!sameIdentity(identity, fixedIdentity)) throw new Error("candidate collision"); safeUnlink(stage, "candidate-stage");
+  }
+  if (!fs.existsSync(fixed)) return;
+  const authority = validateAuthority(readJson(fixed, "candidate")); const fixedIdentity = strictCandidateIdentity(root, fixed); if (!sameIdentity(fixedIdentity, authority.lock_identity)) throw new Error("candidate identity mismatch");
+  if (fs.existsSync(lock)) { const lockIdentity = regularIdentity(lock, 2); if (!sameIdentity(lockIdentity, fixedIdentity) || stableHash(readJson(lock, "lock")) !== stableHash(authority)) throw new Error("candidate conflicts with lock"); }
+  else { failpoint("before-lock-create"); fs.linkSync(fixed, lock); failpoint("after-lock-create"); fsyncDirectory(directory, "lock-create"); }
+  safeUnlink(fixed, "candidate");
+}
 function createLock(root, authority) {
-  const controlDirectory = path.dirname(control(root, LOCK)); validatePin(root, authority.control_pin); const lock = control(root, LOCK); const temp = lockCandidate(root, authority.operation_id);
-  safeUnlink(temp, "lock-candidate-stale"); failpoint("before-lock-candidate-temp-open"); const fd = fs.openSync(temp, "wx", 0o600); failpoint("after-lock-candidate-temp-open");
-  try { const stat = fs.fstatSync(fd); authority.lock_identity = { dev: stat.dev, ino: stat.ino }; seal(authority); failpoint("before-lock-candidate-write"); fs.writeFileSync(fd, `${JSON.stringify(authority, null, 2)}\n`); failpoint("after-lock-candidate-write"); failpoint("before-lock-candidate-fsync"); fs.fsyncSync(fd); failpoint("after-lock-candidate-fsync"); } finally { fs.closeSync(fd); }
-  fsyncDirectory(controlDirectory, "lock-candidate"); failpoint("before-lock-create");
-  try { fs.linkSync(temp, lock); } catch (error) { if (error.code === "EEXIST") throw new Error("scope topology lock exists; use explicit --resume or --abort"); throw error; }
-  failpoint("after-lock-create"); fsyncDirectory(path.dirname(lock), "lock-create"); safeUnlink(temp, "lock-candidate");
+  const controlDirectory = path.dirname(control(root, LOCK)); validatePin(root, authority.control_pin); reconcileCandidates(root); if (fs.existsSync(control(root, LOCK))) throw new Error("scope topology lock exists; use explicit --resume or --abort");
+  const stage = candidateStage(root, authority.operation_id); failpoint("before-candidate-open"); const fd = fs.openSync(stage, "wx", 0o600); failpoint("after-candidate-open");
+  try {
+    const stat = fs.fstatSync(fd); authority.lock_identity = { dev: stat.dev, ino: stat.ino }; seal(authority); const bytes = Buffer.from(`${JSON.stringify(authority, null, 2)}\n`); const split = Math.max(1, Math.floor(bytes.length / 2));
+    failpoint("before-candidate-partial-write"); fs.writeSync(fd, bytes.subarray(0, split)); failpoint("after-candidate-partial-write"); fs.writeSync(fd, bytes.subarray(split)); failpoint("after-candidate-full-write"); failpoint("before-candidate-fsync"); fs.fsyncSync(fd); failpoint("after-candidate-fsync");
+  } finally { fs.closeSync(fd); }
+  fsyncDirectory(controlDirectory, "candidate-stage"); reconcileCandidates(root, authority.operation_id);
 }
 function readJson(file, label) { let value; try { value = JSON.parse(fs.readFileSync(file, "utf8")); } catch (error) { throw new Error(`${label} is unreadable: ${error.message}`); } validateChecksum(value, label); return value; }
 function saveManifest(root, manifest, label) { manifest.updated_at = new Date().toISOString(); seal(manifest); durableJson(control(root, MANIFEST), manifest, label, manifest.operation_id); }
@@ -158,14 +183,13 @@ function validateManifest(manifest, authority) {
   if (!["running", "complete", "aborted"].includes(manifest.phase)) throw new Error("invalid manifest phase"); return manifest;
 }
 function loadRecovery(root, operationId) {
-  pinDirectory(root, path.join(root, ".ariadne")); const lockFile = control(root, LOCK); const manifestFile = control(root, MANIFEST); const hasLock = fs.existsSync(lockFile); const hasManifest = fs.existsSync(manifestFile);
+  pinDirectory(root, path.join(root, ".ariadne")); reconcileCandidates(root); const lockFile = control(root, LOCK); const manifestFile = control(root, MANIFEST); const hasLock = fs.existsSync(lockFile); const hasManifest = fs.existsSync(manifestFile);
   if (!hasLock && !hasManifest) throw new Error("no scope topology operation exists");
   const lockAuthority = hasLock ? validateAuthority(readJson(lockFile, "lock")) : null; if (lockAuthority) { const identity = regularIdentity(lockFile, 2); if (identity.dev !== lockAuthority.lock_identity.dev || identity.ino !== lockAuthority.lock_identity.ino) throw new Error("lock identity mismatch"); }
   const rawManifest = hasManifest ? readJson(manifestFile, "manifest") : null; const manifestAuthority = rawManifest ? validateAuthority(rawManifest.authority) : null;
   const authority = lockAuthority || manifestAuthority; if (authority.operation_id !== operationId) throw new Error("operation ID does not match recovery authority");
   validatePin(root, authority.control_pin);
   if (lockAuthority && manifestAuthority && stableHash(lockAuthority) !== stableHash(manifestAuthority)) throw new Error("lock and manifest authority mismatch");
-  const candidate = lockCandidate(root, operationId); if (fs.existsSync(candidate)) { const candidateAuthority = validateAuthority(readJson(candidate, "lock candidate")); if (stableHash(candidateAuthority) !== stableHash(authority)) throw new Error("lock candidate authority mismatch"); safeUnlink(candidate, "lock-candidate-recovery"); }
   return { authority, manifest: rawManifest ? validateManifest(rawManifest, authority) : null, hasLock, hasManifest };
 }
 

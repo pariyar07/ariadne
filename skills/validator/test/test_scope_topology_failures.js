@@ -232,4 +232,25 @@ for (const mutateTemp of [
   const directory = vault(); const result = run([directory, "--check", "--abort", "x"]); assert.notStrictEqual(result.status, 0); assert.match(result.stderr, /exactly one/u); fs.rmSync(directory, { recursive: true, force: true });
 }
 
+// Discoverable candidate stages recover every pre-lock crash without vault orphans.
+for (const point of [
+  "before-candidate-open", "after-candidate-open", "before-candidate-partial-write", "after-candidate-partial-write", "after-candidate-full-write",
+  "before-candidate-fsync", "after-candidate-fsync", "before-candidate-stage-dir-fsync", "after-candidate-stage-dir-fsync",
+  "before-candidate-link", "after-candidate-link", "before-lock-create", "after-lock-create",
+]) {
+  const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: point } }); assert.notStrictEqual(failed.status, 0, point);
+  const successor = run([directory, "--write", "--request", requestFile]); const lockPath = path.join(directory, ".ariadne/scope-topology.lock");
+  if (successor.status !== 0) { assert.ok(fs.existsSync(lockPath), `${point}: ${successor.stderr}`); const id = JSON.parse(fs.readFileSync(lockPath, "utf8")).operation_id; const resumed = run([directory, "--resume", id]); assert.strictEqual(resumed.status, 0, `${point}: ${resumed.stderr}`); }
+  const leftovers = fs.existsSync(path.join(directory, ".ariadne")) ? fs.readdirSync(path.join(directory, ".ariadne")).filter((name) => name.includes("candidate") || name === "scope-topology.lock" || name === "scope-topology-operation.json") : [];
+  assert.deepStrictEqual(leftovers, [], point); fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
+// A live writer's partial fixed-protocol stage excludes concurrent acquisition.
+{
+  const directory = vault(); const requestFile = disclosedRequest(directory); const child = spawn(process.execPath, [cli, directory, "--write", "--request", requestFile], { env: { ...process.env, ARIADNE_SYNC_PAUSE_AT: "after-candidate-open" }, stdio: "ignore" }); const control = path.join(directory, ".ariadne");
+  for (let count = 0; count < 200 && (!fs.existsSync(control) || !fs.readdirSync(control).some((name) => name.startsWith("scope-topology.candidate-stage-"))); count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+  const concurrent = run([directory, "--write", "--request", requestFile]); assert.notStrictEqual(concurrent.status, 0); assert.match(concurrent.stderr, /candidate is held by a live writer/u); child.kill("SIGTERM");
+  fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
+}
+
 console.log("scope topology failure tests passed");
