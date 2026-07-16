@@ -4,6 +4,8 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-17
+
 ### Fixed
 
 - `ariadne:scope`'s `adopt` operation now discovers legacy candidates (local `AGENTS.md` presence, per the scope topology LLD) so whole-vault and ancestor-chain adoption work on vaults with zero pre-existing `type: scope-index` descriptors. Previously `create`, `adopt`, and `repair` all required a scope to already be tagged or already adopted, so a genuinely unmigrated vault (root included) could never take its first `sync_scope_topology.js --write` step, contradicting the documented "whole-vault adoption adopts every approved scope candidate" behavior. Root titles now also come from an existing legacy hub when present instead of a hardcoded `"Vault"`.
@@ -77,7 +79,8 @@ Updating skills does not activate or rewrite an existing vault. Review [Scope To
 
 This is a breaking release. Reinstall the skill package, remove stale copied retired folders, and update saved prompts and external automations. See [Research Lifecycle Migration](docs/guides/research-lifecycle-migration.md).
 
-[Unreleased]: https://github.com/pariyar07/ariadne/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/pariyar07/ariadne/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/pariyar07/ariadne/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/pariyar07/ariadne/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/pariyar07/ariadne/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/pariyar07/ariadne/releases/tag/v0.2.0
