@@ -125,7 +125,7 @@ node skills/vault/scripts/register_vault.js --agents codex,claude,gemini --docto
 
 The research lifecycle skill names changed atomically. Existing copied skills, generated vault instructions, saved prompts, and external schedulers need an explicit migration pass; see [Research Lifecycle Migration](docs/guides/research-lifecycle-migration.md).
 
-Upcoming release: [Ariadne v0.3.0 — Deterministic Scope Topology](docs/releases/v0.3.0.md). Latest published release: [v0.2.1](docs/releases/v0.2.1.md).
+Latest release: [Ariadne v0.3.0 — Deterministic Scope Topology](docs/releases/v0.3.0.md).
 
 ## Skills
 
