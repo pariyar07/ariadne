@@ -63,7 +63,6 @@ const RETIRED_RESEARCH_SKILL_ALLOWED_PREFIXES = [
   "docs/releases/",
   "docs/decision/",
   "docs/decisions/",
-  "docs/superpowers/plans/",
   "skills/workspace-instructions/test/fixtures/current_research_skill_names/",
   "skills/workspace-instructions/test/fixtures/retired_research_skill_names/",
 ];
@@ -132,8 +131,6 @@ const TOPOLOGY_EXECUTABLE_ALLOWLIST = new Map([
   ["register_vault.js", ["scripts/register_vault.js", "skills/vault/scripts/register_vault.js"]],
 ]);
 const TOPOLOGY_NON_EXECUTABLE_REFERENCES = new Set(["Node.js", "/path/to/request.js"]);
-const RESEARCH_LIFECYCLE_PLAN = "docs/superpowers/plans/2026-07-15-research-lifecycle-upgrade.md";
-const RESEARCH_LIFECYCLE_PLAN_SUPERSESSION = "partially superseded by the direct-breaking v0.2.0 release decision";
 const PREPUBLIC_TERM_PATTERNS = [
   new RegExp("Memory " + "Map", "iu"),
   new RegExp("memory " + "lens(?:es)?", "iu"),
@@ -339,15 +336,6 @@ function validateResearchLifecycleDocs(errors) {
     fail(errors, `${releaseNote} must not link private eval-lab evidence`);
   }
 
-  if (fs.existsSync(path.join(ROOT, RESEARCH_LIFECYCLE_PLAN))) {
-    const plan = read(RESEARCH_LIFECYCLE_PLAN);
-    if (!plan.includes(RESEARCH_LIFECYCLE_PLAN_SUPERSESSION)) {
-      fail(errors, `${RESEARCH_LIFECYCLE_PLAN} must preserve the direct-breaking v0.2.0 supersession notice`);
-    }
-    if (plan.includes("Compatibility adapters remain for one migration release")) {
-      fail(errors, `${RESEARCH_LIFECYCLE_PLAN} must not direct workers to restore compatibility adapters`);
-    }
-  }
 }
 
 function validateTopologyAuthority(errors, files) {
@@ -441,6 +429,7 @@ function validatePathSafety(errors, files) {
     const basename = path.posix.basename(file);
     if (OS_METADATA.has(basename)) fail(errors, `OS metadata file must not be committed: ${file}`);
     if (LOCAL_ONLY_FILES.has(basename)) fail(errors, `local-only agent file must not be committed: ${file}`);
+    if (file.startsWith("docs/superpowers/")) fail(errors, `internal superpowers artifact must not be committed: ${file}`);
   }
 }
 
