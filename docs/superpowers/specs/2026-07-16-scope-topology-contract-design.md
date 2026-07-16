@@ -46,7 +46,7 @@ Rules:
 - Status is `active`, `archived`, or `retired`.
 - Optional `scope_order` affects sibling display only.
 - Optional `former_scope_paths` is append-only.
-- Retired scopes may declare `replaced_by_scope_id`.
+- Only retired scopes may declare `replaced_by_scope_id`; its target must be a distinct adopted active or archived scope. Leaving retired status removes the field.
 - Top-level scalars and flat scalar lists are the supported YAML subset.
 
 Named files such as `00 Product Index.md` may remain content hubs but never replace the exact canonical descriptor. Exact `00 Index.md` files without `type: scope-index` remain ordinary folder hubs.
@@ -142,7 +142,7 @@ Strict topology activates only when root `00 Index.md` is a valid schema-v1 root
 
 ## Write Authorization
 
-Ordinary work writes only inside the confirmed target scope subtree. A topology operation must name every parent/root checkpoint, generated map, registry, or Base formula it intends to modify in an explicit allowed write set.
+Ordinary work writes only inside the confirmed target scope subtree. A topology operation must name every parent/root checkpoint, generated map, or registry it intends to modify in an explicit allowed write set. User Base formulas and requested `normalize_files` remain report-only and never enter the authorized write set.
 
 Audit and check modes perform zero writes. Repair refuses marker ambiguity, unexpected existing files, symlink escape, or any path outside the allowed set.
 

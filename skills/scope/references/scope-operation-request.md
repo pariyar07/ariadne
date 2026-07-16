@@ -34,7 +34,7 @@ Statuses are `active`, `archived`, or `retired`. Retirement may add `"replacemen
 {"operation_schema":1,"operation":"repair","target_scope_id":"root","normalize_files":[],"allowed_write_paths":[]}
 ```
 
-`normalize_files` is an explicit list of content files whose generated marker blocks may be normalized. It is never blanket permission.
+`normalize_files` is reserved for a future complete normalizer. A non-empty list currently produces deterministic `normalization-deferred` proposals/refusals, contributes no content write paths or effects, and cannot authorize write mode.
 
 ## Commands And Recovery
 

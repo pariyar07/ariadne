@@ -72,6 +72,20 @@ assert.strictEqual(repairPlan.write_authorized, true);
 const unusedAuthorization = planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: [...repairPlan.content_write_paths, "Unused.md"] }));
 assert.strictEqual(unusedAuthorization.write_authorized, false);
 assert.ok(unusedAuthorization.refusals.some((item) => item.code === "unused-write-authorization" && item.path === "Unused.md"));
+const normalizationVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-normalization-deferred-"));
+fs.cpSync(fixture("deep_transparent_ancestry"), normalizationVault, { recursive: true });
+fs.writeFileSync(path.join(normalizationVault, "User.md"), Buffer.from([0x75, 0x73, 0x65, 0x72, 0x0a, 0x80]));
+const normalizationInventory = inventoryVault(normalizationVault); const normalizationModel = buildTopology(normalizationInventory);
+const normalizationRequest = { ...operationFixture("repair"), normalize_files: ["User.md"], allowed_write_paths: [] };
+const normalizationPlan = planOperation(normalizationInventory, normalizationModel, parseOperationRequest(normalizationRequest));
+assert.ok(!normalizationPlan.content_write_paths.includes("User.md"));
+assert.deepStrictEqual(normalizationPlan.normalization_proposals, [{ path: "User.md", authorized: false, action: "normalization deferred" }]);
+assert.ok(normalizationPlan.refusals.some((item) => item.code === "normalization-deferred" && item.path === "User.md"));
+assert.strictEqual(normalizationPlan.write_authorized, false);
+const userBefore = fs.readFileSync(path.join(normalizationVault, "User.md"));
+assert.throws(() => applyOperation(normalizationVault, normalizationRequest), /normalization-deferred/u);
+assert.deepStrictEqual(fs.readFileSync(path.join(normalizationVault, "User.md")), userBefore);
+fs.rmSync(normalizationVault, { recursive: true, force: true });
 assert.strictEqual(hashPlan(repairPlan), hashPlan(planOperation(operationInventory, operationModel, parseOperationRequest({ ...operationFixture("repair"), allowed_write_paths: repairPreview.content_write_paths }))));
 
 assert.throws(() => parseOperationRequest({ ...operationFixture("repair"), replacement_scope_id: "alpha" }), /replacement_scope_id is not valid/u);
@@ -84,6 +98,10 @@ const retirement = planWithDisclosedWrites(operationInventory, archivedAlphaMode
 assert.match(retirement.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Alpha/00 Index.md")).bytes, /replaced_by_scope_id: zulu/u);
 const retirementWithoutReplacement = planWithDisclosedWrites(operationInventory, archivedAlphaModel, { ...operationFixture("set-status"), desired_status: "retired" });
 assert.doesNotMatch(retirementWithoutReplacement.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Alpha/00 Index.md")).bytes, /replaced_by_scope_id/u);
+const retiredAlphaModel = { ...operationModel, descriptorsById: new Map(operationModel.descriptorsById) };
+retiredAlphaModel.descriptorsById.set("alpha", { ...retiredAlphaModel.descriptorsById.get("alpha"), status: "retired", replacedByScopeId: "zulu" });
+const unretirement = planWithDisclosedWrites(operationInventory, retiredAlphaModel, { ...operationFixture("set-status"), desired_status: "archived" });
+assert.doesNotMatch(unretirement.replacements.find((item) => item.kind === "descriptor" && item.path.endsWith("Alpha/00 Index.md")).bytes, /replaced_by_scope_id/u);
 
 for (const [from, to, allowed] of [
   ["active", "active", true], ["archived", "archived", true], ["retired", "retired", true],
@@ -128,7 +146,7 @@ for (const [index, relative] of checkpointPaths.entries()) {
 }
 const descriptorFile = path.join(preservingMoveVault, sourceScope, "00 Index.md");
 let descriptorText = fs.readFileSync(descriptorFile).toString("latin1");
-descriptorText = descriptorText.replace("status: active", "status: active\ncreated: 2020-01-02\ntags:\n  - user-tag\nuser_note: keep-me\nreplaced_by_scope_id: zulu");
+descriptorText = descriptorText.replace("status: active", "status: retired\ncreated: 2020-01-02\ntags:\n  - user-tag\nuser_note: keep-me\nreplaced_by_scope_id: zulu");
 fs.writeFileSync(descriptorFile, Buffer.from(descriptorText, "latin1"));
 const preservingInventory = inventoryVault(preservingMoveVault); const preservingModel = buildTopology(preservingInventory);
 const preservingPlan = planWithDisclosedWrites(preservingInventory, preservingModel, operationFixture("move"));
@@ -141,6 +159,7 @@ for (const [index, relative] of checkpointPaths.entries()) {
 const movedDescriptor = fs.readFileSync(path.join(preservingMoveVault, destinationScope, "00 Index.md"), "latin1");
 for (const preserved of ["created: 2020-01-02", "  - user-tag", "user_note: keep-me", "replaced_by_scope_id: zulu"]) assert.match(movedDescriptor, new RegExp(preserved.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
 assert.match(movedDescriptor, /scope_path: Domains\/Product\/Workstreams\/Beta/u);
+assert.match(movedDescriptor, /status: retired/u);
 assert.match(fs.readFileSync(path.join(preservingMoveVault, sourceScope, "00 Index.md"), "utf8"), /type: scope-redirect/u);
 assert.deepStrictEqual(checkTopology(preservingMoveVault).changes, []);
 fs.rmSync(preservingMoveVault, { recursive: true, force: true });
@@ -411,6 +430,23 @@ for (const code of [
   "missing-checkpoint", "lifecycle-violation", "malformed-redirect", "reserved-former-path",
   "marker-drift", "pending-adoption", "unsupported-root", "dismissed-candidate",
 ]) assert.ok(contractFindings.some((item) => item.code === code), `missing finding code ${code}`);
+
+for (const testCase of [
+  { name: "active", replacement: "zulu", expected: /requires retired status/u },
+  { name: "missing", status: "retired", replacement: "missing", expected: /does not exist/u },
+  { name: "self", status: "retired", replacement: "alpha", expected: /must differ/u },
+  { name: "retired-target", status: "retired", replacement: "zulu", retireTarget: true, expected: /active or archived/u },
+]) {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), `ariadne-replacement-${testCase.name}-`)); fs.cpSync(fixture("deep_transparent_ancestry"), directory, { recursive: true });
+  const alphaFile = path.join(directory, "Domains/Product/Workstreams/Alpha/00 Index.md"); let alpha = fs.readFileSync(alphaFile, "utf8");
+  if (testCase.status) alpha = alpha.replace("status: active", `status: ${testCase.status}`);
+  alpha = alpha.replace(/status: (?:active|retired)/u, (line) => `${line}\nreplaced_by_scope_id: ${testCase.replacement}`); fs.writeFileSync(alphaFile, alpha);
+  if (testCase.retireTarget) { const zuluFile = path.join(directory, "Domains/Product/Zulu/00 Index.md"); fs.writeFileSync(zuluFile, fs.readFileSync(zuluFile, "utf8").replace(/status: (?:active|archived)/u, "status: retired")); }
+  const replacementInventory = inventoryVault(directory); const replacementFindings = scopeFindings(buildTopology(replacementInventory), replacementInventory).filter((item) => item.code === "replacement-lifecycle-violation" && item.origin.endsWith("Alpha/00 Index.md"));
+  assert.strictEqual(replacementFindings.length, 1, testCase.name); assert.match(replacementFindings[0].message, testCase.expected);
+  const stableId = replacementFindings[0].finding_id; fs.appendFileSync(alphaFile, "\nUnrelated prose.\n"); const after = scopeFindings(buildTopology(inventoryVault(directory)), inventoryVault(directory)).find((item) => item.code === "replacement-lifecycle-violation" && item.origin.endsWith("Alpha/00 Index.md")); assert.strictEqual(after.finding_id, stableId);
+  fs.rmSync(directory, { recursive: true, force: true });
+}
 assert.deepStrictEqual(contractFindings, [...contractFindings].sort(bySortKey));
 const temporaryContract = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-findings-"));
 fs.cpSync(fixture("contract_failures"), temporaryContract, { recursive: true });

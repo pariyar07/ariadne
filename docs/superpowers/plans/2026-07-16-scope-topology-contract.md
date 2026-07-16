@@ -231,11 +231,11 @@ Reject unknown operation types, schema versions, absolute/traversal paths, dupli
 
 - [ ] **Step 4: Implement deterministic desired-state planning**
 
-Return an ordered plan containing preconditions, descriptor/checkpoint/map replacements, move source/destination effects, redirect schema-v1 bytes, lifecycle checks, Base-formula proposals, and exact content write paths. Root activation is the final canonical replacement during adoption.
+Return an ordered plan containing preconditions, descriptor/checkpoint/map replacements, move source/destination effects, redirect schema-v1 bytes, lifecycle checks, report-only Base-formula and normalization-deferred proposals, and exact content write paths. Root activation is the final canonical replacement during adoption. Non-empty `normalize_files` never contributes effects or write paths and deterministically refuses write mode.
 
 - [ ] **Step 5: Verify no implicit Base-formula rewrites**
 
-Recognize only supported root `file.inFolder` formula shapes. Include each proposed Base path in `allowed_write_paths`; otherwise report a proposal and refuse write mode rather than editing arbitrary YAML.
+Recognize only supported root `file.inFolder` formula shapes. Accepted revision: report proposals/findings only. Do not include user Base paths in `allowed_write_paths`, effects, or replacements until a complete supported-shape normalizer exists; explicit authorization is unused and refused.
 
 - [ ] **Step 6: Commit operation planning**
 

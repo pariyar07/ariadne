@@ -77,6 +77,17 @@ function scopeFindings(topology, inventory) {
     }
   }
 
+  for (const item of parsed.filter((entry) => entry.descriptor.supported && entry.descriptor.replacedByScopeId)) {
+    const replacementId = item.descriptor.replacedByScopeId;
+    const target = parsed.find((entry) => entry.descriptor.supported && entry.descriptor.scopeId === replacementId) || null;
+    let reason = null;
+    if (item.descriptor.status !== "retired") reason = "replacement metadata requires retired status";
+    else if (replacementId === item.descriptor.scopeId) reason = "replacement target must differ from the retired scope";
+    else if (!target) reason = "replacement target does not exist";
+    else if (!["active", "archived"].includes(target.descriptor.status)) reason = "replacement target must be active or archived";
+    if (reason) add("replacement-lifecycle-violation", item.file.relativePath, `${item.file.relativePath}: ${reason}`, item.descriptor.scopeId, target ? [target.file.relativePath] : [], `${replacementId}:${reason}`);
+  }
+
   if (topology.active) {
     const artifacts = [renderScopeRegistry(topology), renderScopeMapMarkdown(topology), renderScopeMapCanvas(topology)];
     const recordAt = (target) => inventory.files.find((candidate) => candidate.relativePath === target);

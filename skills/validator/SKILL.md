@@ -77,6 +77,8 @@ node /path/to/skills/validator/scripts/sync_scope_topology.js /path/to/vault --w
 
 See `ariadne:scope` [scope-operation-request.md](../scope/references/scope-operation-request.md) for complete create, adopt, move, set-status, and repair requests. Unknown or inapplicable fields and unsafe paths are refused before writes. Missing or extra authorization is refused exactly as `operation is not write-authorized: missing-write-authorization:<path>` or `unused-write-authorization:<path>`. Preview with empty `allowed_write_paths`, disclose the resulting content paths, obtain current-turn confirmation, then authorize exactly that sorted set.
 
+`normalize_files` is report-only until a complete normalizer exists. Any requested path produces `normalization-deferred`, is excluded from effects and `content_write_paths`, and keeps write mode unauthorized.
+
 Content write paths are user-confirmed vault content. Engine control paths under `.ariadne/` and owned temporary files are sealed synchronizer state; they are not listed in `allowed_write_paths` and must not be edited manually.
 
 An interrupted write reports or preserves an operation ID. Resume or abort only that ID:

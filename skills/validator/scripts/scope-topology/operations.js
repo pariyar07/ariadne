@@ -188,8 +188,8 @@ function planOperation(inventory, model, requestValue) {
     if (!parents[0]) throw new Error("move destination has no physical parent scope");
     moves.push({ source_path: request.source_path, destination_path: request.destination_path });
     descriptors = descriptors.map((item) => {
-      if (item.scopeId === current.scopeId) return { ...item, scopePath: request.destination_path, parentScopeId: parents[0].scopeId, formerScopePaths: [...new Set([...(item.formerScopePaths || []), request.source_path])].sort() };
-      if (item.scopePath.startsWith(`${request.source_path}/`)) return { ...item, scopePath: `${request.destination_path}${item.scopePath.slice(request.source_path.length)}` };
+      if (item.scopeId === current.scopeId) return { ...item, scopePath: request.destination_path, parentScopeId: parents[0].scopeId, formerScopePaths: [...new Set([...(item.formerScopePaths || []), request.source_path])].sort(), replacedByScopeId: item.status === "retired" ? item.replacedByScopeId : null };
+      if (item.scopePath.startsWith(`${request.source_path}/`)) return { ...item, scopePath: `${request.destination_path}${item.scopePath.slice(request.source_path.length)}`, replacedByScopeId: item.status === "retired" ? item.replacedByScopeId : null };
       return item;
     });
     changedDescriptorIds = new Set(descriptors.filter((item) => item.scopeId === current.scopeId || item.scopePath.startsWith(`${request.destination_path}/`)).map((item) => item.scopeId));
@@ -206,7 +206,7 @@ function planOperation(inventory, model, requestValue) {
     lifecycle_checks.push({ from: current.status, to: request.desired_status, allowed });
     if (allowed && request.desired_status === "retired" && (model.childrenById.get(current.scopeId) || []).some((item) => item.status === "active")) lifecycle_checks[0] = { ...lifecycle_checks[0], allowed: false, reason: "retired scopes may not contain active children" };
     if (lifecycle_checks[0].allowed) {
-      descriptors = descriptors.map((item) => item.scopeId === current.scopeId ? { ...item, status: request.desired_status, ...(replacement ? { replacedByScopeId: replacement.scopeId } : {}) } : item);
+      descriptors = descriptors.map((item) => item.scopeId === current.scopeId ? { ...item, status: request.desired_status, replacedByScopeId: request.desired_status === "retired" ? (replacement ? replacement.scopeId : item.replacedByScopeId) : null } : item);
       changedDescriptorIds.add(current.scopeId);
     }
   }
@@ -226,14 +226,16 @@ function planOperation(inventory, model, requestValue) {
     .map((item) => ({ path: item.path, recognized: true, authorized: false, action: "report-only; no rewrite authorized" }));
   const base_formula_reports = baseMentions.filter((item) => !item.recognized)
     .map((item) => ({ path: item.path, code: "unsupported-base-formula", rewrite_proposed: false }));
-  const content_write_paths = lifecycleRefused ? [] : [...new Set([...replacements.map((item) => item.path), ...request.normalize_files])].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
+  const normalization_proposals = request.normalize_files.map((item) => ({ path: item, authorized: false, action: "normalization deferred" }));
+  const content_write_paths = lifecycleRefused ? [] : [...new Set(replacements.map((item) => item.path))].sort((a, b) => Buffer.from(a).compare(Buffer.from(b)));
   const refusals = [];
   if (lifecycleRefused) refusals.push({ code: "lifecycle-transition-refused", path: descriptorPath(current) });
+  refusals.push(...normalization_proposals.map((item) => ({ code: "normalization-deferred", path: item.path })));
   const missing = content_write_paths.filter((item) => !request.allowed_write_paths.includes(item));
   const unused = request.allowed_write_paths.filter((item) => !content_write_paths.includes(item));
   refusals.push(...missing.map((item) => ({ code: "missing-write-authorization", path: item })));
   refusals.push(...unused.map((item) => ({ code: "unused-write-authorization", path: item })));
-  return Object.freeze({ plan_schema: 1, operation: request.operation, target_scope_id: request.target_scope_id, preconditions, lifecycle_checks, moves, replacements, base_formula_proposals, base_formula_reports, content_write_paths, refusals, write_authorized: refusals.length === 0 });
+  return Object.freeze({ plan_schema: 1, operation: request.operation, target_scope_id: request.target_scope_id, preconditions, lifecycle_checks, moves, replacements, base_formula_proposals, base_formula_reports, normalization_proposals, content_write_paths, refusals, write_authorized: refusals.length === 0 });
 }
 
 module.exports = { hashPlan, parseOperationRequest, planOperation };
