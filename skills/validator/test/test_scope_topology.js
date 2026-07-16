@@ -158,7 +158,7 @@ for (const [index, relative] of checkpointPaths.entries()) {
 }
 const movedDescriptor = fs.readFileSync(path.join(preservingMoveVault, destinationScope, "00 Index.md"), "latin1");
 for (const preserved of ["created: 2020-01-02", "  - user-tag", "user_note: keep-me", "replaced_by_scope_id: zulu"]) assert.match(movedDescriptor, new RegExp(preserved.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
-assert.match(movedDescriptor, /scope_path: Domains\/Product\/Workstreams\/Beta/u);
+assert.match(movedDescriptor, /scope_path: 'Domains\/Product\/Workstreams\/Beta'/u);
 assert.match(movedDescriptor, /status: retired/u);
 assert.match(fs.readFileSync(path.join(preservingMoveVault, sourceScope, "00 Index.md"), "utf8"), /type: scope-redirect/u);
 assert.deepStrictEqual(checkTopology(preservingMoveVault).changes, []);
@@ -180,6 +180,381 @@ const rootDescriptorReplacement = adoption.replacements.findIndex((item) => item
 const rootCheckpointReplacement = adoption.replacements.findIndex((item) => item.path === "00 Index.md" && item.kind === "checkpoint");
 assert.ok(rootDescriptorReplacement >= 0 && rootDescriptorReplacement < rootCheckpointReplacement);
 assert.strictEqual(adoption.replacements[rootDescriptorReplacement].activation, true);
+
+// Legacy candidate discovery: a genuinely unadopted vault (zero pre-existing scope-index
+// descriptors anywhere) must be whole-vault adoptable in one operation, per
+// docs/guides/scope-topology-migration.md. Root, a bare-index candidate, a named-index
+// candidate, and a nested candidate behind a transparent intermediate folder are all
+// discovered from local AGENTS.md presence; a dismissed candidate is excluded.
+const legacyWholeVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-whole-vault-"));
+fs.cpSync(fixture("legacy_vault"), legacyWholeVault, { recursive: true });
+const legacyWholeInventory = inventoryVault(legacyWholeVault);
+const legacyWholeModel = buildTopology(legacyWholeInventory);
+assert.strictEqual(legacyWholeModel.active, false);
+const legacyWholeRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const legacyWholePlan = planWithDisclosedWrites(legacyWholeInventory, legacyWholeModel, legacyWholeRequest);
+assert.strictEqual(legacyWholePlan.write_authorized, true);
+const legacyWholeDescriptors = legacyWholePlan.replacements.filter((item) => item.kind === "descriptor");
+assert.deepStrictEqual(legacyWholeDescriptors.map((item) => item.path).sort(), [
+  "00 Index.md", "Domains/Alpha/00 Index.md", "Domains/Beta/00 Index.md", "Domains/Gamma/Delta/00 Index.md",
+]);
+assert.match(legacyWholeDescriptors.find((item) => item.path === "00 Index.md").bytes, /title: 'Example Vault'/u);
+const legacyBeta = legacyWholeDescriptors.find((item) => item.path === "Domains/Beta/00 Index.md").bytes;
+assert.match(legacyBeta, /title: 'Beta Domain'/u);
+assert.match(legacyBeta, /parent_scope_id: root/u);
+assert.match(legacyWholeDescriptors.find((item) => item.path === "Domains/Alpha/00 Index.md").bytes, /parent_scope_id: root/u);
+assert.match(legacyWholeDescriptors.find((item) => item.path === "Domains/Gamma/Delta/00 Index.md").bytes, /parent_scope_id: root/u);
+applyOperation(legacyWholeVault, { ...legacyWholeRequest, allowed_write_paths: legacyWholePlan.content_write_paths });
+assert.deepStrictEqual(checkTopology(legacyWholeVault).changes, []);
+assert.ok(fs.existsSync(path.join(legacyWholeVault, "Domains/Beta/00 Beta Index.md")));
+assert.match(fs.readFileSync(path.join(legacyWholeVault, "Domains/Beta/00 Beta Index.md"), "utf8"), /title: Beta Domain/u);
+assert.ok(!fs.existsSync(path.join(legacyWholeVault, "Domains/Gamma/00 Index.md")));
+const omegaAfter = fs.readFileSync(path.join(legacyWholeVault, "Domains/Omega/00 Index.md"), "utf8");
+assert.match(omegaAfter, /ariadne_scope_adoption: dismissed/u);
+assert.doesNotMatch(omegaAfter, /type: scope-index/u);
+fs.rmSync(legacyWholeVault, { recursive: true, force: true });
+
+// Ancestor-chain adoption against the same unadopted vault only adopts the target and its
+// physical ancestors, leaving unrelated legacy candidates untouched.
+const legacyAncestorVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-ancestor-"));
+fs.cpSync(fixture("legacy_vault"), legacyAncestorVault, { recursive: true });
+const legacyAncestorInventory = inventoryVault(legacyAncestorVault);
+const legacyAncestorRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "alpha", adoption_mode: "ancestor-chain", normalize_files: [], allowed_write_paths: [] };
+const legacyAncestorPlan = planWithDisclosedWrites(legacyAncestorInventory, buildTopology(legacyAncestorInventory), legacyAncestorRequest);
+assert.deepStrictEqual(legacyAncestorPlan.replacements.filter((item) => item.kind === "descriptor").map((item) => item.path).sort(), ["00 Index.md", "Domains/Alpha/00 Index.md"]);
+fs.rmSync(legacyAncestorVault, { recursive: true, force: true });
+
+// Legacy scope_id collisions (same basename at different physical locations) are
+// disambiguated deterministically by full path rather than silently colliding.
+const collisionVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-collision-"));
+fs.cpSync(fixture("root_only"), collisionVault, { recursive: true });
+fs.mkdirSync(path.join(collisionVault, "Engineering"), { recursive: true });
+fs.writeFileSync(path.join(collisionVault, "Engineering", "AGENTS.md"), "# Engineering\n");
+fs.mkdirSync(path.join(collisionVault, "Product", "Engineering"), { recursive: true });
+fs.writeFileSync(path.join(collisionVault, "Product", "AGENTS.md"), "# Product\n");
+fs.writeFileSync(path.join(collisionVault, "Product", "Engineering", "AGENTS.md"), "# Product Engineering\n");
+const collisionInventory = inventoryVault(collisionVault);
+const collisionModel = buildTopology(collisionInventory);
+assert.strictEqual(collisionModel.active, true);
+const collisionRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "engineering", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const collisionPlan = planWithDisclosedWrites(collisionInventory, collisionModel, collisionRequest);
+const collisionDescriptors = collisionPlan.replacements.filter((item) => item.kind === "descriptor" && item.path !== "00 Index.md");
+const collisionIds = collisionDescriptors.map((item) => item.bytes.toString().match(/scope_id: (\S+)/u)[1]).sort();
+assert.deepStrictEqual(collisionIds, ["engineering", "product", "product-engineering"]);
+assert.strictEqual(new Set(collisionIds).size, 3);
+fs.rmSync(collisionVault, { recursive: true, force: true });
+
+// The full-path slug fallback can itself collide (e.g. "A-B/X" and "A/B/X" both slugify to
+// "a-b-x"); a deterministic hash-of-path suffix disambiguates rather than refusing.
+const deepCollisionVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-deep-collision-"));
+fs.writeFileSync(path.join(deepCollisionVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(deepCollisionVault, "A-B", "X"), { recursive: true });
+fs.writeFileSync(path.join(deepCollisionVault, "A-B", "AGENTS.md"), "# A-B\n");
+fs.writeFileSync(path.join(deepCollisionVault, "A-B", "X", "AGENTS.md"), "# X\n");
+fs.mkdirSync(path.join(deepCollisionVault, "A", "B", "X"), { recursive: true });
+fs.writeFileSync(path.join(deepCollisionVault, "A", "AGENTS.md"), "# A\n");
+fs.writeFileSync(path.join(deepCollisionVault, "A", "B", "AGENTS.md"), "# B\n");
+fs.writeFileSync(path.join(deepCollisionVault, "A", "B", "X", "AGENTS.md"), "# X\n");
+const deepCollisionInventory = inventoryVault(deepCollisionVault);
+const deepCollisionPlan = planWithDisclosedWrites(deepCollisionInventory, buildTopology(deepCollisionInventory), {
+  operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [],
+});
+const deepCollisionIds = deepCollisionPlan.replacements
+  .filter((item) => item.kind === "descriptor" && item.path !== "00 Index.md")
+  .map((item) => item.bytes.toString().match(/scope_id: (\S+)/u)[1]);
+assert.strictEqual(deepCollisionIds.length, 5);
+assert.strictEqual(new Set(deepCollisionIds).size, 5);
+assert.ok(deepCollisionIds.filter((id) => id.startsWith("a-b-x")).length === 2, deepCollisionIds.join(","));
+fs.rmSync(deepCollisionVault, { recursive: true, force: true });
+
+// virtualModel (write-time planning) and buildTopology (post-write reads) must order
+// siblings identically. A folder whose basename sorts differently than its title (e.g.
+// "Engineering" the folder vs "Company Operating Context Graph" the title) previously
+// produced a Scope Map/Canvas that matched what was written but disagreed with what a
+// later scopeFindings pass considered canonical, permanently reporting scope-map-drift.
+// This targets a fresh whole-vault adoption (root included in the same operation),
+// matching how legacy vaults are actually first adopted.
+const orderingVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-ordering-"));
+fs.mkdirSync(path.join(orderingVault, "Zeta"), { recursive: true });
+fs.writeFileSync(path.join(orderingVault, "AGENTS.md"), "# Root\n");
+fs.writeFileSync(path.join(orderingVault, "Zeta", "AGENTS.md"), "# Zeta\n");
+fs.writeFileSync(path.join(orderingVault, "Zeta", "00 Index.md"), "---\ntitle: Alpha Priority\ntype: index\nstatus: active\n---\n# Alpha Priority\n");
+fs.mkdirSync(path.join(orderingVault, "Alpha"), { recursive: true });
+fs.writeFileSync(path.join(orderingVault, "Alpha", "AGENTS.md"), "# Alpha\n");
+fs.writeFileSync(path.join(orderingVault, "Alpha", "00 Index.md"), "---\ntitle: Zeta Priority\ntype: index\nstatus: active\n---\n# Zeta Priority\n");
+const orderingInventory = inventoryVault(orderingVault);
+const orderingRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const orderingPlan = planWithDisclosedWrites(orderingInventory, buildTopology(orderingInventory), orderingRequest);
+applyOperation(orderingVault, { ...orderingRequest, allowed_write_paths: orderingPlan.content_write_paths });
+const onDiskMap = fs.readFileSync(path.join(orderingVault, "Agent/Scope Map.md"), "utf8");
+const freshExpectedMap = renderScopeMapMarkdown(buildTopology(inventoryVault(orderingVault))).bytes.toString("utf8");
+assert.strictEqual(onDiskMap, freshExpectedMap);
+assert.ok(onDiskMap.indexOf("Alpha Priority") < onDiskMap.indexOf("Zeta Priority"));
+assert.deepStrictEqual(checkTopology(orderingVault).changes, []);
+fs.rmSync(orderingVault, { recursive: true, force: true });
+
+// Incremental adopt against an already-active root must not drop existing scopes (including
+// root) from the write-time model. Previously "descriptors = selected" replaced the whole
+// topology with only the newly-selected candidates, so root and any other already-active
+// sibling disappeared from generated content, and applyOperation failed its own final check
+// after already having written some files.
+const incrementalVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-incremental-"));
+fs.cpSync(fixture("root_only"), incrementalVault, { recursive: true });
+fs.mkdirSync(path.join(incrementalVault, "New Scope"), { recursive: true });
+fs.writeFileSync(path.join(incrementalVault, "New Scope", "AGENTS.md"), "# New Scope\n");
+const incrementalInventory = inventoryVault(incrementalVault);
+const incrementalModel = buildTopology(incrementalInventory);
+assert.strictEqual(incrementalModel.active, true);
+const incrementalRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "new-scope", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const incrementalPlan = planWithDisclosedWrites(incrementalInventory, incrementalModel, incrementalRequest);
+assert.strictEqual(incrementalPlan.write_authorized, true);
+const incrementalResult = applyOperation(incrementalVault, { ...incrementalRequest, allowed_write_paths: incrementalPlan.content_write_paths });
+assert.deepStrictEqual(incrementalResult.changes, []);
+const incrementalFreshTopology = buildTopology(inventoryVault(incrementalVault));
+assert.ok(incrementalFreshTopology.descriptorsById.has("root"));
+assert.ok(incrementalFreshTopology.descriptorsById.has("new-scope"));
+const incrementalRootBoundary = fs.readFileSync(path.join(incrementalVault, "00 Index.md"), "utf8");
+assert.match(incrementalRootBoundary, /new-scope/u);
+assert.deepStrictEqual(checkTopology(incrementalVault).changes, []);
+fs.rmSync(incrementalVault, { recursive: true, force: true });
+
+// A malformed explicit type: scope-index descriptor already declares deliberate scope
+// identity, even if broken. adopt must refuse rather than silently reinterpret that
+// directory as ordinary AGENTS.md-based legacy content.
+const invalidDescriptorVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-invalid-descriptor-"));
+fs.mkdirSync(path.join(invalidDescriptorVault, "Broken"), { recursive: true });
+fs.writeFileSync(path.join(invalidDescriptorVault, "AGENTS.md"), "# Root\n");
+fs.writeFileSync(path.join(invalidDescriptorVault, "Broken", "AGENTS.md"), "# Broken\n");
+fs.writeFileSync(path.join(invalidDescriptorVault, "Broken", "00 Index.md"), "---\ntitle: Broken\ntype: scope-index\nscope_schema: 1\nstatus: active\n---\n# Broken\n");
+const invalidDescriptorInventory = inventoryVault(invalidDescriptorVault);
+const invalidDescriptorModel = buildTopology(invalidDescriptorInventory);
+assert.ok(invalidDescriptorModel.invalidDescriptors.length >= 1);
+assert.throws(
+  () => planOperation(invalidDescriptorInventory, invalidDescriptorModel, parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /invalid scope descriptor/u,
+);
+fs.rmSync(invalidDescriptorVault, { recursive: true, force: true });
+
+// Generated frontmatter must be safe YAML for any legacy title the discovery step can derive
+// from an existing named/bare index -- not just simple word-and-space titles.
+const yamlTitleCases = [
+  ["Research: Notes", "colon-space"],
+  ["# Planning", "leading hash"],
+  ["{Draft}", "leading brace"],
+  ["-leading-hyphen", "leading hyphen"],
+  ["true", "reserved scalar"],
+  ["42", "numeric-looking"],
+  ["Ünïcödé Tïtle", "unicode"],
+  ["Multiple ''' apostrophes here", "multiple non-word-bounded quote characters"],
+  ["\"Already Double Quoted\"", "value itself contains double quotes"],
+  ["TRUE", "uppercase YAML 1.1 boolean"],
+  ["False", "mixed-case YAML 1.1 boolean"],
+  ["NULL", "uppercase YAML null"],
+  ["01", "leading-zero integer-looking"],
+  ["0xFF", "hex-looking"],
+  ["+1", "leading-plus integer-looking"],
+  ["2026-07-16", "ISO-date-looking"],
+  ["1.", "trailing-dot float-looking"],
+  [".inf", "YAML 1.1 infinity-looking"],
+  [".NaN", "YAML 1.1 NaN-looking"],
+  ["0b101", "binary-looking"],
+  ["12:34", "sexagesimal-looking"],
+  ["Plain Simple Title", "no special characters at all -- must still be quoted unconditionally"],
+];
+for (const [title, label] of yamlTitleCases) {
+  const yamlVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-yaml-title-"));
+  fs.writeFileSync(path.join(yamlVault, "AGENTS.md"), "# Root\n");
+  fs.mkdirSync(path.join(yamlVault, "Tricky"), { recursive: true });
+  fs.writeFileSync(path.join(yamlVault, "Tricky", "AGENTS.md"), "# Tricky\n");
+  // Write the fixture's named-hub title double-quote-wrapped so it reads back as the exact
+  // plain string regardless of its own content (this codebase's frontmatter reader strips
+  // exactly one leading/trailing quote character by position, with no interior escaping, so
+  // wrapping always round-trips). This test is proving the *generator* is safe; the title
+  // itself is deliberately tricky, not the fixture's own quoting.
+  fs.writeFileSync(path.join(yamlVault, "Tricky", "00 Named Index.md"), Buffer.concat([Buffer.from("---\ntitle: \""), Buffer.from(title, "utf8"), Buffer.from("\"\ntype: index\nstatus: active\n---\n# "), Buffer.from(title, "utf8"), Buffer.from("\n")]));
+  const yamlInventory = inventoryVault(yamlVault);
+  const namedTitleRead = yamlInventory.files.find((item) => item.relativePath === "Tricky/00 Named Index.md").frontmatter.title;
+  assert.strictEqual(namedTitleRead, title, `fixture title itself must be readable: ${label}`);
+  const yamlModel = buildTopology(yamlInventory);
+  const yamlRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "tricky", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+  const yamlPlan = planWithDisclosedWrites(yamlInventory, yamlModel, yamlRequest);
+  applyOperation(yamlVault, { ...yamlRequest, allowed_write_paths: yamlPlan.content_write_paths });
+  const writtenInventory = inventoryVault(yamlVault);
+  const writtenDescriptor = writtenInventory.files.find((item) => item.relativePath === "Tricky/00 Index.md");
+  assert.strictEqual(writtenDescriptor.frontmatter.title, title, `round-trip: ${label}`);
+  const syntaxCheck = spawnSync(process.execPath, [path.resolve(__dirname, "../scripts/validate_vault.js"), yamlVault], { encoding: "utf8" });
+  assert.match(syntaxCheck.stdout, /^yaml-ok$/mu, `validate_vault.js must accept generated frontmatter for: ${label}\n${syntaxCheck.stdout}${syntaxCheck.stderr}`);
+  assert.deepStrictEqual(checkTopology(yamlVault).changes, [], `idempotent after write: ${label}`);
+  fs.rmSync(yamlVault, { recursive: true, force: true });
+}
+// A title needing both quote types is refused rather than silently emitted unsafely.
+const unsafeVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-yaml-unsafe-"));
+fs.writeFileSync(path.join(unsafeVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(unsafeVault, "Tricky"), { recursive: true });
+fs.writeFileSync(path.join(unsafeVault, "Tricky", "AGENTS.md"), "# Tricky\n");
+fs.writeFileSync(path.join(unsafeVault, "Tricky", "00 Named Index.md"), Buffer.from("---\ntitle: It's a \"quote\" test\ntype: index\nstatus: active\n---\n# unsafe\n", "utf8"));
+const unsafeInventory = inventoryVault(unsafeVault);
+assert.strictEqual(unsafeInventory.files.find((item) => item.relativePath === "Tricky/00 Named Index.md").frontmatter.title, "It's a \"quote\" test");
+assert.throws(
+  () => planOperation(unsafeInventory, buildTopology(unsafeInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "tricky", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /cannot be safely serialized as YAML/u,
+);
+fs.rmSync(unsafeVault, { recursive: true, force: true });
+
+// scope_path itself (derived from the real folder path, not just the title) must also be
+// serialized safely -- a folder literally named "#Plan" produces a scope_path value that a
+// real YAML parser would treat as an empty value plus a trailing comment if left unquoted.
+const hashPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-yaml-hash-path-"));
+fs.writeFileSync(path.join(hashPathVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(hashPathVault, "#Plan"), { recursive: true });
+fs.writeFileSync(path.join(hashPathVault, "#Plan", "AGENTS.md"), "# Plan\n");
+const hashPathInventory = inventoryVault(hashPathVault);
+const hashPathRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "plan", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const hashPathPlan = planWithDisclosedWrites(hashPathInventory, buildTopology(hashPathInventory), hashPathRequest);
+applyOperation(hashPathVault, { ...hashPathRequest, allowed_write_paths: hashPathPlan.content_write_paths });
+const hashPathWritten = inventoryVault(hashPathVault).files.find((item) => item.relativePath === "#Plan/00 Index.md");
+assert.strictEqual(hashPathWritten.frontmatter.scope_path, "#Plan");
+const hashPathSyntax = spawnSync(process.execPath, [path.resolve(__dirname, "../scripts/validate_vault.js"), hashPathVault], { encoding: "utf8" });
+assert.match(hashPathSyntax.stdout, /^yaml-ok$/mu, hashPathSyntax.stdout + hashPathSyntax.stderr);
+assert.deepStrictEqual(checkTopology(hashPathVault).changes, []);
+fs.rmSync(hashPathVault, { recursive: true, force: true });
+
+// A folder path containing a character the schema's own normalizeScopePath already forbids
+// (e.g. a literal ":") must refuse discovery rather than adopt a scope_path it can never
+// legitimately keep -- re-parsing it afterward would immediately fail as an invalid descriptor.
+const illegalPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-illegal-path-"));
+fs.writeFileSync(path.join(illegalPathVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(illegalPathVault, "A: B"), { recursive: true });
+fs.writeFileSync(path.join(illegalPathVault, "A: B", "AGENTS.md"), "# A B\n");
+const illegalPathInventory = inventoryVault(illegalPathVault);
+assert.throws(
+  () => planOperation(illegalPathInventory, buildTopology(illegalPathInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /cannot be a valid scope_path/u,
+);
+fs.rmSync(illegalPathVault, { recursive: true, force: true });
+
+// A folder whose real (POSIX-legal) path contains a literal backslash must also refuse
+// discovery. normalizeScopePath treats "\\" as a path separator and rewrites it to "/" without
+// throwing (so a Windows-style path can be typed as a scope_path) -- checking only whether
+// normalizeScopePath threw let a real directory named e.g. "A\B" through discovery with a
+// scope_path ("A/B") that no longer identifies the same physical folder: the write plan would
+// authorize "A/B" while the directory on disk is still "A\B", and the write would refuse at the
+// allowed_write_paths check with the two paths talking past each other instead of at discovery,
+// where the actual problem is.
+const backslashPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-backslash-path-"));
+fs.writeFileSync(path.join(backslashPathVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(backslashPathVault, "A\\B"), { recursive: true });
+fs.writeFileSync(path.join(backslashPathVault, "A\\B", "AGENTS.md"), "# A B\n");
+const backslashPathInventory = inventoryVault(backslashPathVault);
+assert.ok(backslashPathInventory.directories.some((item) => item.relativePath === "A\\B"), "fixture directory must be discoverable as A\\B");
+assert.throws(
+  () => planOperation(backslashPathInventory, buildTopology(backslashPathInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /does not match its normalized scope_path form/u,
+);
+fs.rmSync(backslashPathVault, { recursive: true, force: true });
+
+// A directory whose on-disk spelling is not already Unicode-NFC-normalized must also refuse
+// discovery. inventoryVault's relativePath is always NFC-normalized, so relativePath alone
+// cannot distinguish an already-NFC folder from one whose real bytes are NFD-decomposed -- a
+// filesystem that does not itself normalize on write (ext4, unlike APFS) can hold the latter,
+// and a write step that trusts only the normalized relativePath could target a scope_path the
+// filesystem doesn't actually have under that spelling. APFS -- this repo's dev/CI filesystem --
+// both normalizes fs.readdirSync's own results to NFC and resolves NFD-spelled paths to the same
+// underlying entry regardless of which spelling is used to reach it, so a real end-to-end
+// fixture can't exhibit the divergence here; a patched fs.readdirSync simulates an ext4-like
+// non-normalizing directory listing for exactly one directory, relying on APFS's confirmed
+// normalization-insensitive path resolution to keep the underlying lstat/readFile calls working
+// underneath the substituted (differently-spelled) name.
+const nfcName = "Caf\u00e9".normalize("NFC");
+const nfdName = "Caf\u00e9".normalize("NFD");
+assert.notStrictEqual(nfcName, nfdName, "fixture requires genuinely distinct NFC/NFD byte forms");
+const nfdPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-nfd-path-"));
+fs.writeFileSync(path.join(nfdPathVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(nfdPathVault, nfcName), { recursive: true });
+fs.writeFileSync(path.join(nfdPathVault, nfcName, "AGENTS.md"), "# Cafe\n");
+const originalReaddirSync = fs.readdirSync;
+fs.readdirSync = function patchedReaddirSync(dir, options) {
+  const entries = originalReaddirSync.call(fs, dir, options);
+  if (dir === nfdPathVault && options && options.withFileTypes) {
+    for (const entry of entries) if (entry.name === nfcName) entry.name = nfdName;
+  }
+  return entries;
+};
+let nfdPathInventory;
+try {
+  nfdPathInventory = inventoryVault(nfdPathVault);
+} finally {
+  fs.readdirSync = originalReaddirSync;
+}
+const nfdCandidate = nfdPathInventory.directories.find((item) => item.relativePath === nfcName);
+assert.ok(nfdCandidate, "candidate directory must still be discoverable by its NFC relativePath");
+assert.strictEqual(nfdCandidate.rawRelativePath, nfdName, "rawRelativePath must preserve the physical NFD spelling");
+assert.throws(
+  () => planOperation(nfdPathInventory, buildTopology(nfdPathInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /does not match its on-disk spelling/u,
+);
+fs.rmSync(nfdPathVault, { recursive: true, force: true });
+
+// A control character in a legacy title must refuse rather than corrupt the written file. A
+// literal newline can't even survive as a single frontmatter value through this codebase's
+// line-based reader (it would split the title across two unrelated lines on the way in), so
+// this uses a same-line control character (NUL) that the reader does preserve verbatim.
+const controlCharVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-control-char-"));
+fs.writeFileSync(path.join(controlCharVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(controlCharVault, "Tricky"), { recursive: true });
+fs.writeFileSync(path.join(controlCharVault, "Tricky", "AGENTS.md"), "# Tricky\n");
+fs.writeFileSync(path.join(controlCharVault, "Tricky", "00 Named Index.md"), Buffer.concat([Buffer.from("---\ntitle: Bad"), Buffer.from([0x00]), Buffer.from("Title\ntype: index\nstatus: active\n---\n# unsafe\n")]));
+const controlCharInventory = inventoryVault(controlCharVault);
+assert.strictEqual(controlCharInventory.files.find((item) => item.relativePath === "Tricky/00 Named Index.md").frontmatter.title, "Bad Title");
+assert.throws(
+  () => planOperation(controlCharInventory, buildTopology(controlCharInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "tricky", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /control character or line break/u,
+);
+fs.rmSync(controlCharVault, { recursive: true, force: true });
+
+// A C1 control character (U+0080-U+009F), not just the C0 range, must also refuse. U+0085 (NEL)
+// is the sharpest example: a real, standards-compliant YAML parser gives it line-break
+// semantics and folds it to a space, so "Bad<U+0085>Title" would silently become "Bad Title" in
+// any such reader even though this codebase's own naive parser -- which only recognizes \r\n/\n
+// as line breaks -- round-trips the character on the same line unchanged.
+const c1ControlVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-c1-control-"));
+fs.writeFileSync(path.join(c1ControlVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(c1ControlVault, "Tricky"), { recursive: true });
+fs.writeFileSync(path.join(c1ControlVault, "Tricky", "AGENTS.md"), "# Tricky\n");
+fs.writeFileSync(path.join(c1ControlVault, "Tricky", "00 Named Index.md"), "---\ntitle: Bad\u0085Title\ntype: index\nstatus: active\n---\n# unsafe\n", "utf8");
+const c1ControlInventory = inventoryVault(c1ControlVault);
+assert.strictEqual(c1ControlInventory.files.find((item) => item.relativePath === "Tricky/00 Named Index.md").frontmatter.title, "Bad\u0085Title");
+assert.throws(
+  () => planOperation(c1ControlInventory, buildTopology(c1ControlInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "tricky", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /control character or line break/u,
+);
+fs.rmSync(c1ControlVault, { recursive: true, force: true });
+
+// Dismissal on a *named* legacy hub (not just AGENTS.md or a bare 00 Index.md) must be honored.
+const namedDismissalVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-named-dismissal-"));
+fs.writeFileSync(path.join(namedDismissalVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(namedDismissalVault, "Legacy"), { recursive: true });
+fs.writeFileSync(path.join(namedDismissalVault, "Legacy", "AGENTS.md"), "# Legacy\n");
+fs.writeFileSync(path.join(namedDismissalVault, "Legacy", "00 Legacy Index.md"), "---\ntitle: Legacy\ntype: index\nstatus: active\nariadne_scope_adoption: dismissed\n---\n# Legacy\n");
+const namedDismissalInventory = inventoryVault(namedDismissalVault);
+const namedDismissalPlan = planWithDisclosedWrites(namedDismissalInventory, buildTopology(namedDismissalInventory), {
+  operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [],
+});
+assert.deepStrictEqual(namedDismissalPlan.replacements.filter((item) => item.kind === "descriptor").map((item) => item.path), ["00 Index.md"]);
+assert.ok(!fs.existsSync(path.join(namedDismissalVault, "Legacy", "00 Index.md")));
+fs.rmSync(namedDismissalVault, { recursive: true, force: true });
+
+// Hidden/tool-owned directories are never legacy candidates, even with an AGENTS.md inside.
+const toolDirVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-tool-dir-"));
+fs.writeFileSync(path.join(toolDirVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(toolDirVault, ".claude"), { recursive: true });
+fs.writeFileSync(path.join(toolDirVault, ".claude", "AGENTS.md"), "# Claude\n");
+const toolDirInventory = inventoryVault(toolDirVault);
+const toolDirPlan = planWithDisclosedWrites(toolDirInventory, buildTopology(toolDirInventory), {
+  operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [],
+});
+assert.deepStrictEqual(toolDirPlan.replacements.filter((item) => item.kind === "descriptor").map((item) => item.path), ["00 Index.md"]);
+fs.rmSync(toolDirVault, { recursive: true, force: true });
 
 const createVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-create-"));
 fs.cpSync(fixture("root_only"), createVault, { recursive: true });
@@ -310,17 +685,22 @@ assert.match(registry, /name: Lifecycle/u);
 assert.doesNotMatch(registry, /^filters:/u);
 assert.strictEqual((registry.match(/^    filters:/gmu) || []).length, 2);
 const canvas = JSON.parse(renderScopeMapCanvas(deep).bytes);
-assert.strictEqual(canvas.nodes.length, 4);
+assert.strictEqual(canvas.nodes.length, 8);
 assert.strictEqual(canvas.edges.length, 3);
-assert.deepStrictEqual(canvas.nodes.map(({ x, y, width, height, color }) => ({ x, y, width, height, color })), [
-  { x: 0, y: 0, width: 320, height: 120, color: "4" },
-  { x: 480, y: 180, width: 320, height: 120, color: "4" },
-  { x: 960, y: 360, width: 320, height: 120, color: "4" },
-  { x: 960, y: 540, width: 320, height: 120, color: "6" },
+assert.deepStrictEqual(canvas.nodes.map(({ x, y, width, height, color, type }) => ({ x, y, width, height, color, type })), [
+  { x: 0, y: 0, width: 320, height: 60, color: "4", type: "text" },
+  { x: 0, y: 80, width: 320, height: 120, color: "4", type: "file" },
+  { x: 480, y: 240, width: 320, height: 60, color: "4", type: "text" },
+  { x: 480, y: 320, width: 320, height: 120, color: "4", type: "file" },
+  { x: 960, y: 480, width: 320, height: 60, color: "4", type: "text" },
+  { x: 960, y: 560, width: 320, height: 120, color: "4", type: "file" },
+  { x: 960, y: 720, width: 320, height: 60, color: "6", type: "text" },
+  { x: 960, y: 800, width: 320, height: 120, color: "6", type: "file" },
 ]);
 for (const item of [...canvas.nodes, ...canvas.edges]) assert.match(item.id, /^[a-f0-9]{16}$/u);
-assert.strictEqual(new Set([...canvas.nodes, ...canvas.edges].map((item) => item.id)).size, 7);
+assert.strictEqual(new Set([...canvas.nodes, ...canvas.edges].map((item) => item.id)).size, 11);
 assert.deepStrictEqual(JSON.parse(renderScopeMapCanvas(deep).bytes), canvas);
+assert.ok(canvas.nodes.filter((item) => item.type === "text").every((item, index) => item.text.includes(["Vault", "Product", "Alpha", "Zulu"][index])), "each label node must carry a distinct scope title");
 
 const semanticVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-render-"));
 fs.cpSync(fixture("deep_transparent_ancestry"), semanticVault, { recursive: true });

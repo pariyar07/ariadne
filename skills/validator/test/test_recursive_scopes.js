@@ -887,6 +887,21 @@ rollup_boundaries: []
     }
   },
 
+  function apostropheInScalarValueIsNotAQuoteDelimiter() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "root_only_legacy_pass"), vault);
+      const descriptor = path.join(vault, "00 Index.md");
+      fs.writeFileSync(descriptor, fs.readFileSync(descriptor, "utf8").replace(/^title: .*$/m, "title: Reader's Vault"));
+      const result = runValidatorPath(vault);
+      assertSuccess(result);
+      assert.match(result.stdout, /^yaml-ok$/m);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
   function inlineNestedCollectionsRemainUnsupportedResearchValues() {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
     const vault = path.join(dir, "vault");

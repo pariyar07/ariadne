@@ -5,8 +5,10 @@ const crypto = require("crypto");
 const STATUS_COLORS = Object.freeze({ active: "4", archived: "6", retired: "1" });
 const WIDTH = 320;
 const HEIGHT = 120;
+const LABEL_HEIGHT = 60;
+const LABEL_GAP = 20;
 const X_STEP = 480;
-const Y_STEP = 180;
+const Y_STEP = HEIGHT + LABEL_HEIGHT + LABEL_GAP + 40;
 
 function result(path, text, reason, owner) {
   return Object.freeze({ path, bytes: Buffer.from(text, "utf8"), reason, owner });
@@ -151,17 +153,32 @@ function renderScopeMapMarkdown(model) {
 
 function stableId(kind, value) { return crypto.createHash("sha256").update(`${kind}\0${value}`).digest("hex").slice(0, 16); }
 
+function labelText(descriptor) {
+  return `[[${link(descriptor)}|${descriptor.title}]]\n\`${descriptor.scopeId}\`\n${descriptor.scopePath}`;
+}
+
+// Every Canvas file node points at a "00 Index.md" (or root's "00 Index.md"), and Obsidian
+// shows the filename as the node's identifying label, so with more than one scope every file
+// node reads as the identical "00 Index" regardless of which scope it represents. A paired
+// text node carrying the title, scope_id, and scope_path makes each scope distinguishable.
 function renderScopeMapCanvas(model, options = {}) {
   const idFor = options.idFactory || stableId;
   const depths = new Map();
   for (const descriptor of model.descriptors) depths.set(descriptor.scopeId, descriptor.parentScopeId ? (depths.get(descriptor.parentScopeId) || 0) + 1 : 0);
   const ids = new Set();
   const claim = (id) => { if (ids.has(id)) throw new Error(`Canvas ID collision: ${id}`); ids.add(id); return id; };
-  const nodes = [...model.descriptors].map((descriptor, index) => ({
-    id: claim(idFor("scope-node", descriptor.scopeId)), type: "file", file: `${link(descriptor)}.md`,
-    x: depths.get(descriptor.scopeId) * X_STEP, y: index * Y_STEP, width: WIDTH, height: HEIGHT, color: STATUS_COLORS[descriptor.status],
-  }));
-  const nodeByScope = new Map([...model.descriptors].map((descriptor, index) => [descriptor.scopeId, nodes[index].id]));
+  const nodes = [];
+  const nodeByScope = new Map();
+  [...model.descriptors].forEach((descriptor, index) => {
+    const x = depths.get(descriptor.scopeId) * X_STEP;
+    const labelY = index * Y_STEP;
+    const fileY = labelY + LABEL_HEIGHT + LABEL_GAP;
+    const labelId = claim(idFor("scope-label", descriptor.scopeId));
+    const fileId = claim(idFor("scope-node", descriptor.scopeId));
+    nodes.push({ id: labelId, type: "text", text: labelText(descriptor), x, y: labelY, width: WIDTH, height: LABEL_HEIGHT, color: STATUS_COLORS[descriptor.status] });
+    nodes.push({ id: fileId, type: "file", file: `${link(descriptor)}.md`, x, y: fileY, width: WIDTH, height: HEIGHT, color: STATUS_COLORS[descriptor.status] });
+    nodeByScope.set(descriptor.scopeId, fileId);
+  });
   const edges = [...model.descriptors].filter((descriptor) => descriptor.parentScopeId).map((descriptor) => ({
     id: claim(idFor("scope-edge", `${descriptor.parentScopeId}\0${descriptor.scopeId}`)),
     fromNode: nodeByScope.get(descriptor.parentScopeId), fromSide: "right", toNode: nodeByScope.get(descriptor.scopeId), toSide: "left",

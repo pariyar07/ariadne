@@ -215,6 +215,10 @@ function nearestParentHub(dir, hubsByDir) {
   }
 }
 
+function isWordChar(char) {
+  return char !== undefined && /[\p{L}\p{N}]/u.test(char);
+}
+
 function validateYamlSyntax(text, file) {
   const stack = [];
   let quote = null;
@@ -229,6 +233,12 @@ function validateYamlSyntax(text, file) {
       }
       if (char === quote && !escaped) quote = null;
       escaped = false;
+      continue;
+    }
+    // A quote character surrounded by word characters on both sides (e.g. the
+    // apostrophe in "Reader's") is a contraction/possessive inside an unquoted
+    // plain scalar, not a YAML quote delimiter, which must start a scalar value.
+    if ((char === "\"" || char === "'") && isWordChar(text[index - 1]) && isWordChar(text[index + 1])) {
       continue;
     }
     if (char === "\"" || char === "'") {

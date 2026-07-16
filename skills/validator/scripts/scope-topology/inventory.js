@@ -9,7 +9,7 @@ function toPosix(value) {
 }
 
 function excluded(relativePath) {
-  return relativePath.split("/").some((segment) => segment === ".git" || segment === ".obsidian");
+  return relativePath.split("/").some((segment) => segment === ".git" || segment === ".obsidian" || segment === ".ariadne");
 }
 
 function parseScalar(source) {
@@ -80,7 +80,7 @@ function inventoryVault(vaultRoot) {
   const files = [];
   const directories = [];
 
-  function directoryRecord(absolutePath, relativePath) {
+  function directoryRecord(absolutePath, relativePath, rawRelativePath) {
     const lstat = fs.lstatSync(absolutePath);
     let canonicalPath = null;
     let canonicalContained = false;
@@ -90,20 +90,31 @@ function inventoryVault(vaultRoot) {
     } catch (_error) {
       // An unreadable directory remains represented by its captured metadata.
     }
-    return Object.freeze({ relativePath, lexicalPath: absolutePath, canonicalPath, canonicalContained, lstat });
+    return Object.freeze({ relativePath, rawRelativePath, lexicalPath: absolutePath, canonicalPath, canonicalContained, lstat });
   }
 
-  function walk(directory, relativeDirectory = ".") {
-    directories.push(directoryRecord(directory, relativeDirectory));
+  // relativePath is always NFC-normalized so equal-looking paths compare equal regardless of how
+  // a given filesystem or editor happened to encode them. That normalization is exactly what
+  // makes it unsafe as the sole record of a directory's identity: a filesystem that does not
+  // itself normalize filenames (ext4, unlike APFS) can hold a physically NFD-decomposed name
+  // (e.g. "Cafe\u0301") that normalizes to the same NFC string ("Caf\u00e9") as some other,
+  // differently-spelled entry -- or, more directly relevant here, whose actual on-disk bytes
+  // simply are not what a write step that trusts only the normalized relativePath would target.
+  // rawRelativePath preserves the pre-normalization path (still posix-separated, still exactly
+  // what fs.readdirSync/path.relative produced) so callers that need to detect this -- like
+  // legacy scope discovery -- can compare the two and refuse rather than silently normalize.
+  function walk(directory, relativeDirectory = ".", rawRelativeDirectory = ".") {
+    directories.push(directoryRecord(directory, relativeDirectory, rawRelativeDirectory));
     const entries = fs.readdirSync(directory, { withFileTypes: true })
       .sort((left, right) => Buffer.from(left.name).compare(Buffer.from(right.name)));
     for (const entry of entries) {
       const absolutePath = path.join(directory, entry.name);
-      const relativePath = toPosix(path.relative(root, absolutePath)).normalize("NFC");
+      const rawRelativePath = toPosix(path.relative(root, absolutePath));
+      const relativePath = rawRelativePath.normalize("NFC");
       if (excluded(relativePath)) continue;
       const lstat = fs.lstatSync(absolutePath);
       if (lstat.isDirectory()) {
-        walk(absolutePath, relativePath);
+        walk(absolutePath, relativePath, rawRelativePath);
         continue;
       }
       let canonicalPath = null;
@@ -117,6 +128,7 @@ function inventoryVault(vaultRoot) {
       const rawBytes = lstat.isFile() ? fs.readFileSync(absolutePath) : null;
       files.push(Object.freeze({
         relativePath,
+        rawRelativePath,
         lexicalPath: absolutePath,
         canonicalPath,
         canonicalContained: contained,
@@ -130,7 +142,7 @@ function inventoryVault(vaultRoot) {
     }
   }
 
-  walk(root);
+  walk(root, ".", ".");
   files.sort((left, right) => Buffer.from(left.relativePath).compare(Buffer.from(right.relativePath)));
   const caseFoldCollisions = new Map();
   for (const file of files) {
