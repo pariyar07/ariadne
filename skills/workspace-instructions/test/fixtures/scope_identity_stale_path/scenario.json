@@ -1,40 +1,9 @@
 {
-  "name": "scope_identity_stale_path",
-  "files": [
-    {
-      "path": "AGENTS.md",
-      "content": "# Agent Instructions\n\nUser prose outside the marker must remain outside the identity check: scope_id: outside-decoy, scope_path: Outside/Current, [[Outside/Old]].\n\n<!-- ariadne:workspace-vault-link:start -->\nscope_id: product-evaluation\nscope_path: Domains/Product/Evaluation\nRelated Ariadne scope: [[Projects/Product/Evaluation]]\n<!-- ariadne:workspace-vault-link:end -->\n"
-    },
-    {
-      "path": "CLAUDE.md",
-      "content": "Outside prose declares scope_id: outside-only.\n\n<!-- ariadne:workspace-vault-link:start -->\nRelated Ariadne scope: [[Domains/Unknown]]\nscope_path: Domains/Unknown\n<!-- ariadne:workspace-vault-link:end -->\n"
-    }
-  ],
-  "expected": {
-    "git": {
-      "insideWorkTree": false,
-      "isLinkedWorktree": false
-    },
-    "arrays": {
-      "staleScopePathFiles": ["AGENTS.md"],
-      "unknownScopeIdFiles": ["CLAUDE.md"]
-    },
-    "objects": {
-      "workspaceScopeIdentityByFile": {
-        "AGENTS.md": {
-          "scopeId": "product-evaluation",
-          "scopePath": "Domains/Product/Evaluation",
-          "linkedScopePath": "Projects/Product/Evaluation"
-        },
-        "CLAUDE.md": {
-          "scopeId": null,
-          "scopePath": "Domains/Unknown",
-          "linkedScopePath": "Domains/Unknown"
-        }
-      }
-    },
-    "values": {
-      "scopeLinkRepairGuidance": "After confirming the stable scope_id against vault-local scope inventory, update only the scope_path and Related Ariadne scope target inside the workspace-vault-link marker; preserve all text outside the marker."
-    }
-  }
+  "name":"scope_identity_stale_path",
+  "files":[{"path":"AGENTS.md","content":"Outside scope_id: decoy.\n<!-- ariadne:workspace-vault-link:start -->\nscope_id: product\nscope_path: Projects/Product\nRelated Ariadne scope: [[Projects/Product]]\n<!-- ariadne:workspace-vault-link:end -->\n"}],
+  "vault":{"files":[
+    {"path":"00 Index.md","content":"---\ntitle: Vault\ntype: scope-index\nscope_schema: 1\nscope_id: root\nscope_path: .\nstatus: active\n---\n"},
+    {"path":"Domains/Product/00 Index.md","content":"---\ntitle: Product\ntype: scope-index\nscope_schema: 1\nscope_id: product\nscope_path: Domains/Product\nparent_scope_id: root\nstatus: active\n---\n"}
+  ]},
+  "expected":{"git":{"insideWorkTree":false,"isLinkedWorktree":false},"arrays":{"staleScopePathFiles":["AGENTS.md"],"unknownScopeIdFiles":[],"invalidScopeIdentityFiles":[],"unverifiedScopeIdentityFiles":[]},"objects":{"workspaceScopeIdentityByFile":{"AGENTS.md":{"scopeId":"product","scopePath":"Projects/Product","linkedScopePath":"Projects/Product","canonicalScopePath":"Domains/Product","verification":"stale"}}},"values":{"scopeIdentityVaultConfirmed":true}}
 }

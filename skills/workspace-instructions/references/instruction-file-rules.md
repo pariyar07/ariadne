@@ -37,7 +37,7 @@ The rubric is advisory guidance for the skill, not a hard gate. Mechanical signa
 | B5 | `.gitignore` coverage for every local-only file in a Git workspace. | [M] | `localFilesMissingGitignore`, `trackedLocalOnlyFiles` |
 | B6 | `WORKSPACE.md` pointer discipline: when referenced it exists and owns child inventory; `AGENTS.md` stays a pointer plus agent rules. | [M] | `workspaceReferenceMissingFiles`, child-name mention signals |
 | B7 | Hermes compatibility: `.hermes.md` / `HERMES.md` are explicit Hermes overrides, not default thin adapters, and must not rely on unsupported `@AGENTS.md` imports. | [M] | `hermesContextFiles`, `hermesShadowsAgentsFiles`, `hermesUnsupportedImportFiles` |
-| B8 | Stable scope identity: scope-specific workspace links declare a stable `scope_id` and current `scope_path`; their `Related Ariadne scope` target matches that path. Repair is bounded to the marker after confirming the ID in vault-local inventory. | [M] | `workspaceScopeIdentityByFile`, `staleScopePathFiles`, `unknownScopeIdFiles`, `scopeLinkRepairGuidance` |
+| B8 | Stable scope identity: a scope link has exactly one lower-kebab ID, one safe normalized vault-relative NFC path, and one equal linked target. With a user-confirmed vault, the shared topology inventory establishes unknown IDs and canonical stale paths; without one, valid identities stay explicitly unverified. Repair is bounded to the marker. | [M] | `workspaceScopeIdentityByFile`, `invalidScopeIdentityFiles`, `unverifiedScopeIdentityFiles`, `unknownScopeIdFiles`, `staleScopePathFiles`, `scopeIdentityVaultConfirmed`, `scopeLinkRepairGuidance` |
 
 ## Attestation
 
