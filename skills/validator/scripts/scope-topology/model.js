@@ -30,7 +30,7 @@ function buildTopology(inventory) {
     try {
       descriptor = parseScopeDescriptor(file.relativePath, file.frontmatter);
     } catch (error) {
-      recognized.push(Object.freeze({ file, error, invalid: true }));
+      recognized.push(Object.freeze({ file, error, invalid: true, directory: directoryOf(file.relativePath) }));
       continue;
     }
     if (descriptor) {
@@ -67,6 +67,7 @@ function buildTopology(inventory) {
   }
 
   const { descriptors, descriptorsById: orderedDescriptorsById, childrenById } = orderDescriptors(descriptorsById);
+  const invalidDescriptors = Object.freeze(recognized.filter((item) => item.invalid));
 
   return Object.freeze({
     active,
@@ -75,6 +76,7 @@ function buildTopology(inventory) {
     childrenById,
     candidates: Object.freeze(candidates),
     pendingDescriptors,
+    invalidDescriptors,
     unsupportedRoot,
   });
 }

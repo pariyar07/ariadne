@@ -236,7 +236,7 @@ function validateYamlSyntax(text, file) {
       continue;
     }
     // A quote character surrounded by word characters on both sides (e.g. the
-    // apostrophe in "Satyam's") is a contraction/possessive inside an unquoted
+    // apostrophe in "Reader's") is a contraction/possessive inside an unquoted
     // plain scalar, not a YAML quote delimiter, which must start a scalar value.
     if ((char === "\"" || char === "'") && isWordChar(text[index - 1]) && isWordChar(text[index + 1])) {
       continue;

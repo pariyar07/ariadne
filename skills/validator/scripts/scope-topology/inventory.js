@@ -9,7 +9,7 @@ function toPosix(value) {
 }
 
 function excluded(relativePath) {
-  return relativePath.split("/").some((segment) => segment === ".git" || segment === ".obsidian");
+  return relativePath.split("/").some((segment) => segment === ".git" || segment === ".obsidian" || segment === ".ariadne");
 }
 
 function parseScalar(source) {

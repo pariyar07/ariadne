@@ -68,9 +68,61 @@ function canonical(value) {
 function hashPlan(plan) { return crypto.createHash("sha256").update(JSON.stringify(canonical(plan))).digest("hex"); }
 function descriptorPath(descriptor) { return descriptor.scopePath === "." ? "00 Index.md" : `${descriptor.scopePath}/00 Index.md`; }
 
+function isWordChar(char) {
+  return char !== undefined && /[\p{L}\p{N}]/u.test(char);
+}
+
+const YAML_RESERVED_SCALARS = new Set(["null", "~", "true", "false"]);
+const YAML_LEADING_INDICATORS = /^[-?:,[\]{}#&*!|>'"%@`]/u;
+
+// A single word-bounded quote character (e.g. the apostrophe in "Satyam's") is safe to leave
+// unquoted: validate_vault.js's syntax scanner treats it as scalar-internal punctuation, not a
+// delimiter. Two or more quote characters anywhere in the value are not safe even when each is
+// individually word-bounded, because the scanner's quote-tracking is stateful across the whole
+// value -- for example "Multiple ''' apostrophes here" has three individually-adjacent-to-word
+// apostrophes but still misreads as an unterminated quote, since the first non-word-bounded one
+// (if any) opens real quote-tracking that subsequent quote characters then interact with.
+function hasUnsafeQuoteCharacters(value) {
+  const positions = [...value].map((char, index) => ({ char, index })).filter((item) => item.char === "'" || item.char === "\"");
+  if (positions.length === 0) return false;
+  if (positions.length > 1) return true;
+  const { index } = positions[0];
+  return !(isWordChar(value[index - 1]) && isWordChar(value[index + 1]));
+}
+
+// A minimal, dependency-free YAML plain/quoted-scalar serializer for the exact subset this
+// codebase's own hand-rolled parsers (inventory.js's parseScalar and validate_vault.js's
+// validateYamlSyntax) support. Neither parser un-escapes doubled or backslash-escaped quote
+// characters -- they only strip a literal leading/trailing quote character by position -- so
+// correctness here means never emitting a quoted form that either parser could misread, not
+// implementing full YAML escaping. Values needing quoting are wrapped in whichever quote
+// character does not also appear inside them; a value containing both a `'` and a `"` (or a
+// backslash) cannot be serialized safely under this constraint and is refused rather than
+// guessed at.
+function yamlScalar(value, field) {
+  if (value === "") return "''";
+  if (/^\s|\s$/u.test(value)) return quoteScalar(value, field);
+  if (YAML_RESERVED_SCALARS.has(value)) return quoteScalar(value, field);
+  if (YAML_LEADING_INDICATORS.test(value)) return quoteScalar(value, field);
+  if (/:(?:\s|$)/u.test(value) || / #/u.test(value)) return quoteScalar(value, field);
+  if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/u.test(value)) return quoteScalar(value, field);
+  if (hasUnsafeQuoteCharacters(value)) return quoteScalar(value, field);
+  return value;
+}
+
+function quoteScalar(value, field) {
+  const hasSingle = value.includes("'");
+  const hasDouble = value.includes("\"");
+  const hasBackslash = value.includes("\\");
+  if (hasBackslash || (hasSingle && hasDouble)) {
+    throw new Error(`${field} cannot be safely serialized as YAML: contains a character combination this vault's parsers cannot round-trip (${value})`);
+  }
+  return hasSingle ? `"${value}"` : `'${value}'`;
+}
+
 function descriptorBytes(descriptor, existingBytes = null) {
   const desired = new Map([
-    ["title", [`title: ${descriptor.title}`]], ["type", ["type: scope-index"]], ["scope_schema", ["scope_schema: 1"]],
+    ["title", [`title: ${yamlScalar(descriptor.title, "title")}`]], ["type", ["type: scope-index"]], ["scope_schema", ["scope_schema: 1"]],
     ["scope_id", [`scope_id: ${descriptor.scopeId}`]], ["scope_path", [`scope_path: ${descriptor.scopePath}`]],
     ["parent_scope_id", descriptor.parentScopeId ? [`parent_scope_id: ${descriptor.parentScopeId}`] : []], ["status", [`status: ${descriptor.status}`]],
     ["scope_order", descriptor.scopeOrder !== null && descriptor.scopeOrder !== undefined ? [`scope_order: ${descriptor.scopeOrder}`] : []],
@@ -153,6 +205,15 @@ function isDismissedCandidate(record) {
   return Boolean(record && record.frontmatter && String(record.frontmatter.ariadne_scope_adoption || "") === "dismissed");
 }
 
+// Dismissal must be honored on any "00 * Index.md" hub in the directory, not only a bare
+// "00 Index.md" -- an intentional legacy hub named e.g. "00 Legacy Index.md" is exactly the
+// kind of named index the migration guide says can carry ariadne_scope_adoption: dismissed.
+function anyIndexDismissed(inventory, directory) {
+  return inventory.files
+    .filter((item) => path.posix.dirname(item.relativePath) === directory && /^00 .*Index\.md$/u.test(path.posix.basename(item.relativePath)))
+    .some((item) => isDismissedCandidate(item));
+}
+
 function namedIndexTitle(inventory, directory) {
   const named = inventory.files
     .filter((item) => path.posix.dirname(item.relativePath) === directory && /^00 .*Index\.md$/u.test(path.posix.basename(item.relativePath)))
@@ -173,11 +234,28 @@ function pathSlug(directory) {
   return directory.split("/").map(slugify).join("-");
 }
 
+// A full-path slug can itself collide (e.g. "A-B/X" and "A/B/X" both slugify to "a-b-x"), and
+// slugify's non-ASCII fallback ("scope") is not unique across multiple non-Latin-only names. A
+// deterministic hash of the real path disambiguates without ever guessing at a human-meaningful
+// name; a caller who wants a specific ID should rename the folder or use ariadne:scope create.
+function hashSuffixedSlug(directory) {
+  return `${pathSlug(directory)}-${crypto.createHash("sha256").update(directory).digest("hex").slice(0, 8)}`;
+}
+
 // Legacy candidate discovery for the "adopt" operation only. A directory is a legacy
 // candidate when it has a local AGENTS.md (the LLD's own discovery signal) and is not
 // already active, pending, or explicitly dismissed. The vault root is always eligible
 // unless it is already active or pending. Discovery never touches disk; it only plans.
 function discoverLegacyCandidates(inventory, model) {
+  // A directory holding a malformed *explicit* type: scope-index descriptor already declares
+  // deliberate (if broken) scope identity. Silently reinterpreting it as ordinary legacy
+  // content -- merging fresh, auto-derived frontmatter over it, or discovering a
+  // freshly-derived scope_id that may not match what the author intended -- would discard
+  // that identity without the human ever being asked. Refuse instead of guessing.
+  if (model.invalidDescriptors && model.invalidDescriptors.length) {
+    const first = model.invalidDescriptors[0];
+    throw new Error(`legacy discovery refused: invalid scope descriptor at ${first.file.relativePath} (${first.error.message}); repair or remove it before adopting`);
+  }
   const knownIds = new Set([...model.descriptorsById.keys(), ...model.pendingDescriptors.map((item) => item.scopeId)]);
   const knownDirectories = new Map();
   for (const item of model.descriptorsById.values()) knownDirectories.set(item.scopePath, item.scopeId);
@@ -187,12 +265,14 @@ function discoverLegacyCandidates(inventory, model) {
   for (const directory of inventory.directories) {
     const dir = directory.relativePath;
     if (knownDirectories.has(dir)) continue;
+    // Hidden/tool-owned directories (.ariadne, .claude, .codex, and similar) are never legacy
+    // scope candidates even if they happen to contain an AGENTS.md.
+    if (dir !== "." && dir.split("/").some((segment) => segment.startsWith("."))) continue;
     if (dir !== ".") {
       const agents = fileAt(inventory, dir, "AGENTS.md");
       if (!agents || isDismissedCandidate(agents)) continue;
     }
-    const bare = fileAt(inventory, dir, "00 Index.md");
-    if (bare && isDismissedCandidate(bare)) continue;
+    if (anyIndexDismissed(inventory, dir)) continue;
     eligible.push(dir);
   }
   eligible.sort((left, right) => {
@@ -218,6 +298,7 @@ function discoverLegacyCandidates(inventory, model) {
     }
     let scopeId = dir === "." ? "root" : slugify(path.posix.basename(dir));
     if (dir !== "." && ((naiveSlugs.get(scopeId) || []).length > 1 || knownIds.has(scopeId))) scopeId = pathSlug(dir);
+    if (dir !== "." && knownIds.has(scopeId)) scopeId = hashSuffixedSlug(dir);
     if (knownIds.has(scopeId)) throw new Error(`legacy candidate scope_id collision could not be resolved deterministically: ${dir}`);
     const bare = fileAt(inventory, dir, "00 Index.md");
     const title = (bare && bare.frontmatter && typeof bare.frontmatter.title === "string" && bare.frontmatter.title.trim())
@@ -270,7 +351,7 @@ function planOperation(inventory, model, requestValue) {
       const rootCandidate = legacyCandidates.find((item) => item.scopeId === "root");
       if (rootCandidate) selected = [rootCandidate, ...selected];
     }
-    descriptors = selected;
+    descriptors = [...model.descriptors, ...selected];
     changedDescriptorIds = new Set(selected.map((item) => item.scopeId));
   }
   if (request.operation === "move") {
