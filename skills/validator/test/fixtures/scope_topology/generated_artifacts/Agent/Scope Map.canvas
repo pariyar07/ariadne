@@ -1,81 +1,41 @@
 {
   "nodes": [
     {
-      "id": "74613cb62ca3d1c6",
+      "id": "3cfe8658e4429068",
       "type": "text",
-      "text": "[[00 Index|Vault]]\n`root`\n.",
+      "text": "[[../00 Index|Vault]]\n`root`\n.",
       "x": 0,
       "y": 0,
       "width": 320,
-      "height": 60,
-      "color": "4"
-    },
-    {
-      "id": "3cfe8658e4429068",
-      "type": "file",
-      "file": "00 Index.md",
-      "x": 0,
-      "y": 80,
-      "width": 320,
       "height": 120,
-      "color": "4"
-    },
-    {
-      "id": "6ae8018e0b5a014b",
-      "type": "text",
-      "text": "[[Domains/Product/00 Index|Product]]\n`product`\nDomains/Product",
-      "x": 480,
-      "y": 240,
-      "width": 320,
-      "height": 60,
       "color": "4"
     },
     {
       "id": "3b200a1402db0f62",
-      "type": "file",
-      "file": "Domains/Product/00 Index.md",
+      "type": "text",
+      "text": "[[Domains/Product/00 Index|Product]]\n`product`\nDomains/Product",
       "x": 480,
-      "y": 320,
+      "y": 180,
       "width": 320,
       "height": 120,
-      "color": "4"
-    },
-    {
-      "id": "2f75b7f0bfbb8250",
-      "type": "text",
-      "text": "[[Domains/Product/Workstreams/Alpha/00 Index|Alpha]]\n`alpha`\nDomains/Product/Workstreams/Alpha",
-      "x": 960,
-      "y": 480,
-      "width": 320,
-      "height": 60,
       "color": "4"
     },
     {
       "id": "650c9ffa63ef1c91",
-      "type": "file",
-      "file": "Domains/Product/Workstreams/Alpha/00 Index.md",
+      "type": "text",
+      "text": "[[Domains/Product/Workstreams/Alpha/00 Index|Alpha]]\n`alpha`\nDomains/Product/Workstreams/Alpha",
       "x": 960,
-      "y": 560,
+      "y": 360,
       "width": 320,
       "height": 120,
       "color": "4"
     },
     {
-      "id": "166dbff43db6c320",
+      "id": "698192002a5490fe",
       "type": "text",
       "text": "[[Domains/Product/Zulu/00 Index|Zulu]]\n`zulu`\nDomains/Product/Zulu",
       "x": 960,
-      "y": 720,
-      "width": 320,
-      "height": 60,
-      "color": "6"
-    },
-    {
-      "id": "698192002a5490fe",
-      "type": "file",
-      "file": "Domains/Product/Zulu/00 Index.md",
-      "x": 960,
-      "y": 800,
+      "y": 540,
       "width": 320,
       "height": 120,
       "color": "6"

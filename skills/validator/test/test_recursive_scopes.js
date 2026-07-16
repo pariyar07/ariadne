@@ -268,6 +268,25 @@ const tests = [
     assert.match(result.stdout, /Agent\/Task Routing Matrix\.md does not link scope hub Projects\/Alpha\/00 Alpha Index\.md/);
   },
 
+  function adoptedCanonicalScopeDoesNotDuplicateLegacyHubRouting() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scope-validator-"));
+    const vault = path.join(dir, "vault");
+    try {
+      copyDir(path.join(FIXTURES, "routing_matrix_missing_scope_warning"), vault);
+      writeFile(vault, "Projects/Alpha/00 Index.md", "---\ntitle: Alpha\ntype: scope-index\nscope_schema: 1\nscope_id: alpha\nscope_path: Projects/Alpha\nparent_scope_id: root\nstatus: active\n---\n# Alpha\n");
+      fs.appendFileSync(path.join(vault, "Projects/Alpha/00 Alpha Index.md"), "\n- [[Projects/Alpha/00 Index]]\n");
+
+      const result = runValidatorPath(vault);
+
+      assertSuccess(result);
+      assertCounter(result.stdout, "scope-navigation-warnings", 0);
+      assertCounter(result.stdout, "routing-matrix-warnings", 0);
+      assert.doesNotMatch(result.stdout, /does not link scope hub Projects\/Alpha\/00 Alpha Index\.md/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  },
+
   function baseScopeFormulaMissingBranchWarns() {
     const result = runValidator("base_scope_formula_missing_branch_warning");
 

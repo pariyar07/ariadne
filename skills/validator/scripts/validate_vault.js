@@ -581,15 +581,25 @@ function validate(vaultPath, options = {}, inventory = null) {
 
   const scopeNavigationWarnings = [];
   const hubsByDir = new Map();
+  const adoptedScopeDirs = new Set(markdownFiles
+    .filter((file) => path.posix.basename(file) === "00 Index.md" && String((markdownFrontmatter.get(file) || {}).type || "") === "scope-index")
+    .map((file) => path.posix.dirname(file)));
   for (const hub of markdownFiles.filter(hubFile).sort()) {
+    if (path.posix.basename(hub) === "00 Index.md" && String((markdownFrontmatter.get(hub) || {}).type || "") === "scope-index") continue;
     const dir = path.posix.dirname(hub);
     if (!hubsByDir.has(dir)) hubsByDir.set(dir, hub);
+  }
+  const parentHubsByDir = new Map(hubsByDir);
+  for (const file of markdownFiles) {
+    if (path.posix.basename(file) !== "00 Index.md" || String((markdownFrontmatter.get(file) || {}).type || "") !== "scope-index") continue;
+    parentHubsByDir.set(path.posix.dirname(file), file);
   }
 
   for (const [dir, childHub] of hubsByDir.entries()) {
     if (dir === ".") continue;
     if (!scopeHub(childHub, markdownFrontmatter)) continue;
-    const parentHub = nearestParentHub(dir, hubsByDir);
+    if (adoptedScopeDirs.has(dir)) continue;
+    const parentHub = nearestParentHub(dir, parentHubsByDir);
     if (!parentHub) continue;
 
     if (!fileLinksToQualified(parentHub, childHub)) {
@@ -607,6 +617,7 @@ function validate(vaultPath, options = {}, inventory = null) {
   }
   for (const [dir, childHub] of hubsByDir.entries()) {
     if (dir === "." || !scopeHub(childHub, markdownFrontmatter)) continue;
+    if (adoptedScopeDirs.has(dir)) continue;
     let inheritedScope = dir;
     let routingMatrix = null;
     while (true) {

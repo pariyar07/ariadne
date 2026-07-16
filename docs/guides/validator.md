@@ -53,6 +53,8 @@ Schema-v1 research frontmatter supports top-level scalar values and flat lists o
 
 Bare content links resolve in this order: the source folder, then exact ancestor folders one by one, then a unique global basename match. If multiple global candidates remain without an exact folder or ancestor match, the link is ambiguous and credits none. Navigation files still warn when a bare link has multiple candidates, even when the content rule could select one.
 
+Schema-v1 canonical `00 Index.md` descriptors are validated by the topology counters. Legacy folder-hub navigation continues to evaluate preserved named hubs separately, and adopted directories do not receive duplicate legacy routing requirements for topology-owned Agent matrices.
+
 ## Expected Output
 
 A healthy vault reports all zeros:

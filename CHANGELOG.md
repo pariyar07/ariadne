@@ -4,6 +4,12 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+
+- Scope checkpoint, inheritance, map, and routing renderers now use unambiguous qualified links across scope boundaries, including relative links back to root `00 Index.md` and `AGENTS.md`; generated child-scope links no longer resolve to same-named local files or trigger ambiguity warnings.
+- The validator now separates schema-v1 canonical descriptors from preserved legacy folder hubs: topology counters own canonical scope navigation, while legacy hub checks no longer impose duplicate named-hub routing requirements on adopted scopes.
+- `Agent/Scope Map.canvas` now uses one clickable text node per scope instead of stacking a label node above a redundant `00 Index` file node.
+
 ## [0.3.1] - 2026-07-17
 
 ### Fixed
