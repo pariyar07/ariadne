@@ -347,6 +347,13 @@ const yamlTitleCases = [
   ["Ünïcödé Tïtle", "unicode"],
   ["Multiple ''' apostrophes here", "multiple non-word-bounded quote characters"],
   ["\"Already Double Quoted\"", "value itself contains double quotes"],
+  ["TRUE", "uppercase YAML 1.1 boolean"],
+  ["False", "mixed-case YAML 1.1 boolean"],
+  ["NULL", "uppercase YAML null"],
+  ["01", "leading-zero integer-looking"],
+  ["0xFF", "hex-looking"],
+  ["+1", "leading-plus integer-looking"],
+  ["2026-07-16", "ISO-date-looking"],
 ];
 for (const [title, label] of yamlTitleCases) {
   const yamlVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-yaml-title-"));
@@ -387,6 +394,55 @@ assert.throws(
   /cannot be safely serialized as YAML/u,
 );
 fs.rmSync(unsafeVault, { recursive: true, force: true });
+
+// scope_path itself (derived from the real folder path, not just the title) must also be
+// serialized safely -- a folder literally named "#Plan" produces a scope_path value that a
+// real YAML parser would treat as an empty value plus a trailing comment if left unquoted.
+const hashPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-yaml-hash-path-"));
+fs.writeFileSync(path.join(hashPathVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(hashPathVault, "#Plan"), { recursive: true });
+fs.writeFileSync(path.join(hashPathVault, "#Plan", "AGENTS.md"), "# Plan\n");
+const hashPathInventory = inventoryVault(hashPathVault);
+const hashPathRequest = { operation_schema: 1, operation: "adopt", target_scope_id: "plan", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] };
+const hashPathPlan = planWithDisclosedWrites(hashPathInventory, buildTopology(hashPathInventory), hashPathRequest);
+applyOperation(hashPathVault, { ...hashPathRequest, allowed_write_paths: hashPathPlan.content_write_paths });
+const hashPathWritten = inventoryVault(hashPathVault).files.find((item) => item.relativePath === "#Plan/00 Index.md");
+assert.strictEqual(hashPathWritten.frontmatter.scope_path, "#Plan");
+const hashPathSyntax = spawnSync(process.execPath, [path.resolve(__dirname, "../scripts/validate_vault.js"), hashPathVault], { encoding: "utf8" });
+assert.match(hashPathSyntax.stdout, /^yaml-ok$/mu, hashPathSyntax.stdout + hashPathSyntax.stderr);
+assert.deepStrictEqual(checkTopology(hashPathVault).changes, []);
+fs.rmSync(hashPathVault, { recursive: true, force: true });
+
+// A folder path containing a character the schema's own normalizeScopePath already forbids
+// (e.g. a literal ":") must refuse discovery rather than adopt a scope_path it can never
+// legitimately keep -- re-parsing it afterward would immediately fail as an invalid descriptor.
+const illegalPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-illegal-path-"));
+fs.writeFileSync(path.join(illegalPathVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(illegalPathVault, "A: B"), { recursive: true });
+fs.writeFileSync(path.join(illegalPathVault, "A: B", "AGENTS.md"), "# A B\n");
+const illegalPathInventory = inventoryVault(illegalPathVault);
+assert.throws(
+  () => planOperation(illegalPathInventory, buildTopology(illegalPathInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "root", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /cannot be a valid scope_path/u,
+);
+fs.rmSync(illegalPathVault, { recursive: true, force: true });
+
+// A control character in a legacy title must refuse rather than corrupt the written file. A
+// literal newline can't even survive as a single frontmatter value through this codebase's
+// line-based reader (it would split the title across two unrelated lines on the way in), so
+// this uses a same-line control character (NUL) that the reader does preserve verbatim.
+const controlCharVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-control-char-"));
+fs.writeFileSync(path.join(controlCharVault, "AGENTS.md"), "# Root\n");
+fs.mkdirSync(path.join(controlCharVault, "Tricky"), { recursive: true });
+fs.writeFileSync(path.join(controlCharVault, "Tricky", "AGENTS.md"), "# Tricky\n");
+fs.writeFileSync(path.join(controlCharVault, "Tricky", "00 Named Index.md"), Buffer.concat([Buffer.from("---\ntitle: Bad"), Buffer.from([0x00]), Buffer.from("Title\ntype: index\nstatus: active\n---\n# unsafe\n")]));
+const controlCharInventory = inventoryVault(controlCharVault);
+assert.strictEqual(controlCharInventory.files.find((item) => item.relativePath === "Tricky/00 Named Index.md").frontmatter.title, "Bad Title");
+assert.throws(
+  () => planOperation(controlCharInventory, buildTopology(controlCharInventory), parseOperationRequest({ operation_schema: 1, operation: "adopt", target_scope_id: "tricky", adoption_mode: "whole-vault", normalize_files: [], allowed_write_paths: [] })),
+  /control character or line break/u,
+);
+fs.rmSync(controlCharVault, { recursive: true, force: true });
 
 // Dismissal on a *named* legacy hub (not just AGENTS.md or a bare 00 Index.md) must be honored.
 const namedDismissalVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-named-dismissal-"));

@@ -47,7 +47,15 @@ function buildTopology(inventory) {
   const pendingDescriptors = active ? [] : Object.freeze(recognized.filter((item) => !item.invalid));
   const adopted = active ? supported : [];
 
-  const byPath = [...adopted].sort((left, right) => left.directory.split("/").length - right.directory.split("/").length);
+  // Root's own directory "." must always sort first. Counting "." as a one-segment path (via
+  // a plain split("/").length) ties it with any real top-level folder, and that tie was broken
+  // by alphabetical file-scan order -- normally harmless, because "00 Index.md" (root, no
+  // folder prefix) sorts before nearly every letter-prefixed folder path, but a folder name
+  // starting with a character earlier than "0" in the file-scan sort order (e.g. "#Plan") could
+  // reorder ahead of root, so the not-yet-registered root couldn't be found as any child's
+  // ancestor and the entire subtree was silently dropped from the topology.
+  const depthOf = (directory) => directory === "." ? 0 : directory.split("/").length;
+  const byPath = [...adopted].sort((left, right) => depthOf(left.directory) - depthOf(right.directory));
   const descriptorsById = new Map();
   for (let descriptor of byPath) {
     const actualPath = descriptor.directory;

@@ -90,22 +90,32 @@ function hasUnsafeQuoteCharacters(value) {
   return !(isWordChar(value[index - 1]) && isWordChar(value[index + 1]));
 }
 
+// Matches YAML 1.1-resolver implicit types that a real, standards-compliant YAML parser (e.g.
+// the one Obsidian's own frontmatter reader almost certainly uses) would coerce away from a
+// plain string, even though this codebase's own naive parser treats every unquoted value as a
+// string. Quoting -- not escaping -- is what prevents implicit typing in any compliant parser,
+// so the fix is purely about detecting when it's needed, not how the quote is unescaped.
+const YAML_IMPLICIT_TYPE = /^(?:[+-]?(?:0|[1-9]\d*)(?:\.\d+)?|[+-]?0x[0-9a-fA-F]+|[+-]?0o[0-7]+|\d{4}-\d{2}-\d{2}(?:[Tt ].*)?|y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF|null|Null|NULL|~)$/u;
+
 // A minimal, dependency-free YAML plain/quoted-scalar serializer for the exact subset this
 // codebase's own hand-rolled parsers (inventory.js's parseScalar and validate_vault.js's
 // validateYamlSyntax) support. Neither parser un-escapes doubled or backslash-escaped quote
 // characters -- they only strip a literal leading/trailing quote character by position -- so
 // correctness here means never emitting a quoted form that either parser could misread, not
 // implementing full YAML escaping. Values needing quoting are wrapped in whichever quote
-// character does not also appear inside them; a value containing both a `'` and a `"` (or a
-// backslash) cannot be serialized safely under this constraint and is refused rather than
-// guessed at.
+// character does not also appear inside them; a value containing both a `'` and a `"`, a
+// backslash, or any control character (which would corrupt this line-based frontmatter format
+// regardless of quoting) cannot be serialized safely under this constraint and is refused
+// rather than guessed at.
 function yamlScalar(value, field) {
+  if (/[\x00-\x1f\x7f]/u.test(value)) {
+    throw new Error(`${field} cannot be safely serialized as YAML: contains a control character or line break (${JSON.stringify(value)})`);
+  }
   if (value === "") return "''";
   if (/^\s|\s$/u.test(value)) return quoteScalar(value, field);
-  if (YAML_RESERVED_SCALARS.has(value)) return quoteScalar(value, field);
+  if (YAML_IMPLICIT_TYPE.test(value)) return quoteScalar(value, field);
   if (YAML_LEADING_INDICATORS.test(value)) return quoteScalar(value, field);
   if (/:(?:\s|$)/u.test(value) || / #/u.test(value)) return quoteScalar(value, field);
-  if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/u.test(value)) return quoteScalar(value, field);
   if (hasUnsafeQuoteCharacters(value)) return quoteScalar(value, field);
   return value;
 }
@@ -113,6 +123,11 @@ function yamlScalar(value, field) {
 function quoteScalar(value, field) {
   const hasSingle = value.includes("'");
   const hasDouble = value.includes("\"");
+  // A backslash is inert in an unquoted scalar and inert inside a single-quoted one (this
+  // scanner gives backslash no special meaning there), but validateYamlSyntax treats it as an
+  // escape character specifically inside double-quote mode. Rather than reason through every
+  // backslash/quote-adjacency interaction that mode could produce, refuse whenever a value
+  // that needs quoting also contains a backslash.
   const hasBackslash = value.includes("\\");
   if (hasBackslash || (hasSingle && hasDouble)) {
     throw new Error(`${field} cannot be safely serialized as YAML: contains a character combination this vault's parsers cannot round-trip (${value})`);
@@ -123,10 +138,10 @@ function quoteScalar(value, field) {
 function descriptorBytes(descriptor, existingBytes = null) {
   const desired = new Map([
     ["title", [`title: ${yamlScalar(descriptor.title, "title")}`]], ["type", ["type: scope-index"]], ["scope_schema", ["scope_schema: 1"]],
-    ["scope_id", [`scope_id: ${descriptor.scopeId}`]], ["scope_path", [`scope_path: ${descriptor.scopePath}`]],
+    ["scope_id", [`scope_id: ${descriptor.scopeId}`]], ["scope_path", [`scope_path: ${yamlScalar(descriptor.scopePath, "scope_path")}`]],
     ["parent_scope_id", descriptor.parentScopeId ? [`parent_scope_id: ${descriptor.parentScopeId}`] : []], ["status", [`status: ${descriptor.status}`]],
     ["scope_order", descriptor.scopeOrder !== null && descriptor.scopeOrder !== undefined ? [`scope_order: ${descriptor.scopeOrder}`] : []],
-    ["former_scope_paths", descriptor.formerScopePaths && descriptor.formerScopePaths.length ? ["former_scope_paths:", ...descriptor.formerScopePaths.map((item) => `  - ${item}`)] : []],
+    ["former_scope_paths", descriptor.formerScopePaths && descriptor.formerScopePaths.length ? ["former_scope_paths:", ...descriptor.formerScopePaths.map((item) => `  - ${yamlScalar(item, "former_scope_paths")}`)] : []],
     ["replaced_by_scope_id", descriptor.replacedByScopeId ? [`replaced_by_scope_id: ${descriptor.replacedByScopeId}`] : []],
   ]);
   let lines = ["---", ...[...desired.values()].flat(), "---"];
@@ -273,6 +288,16 @@ function discoverLegacyCandidates(inventory, model) {
       if (!agents || isDismissedCandidate(agents)) continue;
     }
     if (anyIndexDismissed(inventory, dir)) continue;
+    // A folder whose real path violates the schema's own character/Windows-compatibility
+    // restrictions (schema.js's normalizeScopePath, e.g. a literal ":" in a segment) could
+    // never be re-read as a valid descriptor after adoption -- it would immediately become an
+    // invalid-descriptor refusal on the very next check. Refuse discovery rather than silently
+    // adopt a folder into a scope_path it can't actually keep.
+    try {
+      normalizeScopePath(dir);
+    } catch (error) {
+      throw new Error(`legacy discovery refused: ${dir} cannot be a valid scope_path (${error.message}); rename the folder before adopting`);
+    }
     eligible.push(dir);
   }
   eligible.sort((left, right) => {
@@ -369,7 +394,7 @@ function planOperation(inventory, model, requestValue) {
       return item;
     });
     changedDescriptorIds = new Set(descriptors.filter((item) => item.scopeId === current.scopeId || item.scopePath.startsWith(`${request.destination_path}/`)).map((item) => item.scopeId));
-    replacements.push({ kind: "redirect", path: `${request.source_path}/00 Index.md`, bytes: `---\ntype: scope-redirect\nredirect_schema: 1\nformer_scope_path: ${request.source_path}\ntarget_scope_id: ${current.scopeId}\ntarget_scope_path: ${request.destination_path}\n---\n` });
+    replacements.push({ kind: "redirect", path: `${request.source_path}/00 Index.md`, bytes: `---\ntype: scope-redirect\nredirect_schema: 1\nformer_scope_path: ${yamlScalar(request.source_path, "former_scope_path")}\ntarget_scope_id: ${current.scopeId}\ntarget_scope_path: ${yamlScalar(request.destination_path, "target_scope_path")}\n---\n` });
   }
   if (request.operation === "set-status") {
     let replacement = null;
