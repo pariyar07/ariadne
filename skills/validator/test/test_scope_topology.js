@@ -125,8 +125,10 @@ assert.throws(() => planOperation(operationInventory, reservedModel, parseOperat
 
 const adoptionInventory = inventoryVault(fixture("pending_without_root"));
 const adoption = planWithDisclosedWrites(adoptionInventory, buildTopology(adoptionInventory), operationFixture("adopt"));
-assert.strictEqual(adoption.replacements.at(-1).path, "00 Index.md");
-assert.strictEqual(adoption.replacements.at(-1).activation, true);
+const rootDescriptorReplacement = adoption.replacements.findIndex((item) => item.path === "00 Index.md" && item.kind === "descriptor");
+const rootCheckpointReplacement = adoption.replacements.findIndex((item) => item.path === "00 Index.md" && item.kind === "checkpoint");
+assert.ok(rootDescriptorReplacement >= 0 && rootDescriptorReplacement < rootCheckpointReplacement);
+assert.strictEqual(adoption.replacements[rootDescriptorReplacement].activation, true);
 
 const createVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-operation-create-"));
 fs.cpSync(fixture("root_only"), createVault, { recursive: true });

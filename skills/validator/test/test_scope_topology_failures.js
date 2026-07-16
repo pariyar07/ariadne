@@ -19,6 +19,12 @@ function vault() {
   fs.cpSync(source, value, { recursive: true });
   return value;
 }
+function adoptionVault() {
+  const value = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-adopt-"));
+  fs.cpSync(path.join(__dirname, "fixtures/scope_topology/pending_without_root"), value, { recursive: true });
+  fs.writeFileSync(path.join(value, "00 Index.md"), "---\ntitle: Legacy Home\n---\n# Legacy Home\n\nUser prose outside generated markers.\n");
+  return value;
+}
 function hashTree(directory) {
   const rows = [];
   function walk(current, relative = "") {
@@ -49,6 +55,38 @@ function tamperAuthority(directory, mutate) {
   mutate(lock); reseal(lock); manifest.authority = structuredClone(lock); manifest.authority_checksum = lock.checksum; reseal(manifest); fs.writeFileSync(lockPath, JSON.stringify(lock)); fs.writeFileSync(manifestPath, JSON.stringify(manifest)); return lock.operation_id;
 }
 function run(args, options = {}) { const env = { ...process.env, ...options.env }; if (Object.keys(options.env || {}).some((key) => key.startsWith("ARIADNE_SYNC_"))) env.ARIADNE_SCOPE_TOPOLOGY_TEST_MODE = "1"; return spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env }); }
+
+// Whole-vault adoption composes root activation last and resumes before activation.
+{
+  const directory = adoptionVault();
+  const request = { operation_schema: 1, operation: "adopt", target_scope_id: "pending", adoption_mode: "whole-vault", allowed_write_paths: [] };
+  const requestFile = requestFileFor(directory, request);
+  const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-temp-fsync:00 Index.md" } });
+  assert.notStrictEqual(failed.status, 0);
+  const beforeActivation = fs.readFileSync(path.join(directory, "00 Index.md"), "utf8");
+  assert.match(beforeActivation, /User prose outside generated markers\./u);
+  assert.doesNotMatch(beforeActivation, /scope_schema: 1/u);
+  const manifest = JSON.parse(fs.readFileSync(path.join(directory, ".ariadne/scope-topology-operation.json"), "utf8"));
+  const rootEffects = manifest.authority.effects.filter((item) => item.type === "replace" && item.path === "00 Index.md");
+  assert.strictEqual(rootEffects.length, 1);
+  assert.strictEqual(rootEffects[0].activation, true);
+  const canonicalRoot = Buffer.from(rootEffects[0].bytes_base64, "base64").toString("utf8");
+  assert.match(canonicalRoot, /scope_schema: 1/u);
+  assert.match(canonicalRoot, /<!-- ariadne:scope-boundary:start -->/u);
+  assert.match(canonicalRoot, /User prose outside generated markers\./u);
+  const resumed = run([directory, "--resume", manifest.operation_id]);
+  assert.strictEqual(resumed.status, 0, resumed.stderr);
+  const activated = fs.readFileSync(path.join(directory, "00 Index.md"), "utf8");
+  assert.match(activated, /scope_schema: 1/u);
+  assert.match(activated, /<!-- ariadne:scope-boundary:start -->/u);
+  assert.match(activated, /User prose outside generated markers\./u);
+  const checked = run([directory, "--check"]);
+  assert.strictEqual(checked.status, 0, checked.stderr);
+  assert.deepStrictEqual(JSON.parse(checked.stdout).changes, []);
+  assert.deepStrictEqual(fs.readdirSync(path.join(directory, ".ariadne")), []);
+  fs.rmSync(directory, { recursive: true, force: true });
+  fs.rmSync(requestFile, { force: true });
+}
 
 // Check mode is byte-for-byte and metadata zero-write.
 {

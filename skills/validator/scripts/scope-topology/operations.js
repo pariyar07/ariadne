@@ -150,7 +150,10 @@ function planOperation(inventory, model, requestValue) {
     const pending = model.pendingDescriptors.filter((item) => item.supported);
     let selected = request.adoption_mode === "whole-vault" ? pending : pending.filter((item) => item.scopeId === request.target_scope_id || current.scopePath.startsWith(`${item.scopePath}/`));
     if (!selected.some((item) => item.scopeId === request.target_scope_id)) throw new Error("adoption target is not a pending descriptor");
-    if (!selected.some((item) => item.scopeId === "root")) selected = [{ scopeId: "root", scopePath: ".", parentScopeId: null, title: "Vault", status: "active", scopeOrder: null, formerScopePaths: [] }, ...selected];
+    if (!selected.some((item) => item.scopeId === "root")) {
+      const rootFile = inventory.files.find((item) => item.relativePath === "00 Index.md") || null;
+      selected = [{ scopeId: "root", scopePath: ".", parentScopeId: null, title: "Vault", status: "active", scopeOrder: null, formerScopePaths: [], fileRecord: rootFile }, ...selected];
+    }
     descriptors = selected;
     changedDescriptorIds = new Set(selected.map((item) => item.scopeId));
   }
@@ -190,16 +193,12 @@ function planOperation(inventory, model, requestValue) {
   const desired = virtualModel(descriptors);
   const lifecycleRefused = lifecycle_checks.some((item) => !item.allowed);
   for (const item of descriptors) if (!lifecycleRefused && changedDescriptorIds.has(item.scopeId)) {
-    const original = model.descriptorsById.get(item.scopeId) || model.pendingDescriptors.find((candidate) => candidate.scopeId === item.scopeId);
+    const original = model.descriptorsById.get(item.scopeId) || model.pendingDescriptors.find((candidate) => candidate.scopeId === item.scopeId) || item;
     replacements.push({ kind: "descriptor", path: descriptorPath(item), bytes: descriptorBytes(item, original && original.fileRecord && original.fileRecord.rawBytes), activation: request.operation === "adopt" && item.scopeId === "root" });
   }
   const generated = lifecycleRefused ? [] : [...renderCheckpointBlocks(desired), renderScopeRegistry(desired), renderScopeMapMarkdown(desired), renderScopeMapCanvas(desired)]
     .map((item) => ({ kind: item.owner === "generated-file" ? "generated" : "checkpoint", path: item.path, bytes: item.bytes.toString("utf8") }));
   replacements.push(...generated);
-  if (request.operation === "adopt") {
-    const activation = replacements.findIndex((item) => item.activation);
-    if (activation >= 0) replacements.push(...replacements.splice(activation, 1));
-  }
   const baseMentions = inventory.files.filter((item) => item.relativePath.startsWith("Bases/") && item.relativePath.endsWith(".base") && item.rawBytes && /file\.inFolder/u.test(item.rawBytes.toString("utf8")))
     .map((item) => ({ path: item.relativePath, recognized: hasSupportedRootBaseFormula(item.rawBytes.toString("utf8")) }));
   const base_formula_proposals = baseMentions.filter((item) => item.recognized)
