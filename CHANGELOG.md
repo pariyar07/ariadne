@@ -4,6 +4,8 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-07-17
+
 ### Fixed
 
 - Scope checkpoint, inheritance, map, and routing renderers now use unambiguous qualified links across scope boundaries, including relative links back to root `00 Index.md` and `AGENTS.md`; generated child-scope links no longer resolve to same-named local files or trigger ambiguity warnings.
@@ -85,7 +87,8 @@ Updating skills does not activate or rewrite an existing vault. Review [Scope To
 
 This is a breaking release. Reinstall the skill package, remove stale copied retired folders, and update saved prompts and external automations. See [Research Lifecycle Migration](docs/guides/research-lifecycle-migration.md).
 
-[Unreleased]: https://github.com/pariyar07/ariadne/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/pariyar07/ariadne/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/pariyar07/ariadne/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/pariyar07/ariadne/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/pariyar07/ariadne/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/pariyar07/ariadne/compare/v0.2.0...v0.2.1
