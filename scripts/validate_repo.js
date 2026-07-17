@@ -560,7 +560,7 @@ function validateWorkspaceInstructions(errors) {
     const copiedSkillDir = path.join(tmpRoot, "ariadne-workspace-instructions");
     try {
       fs.cpSync(sourceSkillDir, copiedSkillDir, { recursive: true });
-      fs.cpSync(sourceValidatorDir, path.join(tmpRoot, "validator"), { recursive: true });
+      fs.cpSync(sourceValidatorDir, path.join(tmpRoot, "ariadne-validator"), { recursive: true });
       execFileSync(process.execPath, ["test/test_workspace_instructions.js"], {
         cwd: copiedSkillDir,
         encoding: "utf8",
