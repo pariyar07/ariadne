@@ -10,6 +10,7 @@ const agentNavigation = fs.readFileSync(path.join(templates, "Agent Navigation.m
 assert.match(agentNavigation, /read `Agent\/Task Routing Matrix\.md` before following content-hub or workstream links/u);
 
 const scopeIndex = fs.readFileSync(path.join(templates, "Scope Index.md"), "utf8");
+assert.match(scopeIndex, /Complete each Start Here read before starting the next; do not parallelize these reads/u);
 const instructionsAt = scopeIndex.indexOf("Scope instructions");
 const navigationAt = scopeIndex.indexOf("Scope agent navigation");
 const routingAt = scopeIndex.indexOf("Scope task routing");

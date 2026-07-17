@@ -207,6 +207,8 @@ function registryMarkdown(registry) {
     if (vault.purpose) lines.push(`Purpose: ${vault.purpose}`);
     lines.push("");
     lines.push("Cold-start entry order:");
+    lines.push("");
+    lines.push("Complete each entrypoint read before starting the next; do not parallelize these reads.");
     const entrypoints = Array.isArray(vault.entrypoints) && vault.entrypoints.length > 0 ? vault.entrypoints : DEFAULT_ENTRYPOINTS;
     entrypoints.forEach((entrypoint, index) => {
       const suffix = entrypoint === "Agent/Task Routing Matrix.md" ? " when routing by task" : "";
@@ -230,7 +232,7 @@ function discoveryBlock(registryPathDisplay) {
     "Registry:",
     `- ${registryPathDisplay}`,
     "",
-    "For vague questions, terse keyword prompts, or empty-workspace ambiguity about prior projects, documents, meetings, research, decisions, customers, work history, personal knowledge, or \"what was I working on\", read the vault registry before asking generic project-location questions or creating new artifacts. Then enter the relevant vault through its listed cold-start entry order.",
+    "For vague questions, terse keyword prompts, or empty-workspace ambiguity about prior projects, documents, meetings, research, decisions, customers, work history, personal knowledge, or \"what was I working on\", read the vault registry before asking generic project-location questions or creating new artifacts. Then enter the relevant vault through its listed cold-start entry order in strict sequence; complete each entrypoint read before starting the next and do not parallelize those reads.",
     "For action prompts like add, create, draft, write, plan, summarize, update, track, log, or record, if the object may refer to prior projects, customers, documents, contracts, proposals, meetings, decisions, or workstreams, read the vault registry before asking whether to start from scratch, where the code lives, or what project to use, and before creating a new artifact.",
     "An empty current directory is not evidence that no prior project context exists. For ambiguous work-tracking or knowledge-management prompts, check registered vaults before proposing a new project or codebase workflow.",
     "If multiple plausible vault matches exist, show the top matches with short reasons and ask the user to choose before creating, updating, or filing artifacts.",
@@ -344,6 +346,7 @@ function checkDiscovery(options) {
     const requiredPhrases = [
       ["registry path", "~/.ariadne/vaults.md"],
       ["entrypoint instructions", "listed cold-start entry order"],
+      ["strict entrypoint sequencing", "do not parallelize those reads"],
       ["generic project-location question guard", "before asking generic project-location questions"],
       ["action-prompt discovery instructions", "For action prompts like add, create, draft, write, plan, summarize, update, track, log, or record"],
       ["start-from-scratch question guard", "before asking whether to start from scratch"],
