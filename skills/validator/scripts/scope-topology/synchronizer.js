@@ -8,6 +8,7 @@ const { buildTopology } = require("./model");
 const { scopeFindings, filterFindingsByScope } = require("./findings");
 const { parseOperationRequest, planOperation, hashPlan } = require("./operations");
 const { replaceMarkerBlock } = require("./markers");
+const { normalizeScopeCanvas } = require("./render");
 
 const LOCK = ".ariadne/scope-topology.lock";
 const MANIFEST = ".ariadne/scope-topology-operation.json";
@@ -52,7 +53,12 @@ function desiredChanges(root, plan) {
     const previous = combined.get(item.path); const bytes = checkpointBytes(root, item, previous ? previous.bytes : null);
     combined.set(item.path, { item: { ...item, activation: item.activation === true || Boolean(previous && previous.item.activation) }, bytes });
   }
-  return [...combined.values()].filter(({ item, bytes }) => fileHash(absolute(root, item.path)) !== sha(bytes))
+  const unchanged = (item, bytes) => {
+    const target = absolute(root, item.path);
+    if (item.path !== "Agent/Scope Map.canvas" || !fs.existsSync(target)) return fileHash(target) === sha(bytes);
+    try { return stableHash(normalizeScopeCanvas(JSON.parse(fs.readFileSync(target, "utf8")))) === stableHash(normalizeScopeCanvas(JSON.parse(bytes.toString("utf8")))); } catch { return false; }
+  };
+  return [...combined.values()].filter(({ item, bytes }) => !unchanged(item, bytes))
     .map(({ item, bytes }) => ({ path: item.path, kind: item.kind, activation: item.activation === true, sha256: sha(bytes), bytes_base64: bytes.toString("base64") }));
 }
 function checkTopology(vaultRoot, options = {}) {

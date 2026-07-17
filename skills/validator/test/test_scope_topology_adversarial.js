@@ -5,7 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const {
-  buildTopology, filterFindingsByScope, inventoryVault, normalizeScopePath,
+  buildTopology, checkTopology, filterFindingsByScope, inventoryVault, normalizeScopePath,
   parseOperationRequest, renderCheckpointBlocks, renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry, scopeFindings,
 } = require("../scripts/scope-topology");
 
@@ -115,6 +115,7 @@ contract("canvas-host-metadata", "deep_transparent_ancestry", () => {
     fs.writeFileSync(canvasPath, `${JSON.stringify(canvas)}\n`);
     const inventory = inventoryVault(root);
     assert.ok(!scopeFindings(buildTopology(inventory), inventory).some((item) => item.code === "scope-map-drift" && item.origin === "Agent/Scope Map.canvas"));
+    assert.ok(!checkTopology(root).changes.some((item) => item.path === "Agent/Scope Map.canvas"));
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 contract("base-formula-order", "base_ordering/Incorrect.base", () => {
