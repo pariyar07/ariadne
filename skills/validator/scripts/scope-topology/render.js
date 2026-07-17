@@ -150,6 +150,7 @@ function normalizeScopeCanvas(value) {
   };
   const byId = (left, right) => Buffer.from(String(left.id)).compare(Buffer.from(String(right.id)));
   const normalized = canonical(value);
+  delete normalized.metadata;
   normalized.nodes.sort(byId);
   normalized.edges.sort(byId);
   return normalized;

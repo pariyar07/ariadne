@@ -4,6 +4,10 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+
+- Scope Canvas drift validation now compares only Ariadne-owned `nodes` and `edges`, ignoring host-added top-level metadata such as Obsidian's `metadata.frontmatter` and `metadata.version` fields while still validating the complete generated topology.
+
 ## [0.3.3] - 2026-07-17
 
 ### Fixed
