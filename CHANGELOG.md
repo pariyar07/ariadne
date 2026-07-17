@@ -4,6 +4,10 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+
+- Scope Canvas drift validation and zero-write repair previews now ignore host-added top-level `metadata` such as Obsidian's frontmatter/version fields while still validating all Ariadne-owned topology and unsupported non-host fields; opening a canonical Canvas in Obsidian no longer creates false drift or endless repair proposals.
+
 ## [0.3.3] - 2026-07-17
 
 ### Fixed

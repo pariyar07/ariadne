@@ -5,8 +5,8 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const {
-  buildTopology, filterFindingsByScope, inventoryVault, normalizeScopePath,
-  parseOperationRequest, renderCheckpointBlocks, renderScopeMapCanvas, scopeFindings,
+  buildTopology, checkTopology, filterFindingsByScope, inventoryVault, normalizeScopePath,
+  parseOperationRequest, renderCheckpointBlocks, renderScopeMapCanvas, renderScopeMapMarkdown, renderScopeRegistry, scopeFindings,
 } = require("../scripts/scope-topology");
 
 const fixtures = path.join(__dirname, "fixtures", "scope_topology");
@@ -100,6 +100,23 @@ contract("symlink-swap", "root_only", () => {
 contract("canvas-id-collision", "deep_transparent_ancestry", () => {
   const model = buildTopology(inventoryVault(at("deep_transparent_ancestry")));
   assert.throws(() => renderScopeMapCanvas(model, { idFactory: () => "0000000000000000" }), /Canvas ID collision/u);
+});
+contract("canvas-host-metadata", "deep_transparent_ancestry", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-canvas-metadata-contract-"));
+  try {
+    fs.cpSync(at("deep_transparent_ancestry"), root, { recursive: true });
+    const initialModel = buildTopology(inventoryVault(root));
+    for (const artifact of [renderScopeRegistry(initialModel), renderScopeMapMarkdown(initialModel), renderScopeMapCanvas(initialModel)]) {
+      const output = path.join(root, artifact.path); fs.mkdirSync(path.dirname(output), { recursive: true }); fs.writeFileSync(output, artifact.bytes);
+    }
+    const canvasPath = path.join(root, "Agent/Scope Map.canvas");
+    const canvas = JSON.parse(fs.readFileSync(canvasPath, "utf8"));
+    canvas.metadata = { frontmatter: {}, version: "1.0-1.0" };
+    fs.writeFileSync(canvasPath, `${JSON.stringify(canvas)}\n`);
+    const inventory = inventoryVault(root);
+    assert.ok(!scopeFindings(buildTopology(inventory), inventory).some((item) => item.code === "scope-map-drift" && item.origin === "Agent/Scope Map.canvas"));
+    assert.ok(!checkTopology(root).changes.some((item) => item.path === "Agent/Scope Map.canvas"));
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 contract("base-formula-order", "base_ordering/Incorrect.base", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-base-order-contract-"));
