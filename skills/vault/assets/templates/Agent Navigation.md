@@ -65,4 +65,6 @@ Bases inspect the Markdown wiki through metadata. They are not a replacement for
 
 Agents should start from this note or [[00 Index]], then follow the smallest relevant hub before reading individual notes.
 
+When entering a scope, read `Agent/Task Routing Matrix.md` before following content-hub or workstream links. The routing matrix selects the smallest relevant context; finding a direct content link does not replace that route.
+
 Do not read the whole vault by default. Use hubs first, then search, then raw sources only when compiled notes are insufficient.

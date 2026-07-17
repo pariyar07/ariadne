@@ -22,6 +22,7 @@ Parent scope: [[{{parent_scope_index}}]]
 
 - [[{{scope_path}}/AGENTS|Scope instructions]]
 - [[{{scope_path}}/Agent/00 Agent Navigation|Scope agent navigation]]
+- [[{{scope_path}}/Agent/Task Routing Matrix|Scope task routing]]
 - [[{{scope_path}}/Bases/00 Bases Index|Scope Bases]]
 
 ## Active Child Scopes
