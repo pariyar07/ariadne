@@ -125,7 +125,7 @@ node skills/vault/scripts/register_vault.js --agents codex,claude,gemini --docto
 
 The research lifecycle skill names changed atomically. Existing copied skills, generated vault instructions, saved prompts, and external schedulers need an explicit migration pass; see [Research Lifecycle Migration](docs/guides/research-lifecycle-migration.md).
 
-Latest release: [Ariadne v0.3.3 — Routing Matrix Discovery Fix](docs/releases/v0.3.3.md).
+Latest release: [Ariadne v0.3.4 — Obsidian Canvas Metadata Compatibility](docs/releases/v0.3.4.md).
 
 ## Skills
 
@@ -270,7 +270,7 @@ See `docs/guides/validator.md` for the full counter reference.
 | `docs/guides/validator.md` | Validator counter reference |
 | `docs/guides/scope-topology-migration.md` | Scope topology adoption, recovery, and rollback guidance |
 | `docs/guides/research-lifecycle-migration.md` | Breaking v0.2.0 skill-name and generated-vault migration guidance |
-| `docs/releases/v0.3.3.md` | Published v0.3.3 routing matrix discovery fix release notes and verification summary |
+| `docs/releases/v0.3.4.md` | Published v0.3.4 Obsidian Canvas metadata compatibility release notes and verification summary |
 | `docs/releases/v0.3.0.md` | Published v0.3.0 deterministic scope topology release notes and verification summary |
 | `docs/releases/v0.2.1.md` | Published v0.2.1 frontend-neutral positioning release notes |
 | `docs/releases/v0.2.0.md` | Published v0.2.0 release notes and verification pointers |
