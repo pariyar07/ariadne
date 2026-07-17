@@ -4,7 +4,20 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const { inventoryVault, buildTopology, normalizeScopePath, parseScopeDescriptor } = require("../../validator/scripts/scope-topology");
+
+function resolveScopeTopology() {
+  const candidates = [
+    path.resolve(__dirname, "../../validator/scripts/scope-topology"),
+    path.resolve(__dirname, "../../ariadne-validator/scripts/scope-topology"),
+  ];
+  const modulePath = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!modulePath) {
+    throw new Error(`Cannot locate Ariadne scope-topology dependency. Checked: ${candidates.join(", ")}`);
+  }
+  return require(modulePath);
+}
+
+const { inventoryVault, buildTopology, normalizeScopePath, parseScopeDescriptor } = resolveScopeTopology();
 
 const ROOT_INSTRUCTION_FILES = new Set(["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".hermes.md", "HERMES.md"]);
 const LOCAL_ONLY_FILES = new Set(["AGENTS.override.md", "CLAUDE.local.md", "GEMINI.local.md"]);
