@@ -4,7 +4,7 @@
 ## Scope Inheritance
 
 Read and obey this root-to-current instruction chain:
-- [[AGENTS.md|{{vault_name}} instructions]] (`root`)
+- {{vault_name}} instructions (this file; `root`)
 <!-- ariadne:scope-inheritance:end -->
 
 This is a durable, agent-readable Markdown knowledge vault. It is compatible with Obsidian, but agents operate the filesystem source directly.

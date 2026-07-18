@@ -448,6 +448,17 @@ function validateWorkflows(errors) {
   if (fs.existsSync(path.join(ROOT, repoWorkflow)) && !read(repoWorkflow).includes("node scripts/test_validate_repo.js")) {
     fail(errors, `${repoWorkflow} must run repository guardrail mutation tests`);
   }
+  if (fs.existsSync(path.join(ROOT, repoWorkflow))) {
+    const workflow = read(repoWorkflow);
+    for (const suite of [
+      "skills/vault/test/test_scope_topology_templates.js",
+      "skills/vault/test/test_research_templates.js",
+      "skills/validator/test/test_scope_topology.js",
+      "skills/validator/test/test_scope_topology_failures.js",
+    ]) {
+      if (!workflow.includes(`node ${suite}`)) fail(errors, `${repoWorkflow} must run ${suite}`);
+    }
+  }
   if (fs.existsSync(path.join(ROOT, skillWorkflow)) && !read(skillWorkflow).includes("node scripts/validate_repo.js --skills-only")) {
     fail(errors, `${skillWorkflow} must run scripts/validate_repo.js --skills-only`);
   }

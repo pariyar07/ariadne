@@ -2,8 +2,8 @@
   "nodes": [
     {
       "id": "3cfe8658e4429068",
-      "type": "file",
-      "file": "00 Index.md",
+      "type": "text",
+      "text": "[[../00 Index|{{vault_name}}]]\n`root`\n.",
       "x": 0,
       "y": 0,
       "width": 320,

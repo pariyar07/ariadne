@@ -30,6 +30,13 @@ function runValidator(root) {
   });
 }
 
+function runRepoValidator(root) {
+  return spawnSync(process.execPath, ["scripts/validate_repo.js"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+}
+
 function replace(root, file, from, to) {
   const target = path.join(root, file);
   const original = fs.readFileSync(target, "utf8");
@@ -146,6 +153,21 @@ try {
   }
   const topologyBaseline = runValidator(tempRoot);
   assert.strictEqual(topologyBaseline.status, 0, topologyBaseline.stderr || topologyBaseline.stdout);
+
+  const workflowSuites = [
+    "skills/vault/test/test_scope_topology_templates.js",
+    "skills/vault/test/test_research_templates.js",
+    "skills/validator/test/test_scope_topology.js",
+    "skills/validator/test/test_scope_topology_failures.js",
+  ];
+  const workflowPath = path.join(tempRoot, ".github/workflows/validate-repo.yml");
+  const workflow = fs.readFileSync(workflowPath, "utf8");
+  fs.writeFileSync(workflowPath, workflowSuites.reduce((text, suite) => text.replace(`node ${suite}`, `removed ${suite}`), workflow));
+  const missingWorkflowSuites = runRepoValidator(tempRoot);
+  for (const suite of workflowSuites) {
+    assertRejected(missingWorkflowSuites, `.github/workflows/validate-repo.yml must run ${suite}`);
+  }
+  fs.writeFileSync(workflowPath, workflow);
 
   let restore = replace(
     tempRoot,
