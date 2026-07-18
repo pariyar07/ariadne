@@ -14,7 +14,8 @@ tags:
 <!-- ariadne:scope-navigation:start -->
 ## Scope Navigation
 
-- Boundary: [[00 Index|{{vault_name}}]]
+- Boundary: [[../00 Index|{{vault_name}}]]
+- Routing: [[Agent/Task Routing Matrix|Task Routing Matrix]]
 <!-- ariadne:scope-navigation:end -->
 
 This is the navigation hub for agents working in this vault.

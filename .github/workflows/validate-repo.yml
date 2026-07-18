@@ -29,3 +29,11 @@ jobs:
         run: node skills/vault/test/test_register_vault.js
       - name: Run scope entry route contract
         run: node skills/vault/test/test_scope_entry_route.js
+      - name: Run scope topology template contract
+        run: node skills/vault/test/test_scope_topology_templates.js
+      - name: Run research template contract
+        run: node skills/vault/test/test_research_templates.js
+      - name: Run scope topology suite
+        run: node skills/validator/test/test_scope_topology.js
+      - name: Run scope topology failure suite
+        run: node skills/validator/test/test_scope_topology_failures.js
