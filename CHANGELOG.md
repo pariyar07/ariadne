@@ -4,6 +4,15 @@ All notable Ariadne releases are documented here. Ariadne follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+
+- Installed copies of `ariadne:workspace-instructions` now resolve their checker dependencies correctly instead of assuming repository-relative paths.
+- Generated scope entry routes now direct agents through scope instructions, agent navigation, and the local task-routing matrix before following content-hub links.
+
+### Changed
+
+- Registered-vault and scope-entry cold starts now require strict sequential reads: each required entrypoint must complete before the next begins, and agents must not parallelize the ordered entry contract.
+
 ## [0.3.4] - 2026-07-17
 
 ### Fixed

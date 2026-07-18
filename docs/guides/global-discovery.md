@@ -98,7 +98,7 @@ When an agent sees the global discovery block, it should:
 
 1. Read `~/.ariadne/vaults.md`.
 2. Pick the relevant vault from the user's request.
-3. Enter through that vault's listed cold-start entry order.
+3. Enter through that vault's listed cold-start entry order in strict sequence. Complete each entrypoint read before beginning the next; do not parallelize the required reads.
 4. Search progressively with filenames and `rg`.
 5. Prefer compiled notes, hubs, decisions, indexes, and synthesis notes over raw sources.
 

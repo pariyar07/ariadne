@@ -3,9 +3,9 @@
 > In Greek myth, Ariadne gives Theseus the thread that lets him navigate the labyrinth.
 > Ariadne gives AI agents a thread through a complex knowledge labyrinth.
 
-An agent skill package for building Markdown knowledge vaults that AI agents can navigate, maintain, and operate reliably. Works with ChatGPT/Codex, Claude Code, and any agent runtime that supports the skills protocol.
+An agent skill package for building Markdown knowledge vaults that AI agents can navigate, maintain, and operate reliably. Designed for ChatGPT/Codex, Claude Code, and other runtimes that support the skills protocol; accepted cross-runtime behavioral evidence is still being expanded.
 
-The core pattern: humans choose what enters, agents compile raw material into a linked wiki, and plain Markdown remains the source of truth. Obsidian is an optional, recommended frontend; Bases and other Obsidian features are optional view layers.
+The core pattern: humans choose what enters, agents compile raw material into a linked wiki, and plain Markdown remains the source of truth. Document renderers are replaceable; Obsidian is an optional, recommended frontend, and its Bases and other view features remain derived layers.
 
 ```mermaid
 flowchart LR
@@ -40,15 +40,15 @@ flowchart LR
 - Node.js with `npm`/`npx` available for installing skills and running the bundled validator and vault-registration scripts.
 - A skills-capable agent runtime, such as ChatGPT/Codex, Claude Code, or another runtime that supports the skills protocol.
 
-## Optional Obsidian Frontend
+## Optional Document Renderers
 
-Obsidian is not required for agent workflows. Use it when you want its native reading, editing, backlinks, graph, Canvas, Bases, Kanban, or Dataview experience. Obsidian users may optionally install [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for companion Markdown, Bases, Canvas, extraction, and CLI mechanics.
+No particular renderer is required for agent workflows. Obsidian is not required; use any Markdown-compatible editor or viewer that preserves the underlying files. Obsidian is the recommended and most-tested frontend when you want native backlinks, graph, Canvas, Bases, Kanban, or Dataview. Obsidian users may optionally install [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for companion Markdown, Bases, Canvas, extraction, and CLI mechanics.
 
 Ariadne has no project dependency installation or build step. Its scripts use only built-in Node.js modules; `npx skills` copies the skill package into supported agent runtimes.
 
 ## Install
 
-Install for all supported agents (ChatGPT/Codex, Claude Code, and others):
+Install into all supported skill targets (ChatGPT/Codex, Claude Code, and others):
 
 ```bash
 npx skills add https://github.com/pariyar07/ariadne \
@@ -154,13 +154,13 @@ Recurring maintenance is best handled as an automation prompt that invokes the e
 
 See `docs/guides/weekly-maintenance-automation.md` for a Codex-ready prompt, Claude Code adaptation notes, subagent boundaries, and the optional durable report variant.
 
-## What's Coming
+## Current Direction
 
-Ariadne's next direction is cross-domain synthesis and feedback loops.
+Ariadne's implemented foundation now covers discovery, scoped navigation, knowledge capture, research governance, closeout, deterministic validation, and recoverable scope topology.
 
-Today, Ariadne helps agents enter a vault, find the right scope, ingest research, maintain hubs, and validate structure. The next layer is helping agents notice when knowledge in one domain should affect another domain, then returning those connections to the user as useful output.
+The current product question is whether that structure measurably improves outcomes over a plain Markdown folder, whether non-Codex runtimes follow the same contracts in practice, and whether external users sustain it. Validation and real-user evidence should precede more architecture.
 
-Planned areas of exploration:
+Conditional value directions after that evidence include:
 
 - cross-domain synthesis across scope-level research hubs
 - explicit relationship notes for connections between domains
@@ -168,7 +168,7 @@ Planned areas of exploration:
 - stale question resurfacing
 - contradiction review across old decisions, beliefs, and newer synthesis
 
-The design constraint stays the same: agents should not need to read the whole vault to be useful. They should follow explicit routes, compare durable syntheses, write back meaningful connections, and keep the Markdown vault as the source of truth.
+The design constraint stays the same: agents should not need to read the whole vault to be useful. They should follow ordered explicit routes, preserve bounded write authority, return to canonical evidence, and keep Markdown as the source of truth.
 
 ## How It Works
 

@@ -12,9 +12,9 @@ This guide covers everything you can do with Ariadne: from bootstrapping a new v
 
 Ariadne's scripts use only built-in Node.js modules, so there is no `npm install` step for this repository.
 
-## Optional Obsidian Frontend
+## Optional Document Renderers
 
-Obsidian is not required for agent workflows. Use it for its native note, backlink, graph, Canvas, Bases, Kanban, or Dataview interface. Obsidian users may optionally install [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for companion mechanics.
+No document renderer is required for agent workflows. Use any Markdown-compatible editor or viewer that preserves the underlying files. Obsidian is the recommended and most-tested frontend for native notes, backlinks, graph, Canvas, Bases, Kanban, and Dataview. Obsidian users may optionally install [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills) for companion mechanics.
 
 ---
 
@@ -102,7 +102,7 @@ This writes or refreshes `~/.ariadne/vaults.json`, `~/.ariadne/vaults.md`, and t
 1. `ariadne:global-discovery` checks the target path for Ariadne entry files.
 2. It creates or updates `~/.ariadne/vaults.json` and `~/.ariadne/vaults.md`.
 3. It optionally updates selected global agent instruction files with tiny marker-managed pointers.
-4. Future cold agents can read the registry first, then enter the vault through the listed cold-start entry order.
+4. Future cold agents read the registry first, then enter the vault through the listed cold-start entry order in strict sequence. Each required read completes before the next begins.
 
 **When to use:** You skipped registration during vault creation, imported an older vault, changed machines, want to repair global discovery later, or need to refresh marker blocks after Ariadne ships newer discovery rules.
 
@@ -335,7 +335,7 @@ If you open a new agent session and want it to orient fast:
 4. `Agent/Task Routing Matrix.md` — task entry selector
 5. `Domains/00 Domains Index.md` — scope registry
 
-That's the full cold-start context. The agent should not read more until it knows which task to do.
+That's the full cold-start context. These reads are ordered dependencies, not a parallel bundle. The agent should complete each one before the next and should not read more until it knows which task to do.
 
 If the session starts outside the vault and the vault has been registered globally, the agent should first read `~/.ariadne/vaults.md`, choose the relevant vault, then follow the entry order above.
 
