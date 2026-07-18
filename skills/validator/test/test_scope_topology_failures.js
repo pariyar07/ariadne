@@ -196,7 +196,7 @@ for (const point of [
 // A successor lock with identical bytes but a different inode is rejected.
 {
   const directory = vault(); const requestFile = disclosedRequest(directory); const failed = run([directory, "--write", "--request", requestFile], { env: { ARIADNE_SYNC_FAIL_AT: "after-manifest-cleanup" } }); assert.notStrictEqual(failed.status, 0);
-  const lockPath = path.join(directory, ".ariadne/scope-topology.lock"); const bytes = fs.readFileSync(lockPath); const id = JSON.parse(bytes).operation_id; fs.unlinkSync(lockPath); fs.writeFileSync(lockPath, bytes, { mode: 0o600 });
+  const lockPath = path.join(directory, ".ariadne/scope-topology.lock"); const bytes = fs.readFileSync(lockPath); const id = JSON.parse(bytes).operation_id; const successorPath = `${lockPath}.successor`; fs.writeFileSync(successorPath, bytes, { mode: 0o600 }); fs.unlinkSync(lockPath); fs.renameSync(successorPath, lockPath);
   const resumed = run([directory, "--resume", id]); assert.notStrictEqual(resumed.status, 0); assert.match(resumed.stderr, /lock identity mismatch/u);
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true });
 }
