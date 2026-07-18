@@ -464,20 +464,18 @@ fs.rmSync(backslashPathVault, { recursive: true, force: true });
 // cannot distinguish an already-NFC folder from one whose real bytes are NFD-decomposed -- a
 // filesystem that does not itself normalize on write (ext4, unlike APFS) can hold the latter,
 // and a write step that trusts only the normalized relativePath could target a scope_path the
-// filesystem doesn't actually have under that spelling. APFS -- this repo's dev/CI filesystem --
-// both normalizes fs.readdirSync's own results to NFC and resolves NFD-spelled paths to the same
-// underlying entry regardless of which spelling is used to reach it, so a real end-to-end
-// fixture can't exhibit the divergence here; a patched fs.readdirSync simulates an ext4-like
-// non-normalizing directory listing for exactly one directory, relying on APFS's confirmed
-// normalization-insensitive path resolution to keep the underlying lstat/readFile calls working
-// underneath the substituted (differently-spelled) name.
+// filesystem doesn't actually have under that spelling. Linux can create the physical NFD name
+// directly. APFS normalizes the written name and resolves alternate normalization forms to the
+// same entry, so on macOS a patched fs.readdirSync simulates the non-normalizing directory listing
+// while relying on APFS's normalization-insensitive path resolution for lstat/readFile calls.
 const nfcName = "Caf\u00e9".normalize("NFC");
 const nfdName = "Caf\u00e9".normalize("NFD");
 assert.notStrictEqual(nfcName, nfdName, "fixture requires genuinely distinct NFC/NFD byte forms");
 const nfdPathVault = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-legacy-nfd-path-"));
 fs.writeFileSync(path.join(nfdPathVault, "AGENTS.md"), "# Root\n");
-fs.mkdirSync(path.join(nfdPathVault, nfcName), { recursive: true });
-fs.writeFileSync(path.join(nfdPathVault, nfcName, "AGENTS.md"), "# Cafe\n");
+const physicalName = process.platform === "darwin" ? nfcName : nfdName;
+fs.mkdirSync(path.join(nfdPathVault, physicalName), { recursive: true });
+fs.writeFileSync(path.join(nfdPathVault, physicalName, "AGENTS.md"), "# Cafe\n");
 const originalReaddirSync = fs.readdirSync;
 fs.readdirSync = function patchedReaddirSync(dir, options) {
   const entries = originalReaddirSync.call(fs, dir, options);
