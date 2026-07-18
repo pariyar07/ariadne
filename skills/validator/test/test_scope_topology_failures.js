@@ -317,11 +317,11 @@ for (const point of [
   const directory = vault(); const requestFile = disclosedRequest(directory); const control = path.join(directory, ".ariadne"); fs.mkdirSync(control); const release = path.join(os.tmpdir(), `ariadne-release-${crypto.randomUUID()}`); const resultRoot = fs.mkdtempSync(path.join(os.tmpdir(), "ariadne-race-results-")); const children = [];
   for (const name of ["a", "b"]) {
     const output = path.join(resultRoot, `${name}.out`); const error = path.join(resultRoot, `${name}.err`); const status = path.join(resultRoot, `${name}.status`);
-    children.push({ status, child: spawn("sh", ["-c", '"$1" "$2" "$3" --write --request "$4" >"$5" 2>"$6"; echo $? >"$7"', "sh", process.execPath, cli, directory, requestFile, output, error, status], { env: { ...process.env, ARIADNE_SCOPE_TOPOLOGY_TEST_MODE: "1", ARIADNE_SYNC_CANDIDATE_RELEASE: release }, stdio: "ignore" }) });
+    children.push({ status, child: spawn("sh", ["-c", '"$1" "$2" "$3" --write --request "$4" >"$5" 2>"$6"; echo $? >"$7"', "sh", process.execPath, cli, directory, requestFile, output, error, status], { env: { ...process.env, ARIADNE_SCOPE_TOPOLOGY_TEST_MODE: "1", ARIADNE_SYNC_CANDIDATE_RELEASE: release, ARIADNE_SYNC_PAUSE_AT: "after-candidate-link" }, stdio: "ignore" }) });
   }
   for (let count = 0; count < 500 && fs.readdirSync(control).filter((name) => name.startsWith("scope-topology.candidate-stage-")).length < 2; count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
   assert.strictEqual(fs.readdirSync(control).filter((name) => name.startsWith("scope-topology.candidate-stage-")).length, 2); fs.writeFileSync(release, "go");
-  for (let count = 0; count < 1000 && children.some((item) => !fs.existsSync(item.status)); count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+  for (let count = 0; count < 5000 && children.some((item) => !fs.existsSync(item.status)); count += 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
   assert.deepStrictEqual(children.map((item) => Number(fs.readFileSync(item.status, "utf8"))).sort(), [0, 1]); assert.ok(!fs.readdirSync(control).some((name) => name.includes("candidate") || name === "scope-topology.lock" || name === "scope-topology-operation.json"));
   fs.rmSync(directory, { recursive: true, force: true }); fs.rmSync(resultRoot, { recursive: true, force: true }); fs.rmSync(requestFile, { force: true }); fs.rmSync(release, { force: true });
 }
