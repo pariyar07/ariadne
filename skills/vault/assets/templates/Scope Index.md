@@ -20,6 +20,8 @@ Parent scope: [[{{parent_scope_index}}]]
 
 ## Start Here
 
+Complete each Start Here read before starting the next; do not parallelize these reads.
+
 - [[{{scope_path}}/AGENTS|Scope instructions]]
 - [[{{scope_path}}/Agent/00 Agent Navigation|Scope agent navigation]]
 - [[{{scope_path}}/Agent/Task Routing Matrix|Scope task routing]]

@@ -119,6 +119,7 @@ const tests = [
     assert.match(registryMarkdown, /## Work Vault/);
     assert.match(registryMarkdown, new RegExp(`Path: ${vault.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
     assert.match(registryMarkdown, /Purpose: Long-term project and research knowledge\./);
+    assert.match(registryMarkdown, /Complete each entrypoint read before starting the next; do not parallelize these reads\./);
     assert.match(registryMarkdown, /1\. Read `00 Global Index\.md`\./);
     assert.match(registryMarkdown, /2\. Read `AGENTS\.md`\./);
     assert.match(registryMarkdown, /3\. Read `Agent\/00 Agent Navigation\.md`\./);
@@ -140,6 +141,8 @@ const tests = [
       assertFrontendNeutralDiscovery(text);
       assert.doesNotMatch(text, /This machine has one or more Ariadne/);
     }
+    assert.match(read(path.resolve(__dirname, "../assets/templates/Global Vault Registry.md")), /Complete each entrypoint read before starting the next; do not parallelize these reads\./);
+    assert.match(read(path.resolve(__dirname, "../assets/templates/Global Agent Discovery Snippet.md")), /strict sequence/);
 
     assertFrontendNeutralDiscovery(read(path.resolve(__dirname, "../assets/templates/Global Vault Registry.md")));
     assertFrontendNeutralDiscovery(read(path.resolve(__dirname, "../assets/templates/Global Agent Discovery Snippet.md")));

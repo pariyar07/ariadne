@@ -9,6 +9,8 @@ Purpose: {{purpose}}
 
 Cold-start entry order:
 
+Complete each entrypoint read before starting the next; do not parallelize these reads.
+
 1. Read the detected root index, for example `00 Index.md` or `00 Global Index.md`.
 2. Read `AGENTS.md`.
 3. Read `Agent/00 Agent Navigation.md`.
