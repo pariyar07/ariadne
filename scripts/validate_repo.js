@@ -110,8 +110,8 @@ const SCOPE_TOPOLOGY_TEST_CONTRACTS = new Map([
   ["base-formula-order", "base_ordering/Incorrect.base"], ["scoped-isolation", "scoped_sibling_isolation"],
 ]);
 const TOPOLOGY_ORCHESTRATION_CONTRACTS = new Map([
-  ["skills/scope/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "scope-operation-request.md", "allowed_write_paths", "second check", "Never directly edit"]],
-  ["skills/navigation/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "user extension areas", "generated blocks", "Never edit inside generated blocks"]],
+  ["skills/scope/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "scope-operation-request.md", "allowed_write_paths", "second check", "Never directly edit", "Non-registry root Base formulas are report-only", "explicit allowed_write_set"]],
+  ["skills/navigation/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "user extension areas", "generated blocks", "Never edit inside generated blocks", "Non-registry root Base formulas are report-only", "explicit allowed_write_set"]],
   ["skills/maintenance/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "ariadne_scope_adoption: dismissed", "ancestor-chain", "whole-vault", "never directly edit"]],
   ["skills/validator/SKILL.md", [TOPOLOGY_SYNCHRONIZER, "--check", "--write --request", "--resume", "--abort", "Engine control paths"]],
   ["skills/vault/references/recursive-scopes.md", [TOPOLOGY_SYNCHRONIZER, "scope-operation-request.md"]],
@@ -317,7 +317,7 @@ function validateResearchLifecycleDocs(errors) {
     ["docs/guides/quickstart.md", ["Obsidian is not required"]],
     ["PUBLIC_BOUNDARY.md", ["Markdown knowledge vaults"]],
     ["AGENTS.md", ["Markdown knowledge vaults"]],
-    ["skills/scope/SKILL.md", ["most-specific child branch before its parent branch", "Run scoped validation first, then whole-vault validation", "explicit inheritance from both the nearest parent scope and the vault root", "Preserve unrelated modified and untracked files"]],
+    ["skills/scope/SKILL.md", ["most-specific child branch before its parent branch", "Non-registry root Base formulas are report-only", "explicit allowed_write_set", "Run scoped validation first, then whole-vault validation", "explicit inheritance from both the nearest parent scope and the vault root", "Preserve unrelated modified and untracked files"]],
     ["CONTRIBUTING.md", ["closeout/", "`agents/openai.yaml` is required"]],
     ["docs/releases/v0.2.0.md", ["Published 2026-07-15", "https://github.com/pariyar07/ariadne/releases/tag/v0.2.0"]],
   ]);

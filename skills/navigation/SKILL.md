@@ -53,7 +53,7 @@ When promoting a workstream:
 
 A navigation scope can exist at any depth: the vault root, a top-level workstream, a child workflow, or a deep child project. Promote a child scope only when a recurring durable route needs local traversal; otherwise keep it as a normal folder under the parent scope.
 
-Topology ownership is strict: `sync_scope_topology.js` owns descriptors, generated files, generated blocks, scope maps/registry, routing checkpoints, root Base scope branches, redirects, and parent/child topology. Use `ariadne:scope` for any lifecycle or topology change.
+Topology ownership is strict: `sync_scope_topology.js` owns descriptors, generated files, generated blocks, the scope map and `Bases/Scope Registry.base`, routing checkpoints, redirects, and parent/child topology. Use `ariadne:scope` for any lifecycle or topology change. Non-registry root Base formulas are report-only: they remain user-authored and may be updated outside generated blocks only through a separately confirmed explicit allowed_write_set.
 
 Navigation may edit only user extension areas outside generated blocks: prose around marker-managed checkpoints, user-authored hub sections, semantic links, and other explicitly confirmed content. Never edit inside generated blocks or reproduce generated wiring elsewhere.
 

@@ -97,9 +97,15 @@ try {
 
   const scopeText = fs.readFileSync(path.join(tempRoot, "skills/scope/SKILL.md"), "utf8");
   assert(scopeText.includes("most-specific child branch before its parent branch"), "scope skill must require child-before-parent Base formula ordering");
+  assert(scopeText.includes("Non-registry root Base formulas are report-only"), "scope skill must distinguish report-only user-authored Base formulas from generated topology");
+  assert(scopeText.includes("explicit allowed_write_set"), "scope skill must require explicit authorization for user-authored Base formula updates");
   assert(scopeText.includes("Run scoped validation first, then whole-vault validation"), "scope skill must require scoped-then-whole validation");
   assert(scopeText.includes("explicit inheritance from both the nearest parent scope and the vault root"), "scope skill must require explicit root and parent inheritance");
   assert(scopeText.includes("Preserve unrelated modified and untracked files"), "scope skill must preserve unrelated dirty work");
+
+  const navigationText = fs.readFileSync(path.join(tempRoot, "skills/navigation/SKILL.md"), "utf8");
+  assert(navigationText.includes("Non-registry root Base formulas are report-only"), "navigation skill must preserve the user-authored Base formula boundary");
+  assert(!navigationText.includes("routing checkpoints, root Base scope branches, redirects"), "navigation skill must not assign user-authored root Base formulas to the synchronizer");
 
   const contributingText = fs.readFileSync(path.join(tempRoot, "CONTRIBUTING.md"), "utf8");
   assert(contributingText.includes("closeout/"), "contributor structure must include the closeout skill");
