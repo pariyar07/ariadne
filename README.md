@@ -7,6 +7,8 @@ An agent skill package for building Markdown knowledge vaults that AI agents can
 
 The core pattern: humans choose what enters, agents compile raw material into a linked wiki, and plain Markdown remains the source of truth. Document renderers are replaceable; Obsidian is an optional, recommended frontend, and its Bases and other view features remain derived layers.
 
+Ariadne is the governed, runtime-agnostic knowledge layer. It owns the knowledge lifecycle and its safety contracts, not task execution: agent harnesses, schedulers, automations, tools, and operational systems remain replaceable external layers that can use Ariadne without becoming part of it. Operational systems retain authority over their own records.
+
 ```mermaid
 flowchart LR
   Human(["Human\nSources · notes · requests"])
