@@ -16,6 +16,13 @@ jobs:
         with:
           # Execute the trusted gate from the protected base branch, not PR-authored code.
           ref: ${{ github.event.pull_request.base.sha }}
+      - name: Bootstrap the gate on its approved introduction PR
+        if: github.event.pull_request.base.sha == '3ce0bffb9e836fdc8c939953bcadce50e14c6f82'
+        uses: actions/checkout@v7
+        with:
+          # One-time bootstrap: the pinned pre-gate base cannot contain the validator.
+          # Checking the exact PR commit is safe only for this maintainer-approved introduction.
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: "20"
