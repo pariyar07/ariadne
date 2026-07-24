@@ -95,6 +95,17 @@ Each skill is a folder with:
 - Ariadne behavior must stay Markdown-knowledge-vault-specific. Obsidian-compatible view features belong here; generic runtime-adaptive coordination belongs outside this repo.
 - Do not commit `CLAUDE.local.md`, `GEMINI.local.md`, or `AGENTS.override.md` — these are machine-local.
 
+## Evidence-Gated Releases
+
+Read `EVIDENCE_GATED_RELEASE.md` before implementing a significant behavioral or product change.
+
+- Classify changes before implementation. Agent behavior, write authority, navigation, memory or retrieval, scope topology, privacy or security, automation, compatibility, and public capability claims are significant by default.
+- Keep maintainer-originated significant candidates local or private until a preregistered evaluation has an accepted `pass` or `pass-with-limitations` verdict. Do not push the implementation to this public repository first.
+- External pull requests may arrive without prior private evaluation. Treat them as candidate input; do not merge, release, or strengthen public claims until the maintainer records an accepted verdict.
+- Public pull requests carry only the public-safe attestation defined in `EVIDENCE_GATED_RELEASE.md`. Never expose private repository locations, hidden fixtures, graders, transcripts, credentials, or personal paths.
+- Exempt typo fixes, documentation-only clarifications with no claim change, tests that do not alter behavior, and behavior-preserving refactors by recording `classification: exempt` plus a concrete rationale.
+- A maintainer override must be explicit, time-bounded, and recorded as a limitation; it cannot convert missing evidence into a product claim.
+
 ## Local Setup (gitignored files)
 
 To connect this repo to a local Markdown knowledge vault, create these files (all gitignored):

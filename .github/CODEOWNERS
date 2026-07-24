@@ -6,3 +6,6 @@
 /scripts/ @pariyar07
 /SECURITY.md @pariyar07
 /PUBLIC_BOUNDARY.md @pariyar07
+/EVIDENCE_GATED_RELEASE.md @pariyar07
+/scripts/release_evidence_gate.js @pariyar07
+/.github/workflows/release-evidence-gate.yml @pariyar07

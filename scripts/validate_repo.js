@@ -22,6 +22,10 @@ const REQUIRED_REPO_FILES = [
   ".github/workflows/validate-repo.yml",
   ".github/workflows/validate-skills.yml",
   ".github/workflows/scorecard.yml",
+  ".github/workflows/release-evidence-gate.yml",
+  "EVIDENCE_GATED_RELEASE.md",
+  "scripts/release_evidence_gate.js",
+  "scripts/test_release_evidence_gate.js",
 ];
 
 const OS_METADATA = new Set([".DS_Store", "Thumbs.db", "desktop.ini"]);
@@ -436,6 +440,7 @@ function validatePathSafety(errors, files) {
 function validateWorkflows(errors) {
   const repoWorkflow = ".github/workflows/validate-repo.yml";
   const skillWorkflow = ".github/workflows/validate-skills.yml";
+  const releaseWorkflow = ".github/workflows/release-evidence-gate.yml";
   if (fs.existsSync(path.join(ROOT, repoWorkflow)) && !read(repoWorkflow).includes("node scripts/validate_repo.js")) {
     fail(errors, `${repoWorkflow} must run scripts/validate_repo.js`);
   }
@@ -461,6 +466,9 @@ function validateWorkflows(errors) {
   }
   if (fs.existsSync(path.join(ROOT, skillWorkflow)) && !read(skillWorkflow).includes("node scripts/validate_repo.js --skills-only")) {
     fail(errors, `${skillWorkflow} must run scripts/validate_repo.js --skills-only`);
+  }
+  if (fs.existsSync(path.join(ROOT, releaseWorkflow)) && !read(releaseWorkflow).includes("node scripts/release_evidence_gate.js")) {
+    fail(errors, `${releaseWorkflow} must run scripts/release_evidence_gate.js`);
   }
 }
 

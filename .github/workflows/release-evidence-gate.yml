@@ -1,0 +1,34 @@
+name: Release Evidence Gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  release-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Execute the trusted gate from the protected base branch, not PR-authored code.
+          ref: ${{ github.event.pull_request.base.sha }}
+      - name: Bootstrap the gate on its approved introduction PR
+        if: github.event.pull_request.base.sha == '3ce0bffb9e836fdc8c939953bcadce50e14c6f82'
+        uses: actions/checkout@v7
+        with:
+          # One-time bootstrap: the pinned pre-gate base cannot contain the validator.
+          # Checking the exact PR commit is safe only for this maintainer-approved introduction.
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+      - name: Validate public release attestation
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: node scripts/release_evidence_gate.js
+      - name: Test release evidence gate
+        run: node scripts/test_release_evidence_gate.js

@@ -39,6 +39,14 @@ Read `PUBLIC_BOUNDARY.md` before proposing new behavior. Ariadne owns Markdown k
 
 Read `SECURITY.md` before reporting a vulnerability. Do not paste private vault content, secrets, client data, production logs, or maintainer-local paths into public issues or pull requests.
 
+### Evidence-gated changes
+
+Read `EVIDENCE_GATED_RELEASE.md` before proposing changes to agent behavior, write authority, navigation, memory or retrieval, scope topology, privacy or security, automation, compatibility, or public capability claims.
+
+Significant changes require an accepted maintainer evaluation verdict before merge or release. Maintainer-originated candidates stay local or private until that verdict exists. External contributors may open a proposal or pull request without access to maintainer evaluation infrastructure; the change remains a candidate and may be held unmerged while the maintainer evaluates it.
+
+Every pull request must complete the public-safe release-attestation block. Use `classification: exempt` and explain why for typo fixes, non-claiming documentation corrections, tests that do not change behavior, and behavior-preserving refactors. Do not include private repository names or locations, hidden fixtures, graders, transcripts, credentials, or personal paths.
+
 ### Improving a skill
 
 Each skill is a `SKILL.md` file — plain Markdown instructions for the agent. Edit the relevant `SKILL.md` directly.
