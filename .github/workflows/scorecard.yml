@@ -41,6 +41,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: scorecard-sarif
-      - uses: github/codeql-action/upload-sarif@v4
+      - uses: github/codeql-action/upload-sarif@v4.37.4
         with:
           sarif_file: results.sarif
